@@ -29,8 +29,11 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [listings, setListings] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [userSearch, setUserSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const [categoryError, setCategoryError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
@@ -44,14 +47,17 @@ export default function AdminPage() {
 
   async function loadData() {
     try {
-      const [uRes, pRes] = await Promise.all([
+      const [uRes, pRes, cRes] = await Promise.all([
         fetch("/api/users"),
         fetch("/api/products"),
+        fetch("/api/categories"),
       ]);
       const uData = await uRes.json();
       const pData = await pRes.json();
+      const cData = await cRes.json();
       setUsers(uData.users || []);
       setListings(pData.products || []);
+      setCategories(cData.categories || []);
     } catch {
       // silently fail — table will show empty
     }
@@ -108,6 +114,34 @@ export default function AdminPage() {
     } catch {
       flash("Failed to update product status.");
     }
+  }
+
+  async function handleAddCategory(e) {
+    e.preventDefault();
+    setCategoryError("");
+    if (!newCategory.trim()) { setCategoryError("Category name is required."); return; }
+    const res = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category_name: newCategory.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setCategoryError(data.error || "Failed to add category."); return; }
+    setCategories((prev) => [...prev, data.category].sort((a, b) => a.category_name.localeCompare(b.category_name)));
+    setNewCategory("");
+    flash(`Category "${data.category.category_name}" added.`);
+  }
+
+  async function handleDeleteCategory(id, name) {
+    const res = await fetch("/api/categories", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (!res.ok) { flash(data.error || "Failed to delete category."); return; }
+    setCategories((prev) => prev.filter((c) => c.id !== id));
+    flash(`Category "${name}" deleted.`);
   }
 
   const filteredUsers = users.filter(
@@ -233,6 +267,16 @@ export default function AdminPage() {
                   <Badge color="secondary" pill className="ms-2">{listings.length}</Badge>
                 </NavLink>
               </NavItem>
+              <NavItem>
+                <NavLink
+                  href="#" active={activeTab === "categories"}
+                  onClick={() => setActiveTab("categories")}
+                  style={{ cursor: "pointer", fontWeight: activeTab === "categories" ? 700 : 400 }}
+                >
+                  🏷️ Categories
+                  <Badge color="secondary" pill className="ms-2">{categories.length}</Badge>
+                </NavLink>
+              </NavItem>
             </Nav>
 
             <TabContent activeTab={activeTab}>
@@ -353,6 +397,57 @@ export default function AdminPage() {
                               <Button size="sm" color={l.product_status === "Inactive" ? "success" : "danger"} outline
                                 onClick={() => toggleListing(l.id)}>
                                 {l.product_status === "Inactive" ? "Activate" : "Deactivate"}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                )}
+              </TabPane>
+
+              {/* ── Categories tab ── */}
+              <TabPane tabId="categories">
+                <form onSubmit={handleAddCategory} className="d-flex gap-2 mb-4" style={{ maxWidth: 420 }}>
+                  <Input
+                    placeholder="New category name..."
+                    value={newCategory}
+                    onChange={(e) => { setNewCategory(e.target.value); setCategoryError(""); }}
+                    invalid={!!categoryError}
+                  />
+                  <Button type="submit" style={{ background: "#0a9e8f", border: "none", whiteSpace: "nowrap" }}>
+                    + Add
+                  </Button>
+                </form>
+                {categoryError && <div className="text-danger small mb-3">{categoryError}</div>}
+                {categories.length === 0 ? (
+                  <div className="text-center text-muted py-4">No categories yet.</div>
+                ) : (
+                  <div className="table-responsive">
+                    <Table hover className="align-middle mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th>#</th>
+                          <th>Category Name</th>
+                          <th>Products</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {categories.map((c, i) => (
+                          <tr key={c.id}>
+                            <td className="text-muted">{i + 1}</td>
+                            <td className="fw-semibold">{c.category_name}</td>
+                            <td>{c._count?.products ?? 0}</td>
+                            <td>
+                              <Button
+                                size="sm" color="danger" outline
+                                disabled={(c._count?.products ?? 0) > 0}
+                                title={(c._count?.products ?? 0) > 0 ? "Has products — cannot delete" : "Delete"}
+                                onClick={() => handleDeleteCategory(c.id, c.category_name)}
+                              >
+                                Delete
                               </Button>
                             </td>
                           </tr>
