@@ -1,6 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
+export async function GET() {
+  try {
+    const products = await prisma.productList.findMany({
+      include: { category: true, user: { select: { id: true, name: true, email: true } } },
+      orderBy: { upload_date_time: 'desc' },
+    });
+    return Response.json({ products });
+  } catch (error) {
+    return Response.json({ error: error.message || 'Failed to fetch products' }, { status: 500 });
+  }
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();

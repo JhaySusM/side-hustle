@@ -42,9 +42,19 @@ export default function AdminPage() {
     if (authed) loadData();
   }, [authed]);
 
-  function loadData() {
-    setUsers(JSON.parse(localStorage.getItem("batjee_users") || "[]"));
-    setListings(JSON.parse(localStorage.getItem("batjee_listings") || "[]"));
+  async function loadData() {
+    try {
+      const [uRes, pRes] = await Promise.all([
+        fetch("/api/users"),
+        fetch("/api/products"),
+      ]);
+      const uData = await uRes.json();
+      const pData = await pRes.json();
+      setUsers(uData.users || []);
+      setListings(pData.products || []);
+    } catch {
+      // silently fail — table will show empty
+    }
   }
 
   function handleLogin(e) {
@@ -68,41 +78,53 @@ export default function AdminPage() {
     setTimeout(() => setSuccessMsg(""), 3000);
   }
 
-  function toggleUser(targetEmail) {
-    const updated = users.map((u) =>
-      u.email === targetEmail ? { ...u, deactivated: !u.deactivated } : u
-    );
-    localStorage.setItem("batjee_users", JSON.stringify(updated));
-    setUsers(updated);
-    const target = updated.find((u) => u.email === targetEmail);
-    flash(`User "${target.name}" has been ${target.deactivated ? "deactivated" : "activated"}.`);
+  async function toggleUser(userId) {
+    const target = users.find((u) => u.id === userId);
+    const newStatus = target.status === "active" ? "inactive" : "active";
+    try {
+      await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, status: newStatus } : u));
+      flash(`User "${target.name}" has been ${newStatus === "inactive" ? "deactivated" : "activated"}.`);
+    } catch {
+      flash("Failed to update user status.");
+    }
   }
 
-  function toggleListing(id) {
-    const updated = listings.map((l) =>
-      l.id === id ? { ...l, deactivated: !l.deactivated } : l
-    );
-    localStorage.setItem("batjee_listings", JSON.stringify(updated));
-    setListings(updated);
-    const target = updated.find((l) => l.id === id);
-    flash(`Product "${target.title}" has been ${target.deactivated ? "deactivated" : "activated"}.`);
+  async function toggleListing(id) {
+    const target = listings.find((l) => l.id === id);
+    const newStatus = target.product_status === "Active" ? "Inactive" : "Active";
+    try {
+      await fetch("/api/products/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, product_status: newStatus }),
+      });
+      setListings((prev) => prev.map((l) => l.id === id ? { ...l, product_status: newStatus } : l));
+      flash(`Product "${target.product_name}" has been ${newStatus === "Inactive" ? "deactivated" : "activated"}.`);
+    } catch {
+      flash("Failed to update product status.");
+    }
   }
 
   const filteredUsers = users.filter(
     (u) =>
-      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+      (u.name || "").toLowerCase().includes(userSearch.toLowerCase()) ||
       u.email.toLowerCase().includes(userSearch.toLowerCase())
   );
 
   const filteredListings = listings.filter(
     (l) =>
-      l.title.toLowerCase().includes(productSearch.toLowerCase()) ||
-      l.seller.toLowerCase().includes(productSearch.toLowerCase()) ||
-      l.category.toLowerCase().includes(productSearch.toLowerCase())
+      (l.product_name || "").toLowerCase().includes(productSearch.toLowerCase()) ||
+      (l.user?.name || "").toLowerCase().includes(productSearch.toLowerCase()) ||
+      (l.category?.category_name || "").toLowerCase().includes(productSearch.toLowerCase())
   );
 
-  const activeUsers = users.filter((u) => !u.deactivated).length;
-  const activeProducts = listings.filter((l) => !l.deactivated).length;
+  const activeUsers = users.filter((u) => u.status === "active").length;
+  const activeProducts = listings.filter((l) => l.product_status === "Active").length;
 
   // ── Login screen ──────────────────────────────────────────────
   if (!authed) {
@@ -239,41 +261,34 @@ export default function AdminPage() {
                       </thead>
                       <tbody>
                         {filteredUsers.map((u) => {
-                          const userListings = listings.filter((l) => l.sellerEmail === u.email).length;
+                          const userListings = listings.filter((l) => l.user_id === u.id).length;
+                          const isInactive = u.status === "inactive";
                           return (
-                            <tr key={u.email} style={{ opacity: u.deactivated ? 0.5 : 1 }}>
+                            <tr key={u.id} style={{ opacity: isInactive ? 0.5 : 1 }}>
                               <td>
                                 <div className="d-flex align-items-center gap-2">
                                   <div style={{
                                     width: 34, height: 34, borderRadius: "50%",
-                                    background: u.deactivated ? "#adb5bd" : "#0d6efd",
+                                    background: isInactive ? "#adb5bd" : "#0d6efd",
                                     color: "#fff", display: "flex", alignItems: "center",
                                     justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0,
                                   }}>
-                                    {u.name.charAt(0).toUpperCase()}
+                                    {(u.name || u.email).charAt(0).toUpperCase()}
                                   </div>
-                                  <span className="fw-semibold">{u.name}</span>
+                                  <span className="fw-semibold">{u.name || "—"}</span>
                                 </div>
                               </td>
                               <td className="text-muted">{u.email}</td>
                               <td>{userListings}</td>
                               <td>
-                                <Badge
-                                  pill
-                                  color={u.deactivated ? "secondary" : "success"}
-                                  style={{ fontSize: 11 }}
-                                >
-                                  {u.deactivated ? "Deactivated" : "Active"}
+                                <Badge pill color={isInactive ? "secondary" : "success"} style={{ fontSize: 11 }}>
+                                  {isInactive ? "Deactivated" : "Active"}
                                 </Badge>
                               </td>
                               <td>
-                                <Button
-                                  size="sm"
-                                  color={u.deactivated ? "success" : "danger"}
-                                  outline
-                                  onClick={() => toggleUser(u.email)}
-                                >
-                                  {u.deactivated ? "Activate" : "Deactivate"}
+                                <Button size="sm" color={isInactive ? "success" : "danger"} outline
+                                  onClick={() => toggleUser(u.id)}>
+                                  {isInactive ? "Activate" : "Deactivate"}
                                 </Button>
                               </td>
                             </tr>
@@ -317,35 +332,27 @@ export default function AdminPage() {
                               <div className="d-flex align-items-center gap-2">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                  src={l.imageUrl || FALLBACK_IMG}
-                                  alt={l.title}
+                                  src={l.image || FALLBACK_IMG}
+                                  alt={l.product_name}
                                   onError={(e) => { e.target.src = FALLBACK_IMG; }}
                                   style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6 }}
                                 />
-                                <span className="fw-semibold" style={{ maxWidth: 160 }}>{l.title}</span>
+                                <span className="fw-semibold" style={{ maxWidth: 160 }}>{l.product_name}</span>
                               </div>
                             </td>
-                            <td className="text-muted">{l.category}</td>
+                            <td className="text-muted">{l.category?.category_name || "—"}</td>
                             <td className="text-primary fw-semibold">₱{Number(l.price).toLocaleString()}</td>
-                            <td className="text-muted">{l.seller}</td>
-                            <td className="text-muted" style={{ whiteSpace: "nowrap" }}>{l.date}</td>
+                            <td className="text-muted">{l.user?.name || "—"}</td>
+                            <td className="text-muted" style={{ whiteSpace: "nowrap" }}>{l.upload_date_time ? new Date(l.upload_date_time).toLocaleDateString() : "—"}</td>
                             <td>
-                              <Badge
-                                pill
-                                color={l.deactivated ? "secondary" : "success"}
-                                style={{ fontSize: 11 }}
-                              >
-                                {l.deactivated ? "Deactivated" : "Active"}
+                              <Badge pill color={l.product_status === "Inactive" ? "secondary" : "success"} style={{ fontSize: 11 }}>
+                                {l.product_status}
                               </Badge>
                             </td>
                             <td>
-                              <Button
-                                size="sm"
-                                color={l.deactivated ? "success" : "danger"}
-                                outline
-                                onClick={() => toggleListing(l.id)}
-                              >
-                                {l.deactivated ? "Activate" : "Deactivate"}
+                              <Button size="sm" color={l.product_status === "Inactive" ? "success" : "danger"} outline
+                                onClick={() => toggleListing(l.id)}>
+                                {l.product_status === "Inactive" ? "Activate" : "Deactivate"}
                               </Button>
                             </td>
                           </tr>

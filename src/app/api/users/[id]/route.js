@@ -1,12 +1,38 @@
-// GET: Get user by id, PUT: Update user, DELETE: Remove user
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+
 export async function GET(request, { params }) {
-  return Response.json({ user: { id: params.id } });
+  const { id } = await params;
+  try {
+    const user = await prisma.user.findUnique({ where: { id: Number(id) } });
+    if (!user) return Response.json({ error: 'User not found' }, { status: 404 });
+    return Response.json({ user });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function PUT(request, { params }) {
-  return Response.json({ message: `User ${params.id} updated` });
+  const { id } = await params;
+  try {
+    const body = await request.json();
+    const { status } = body;
+    const user = await prisma.user.update({
+      where: { id: Number(id) },
+      data: { status },
+    });
+    return Response.json({ user });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function DELETE(request, { params }) {
-  return Response.json({ message: `User ${params.id} deleted` });
+  const { id } = await params;
+  try {
+    await prisma.user.delete({ where: { id: Number(id) } });
+    return Response.json({ message: 'User deleted' });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 }

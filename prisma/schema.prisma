@@ -33,6 +33,7 @@ model User {
   name      String?
   password  String
   user_type String        @default("user")
+  status    String        @default("active")
   products  ProductList[]
 }
 
