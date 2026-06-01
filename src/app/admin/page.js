@@ -1,0 +1,364 @@
+"use client";
+import { useEffect, useState } from "react";
+import {
+  Container, Row, Col, Card, CardBody, Button, Badge,
+  Input, Table, Nav, NavItem, NavLink, TabContent, TabPane, Alert,
+} from "reactstrap";
+
+const ADMIN_EMAIL = "admin@gmail.com";
+const ADMIN_PASSWORD = "admin1234";
+
+const FALLBACK_IMG = "https://placehold.co/60x60?text=No+Img";
+
+function StatCard({ label, value, color }) {
+  return (
+    <Card className="border-0 shadow-sm text-center h-100">
+      <CardBody>
+        <div style={{ fontSize: 32, fontWeight: 700, color }}>{value}</div>
+        <div className="text-muted small">{label}</div>
+      </CardBody>
+    </Card>
+  );
+}
+
+export default function AdminPage() {
+  const [authed, setAuthed] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [activeTab, setActiveTab] = useState("users");
+  const [users, setUsers] = useState([]);
+  const [listings, setListings] = useState([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  useEffect(() => {
+    const session = sessionStorage.getItem("batjee_admin");
+    if (session === "true") setAuthed(true);
+  }, []);
+
+  useEffect(() => {
+    if (authed) loadData();
+  }, [authed]);
+
+  function loadData() {
+    setUsers(JSON.parse(localStorage.getItem("batjee_users") || "[]"));
+    setListings(JSON.parse(localStorage.getItem("batjee_listings") || "[]"));
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    setLoginError("");
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      sessionStorage.setItem("batjee_admin", "true");
+      setAuthed(true);
+    } else {
+      setLoginError("Invalid admin credentials.");
+    }
+  }
+
+  function handleLogout() {
+    sessionStorage.removeItem("batjee_admin");
+    setAuthed(false);
+  }
+
+  function flash(msg) {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  }
+
+  function toggleUser(targetEmail) {
+    const updated = users.map((u) =>
+      u.email === targetEmail ? { ...u, deactivated: !u.deactivated } : u
+    );
+    localStorage.setItem("batjee_users", JSON.stringify(updated));
+    setUsers(updated);
+    const target = updated.find((u) => u.email === targetEmail);
+    flash(`User "${target.name}" has been ${target.deactivated ? "deactivated" : "activated"}.`);
+  }
+
+  function toggleListing(id) {
+    const updated = listings.map((l) =>
+      l.id === id ? { ...l, deactivated: !l.deactivated } : l
+    );
+    localStorage.setItem("batjee_listings", JSON.stringify(updated));
+    setListings(updated);
+    const target = updated.find((l) => l.id === id);
+    flash(`Product "${target.title}" has been ${target.deactivated ? "deactivated" : "activated"}.`);
+  }
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
+  const filteredListings = listings.filter(
+    (l) =>
+      l.title.toLowerCase().includes(productSearch.toLowerCase()) ||
+      l.seller.toLowerCase().includes(productSearch.toLowerCase()) ||
+      l.category.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const activeUsers = users.filter((u) => !u.deactivated).length;
+  const activeProducts = listings.filter((l) => !l.deactivated).length;
+
+  // ── Login screen ──────────────────────────────────────────────
+  if (!authed) {
+    return (
+      <div style={{
+        minHeight: "100vh", background: "linear-gradient(135deg,#0a9e8f,#0d6efd)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <Card style={{ width: 380, borderRadius: 16, border: "none" }} className="shadow-lg">
+          <CardBody className="p-5">
+            <div className="text-center mb-4">
+              <div style={{
+                width: 56, height: 56, borderRadius: "50%",
+                background: "linear-gradient(135deg,#0a9e8f,#0d6efd)",
+                color: "#fff", display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 26, margin: "0 auto 12px",
+              }}>🛡️</div>
+              <h5 className="fw-bold mb-0">Admin Panel</h5>
+              <div className="text-muted small">Batjee.com</div>
+            </div>
+            {loginError && <Alert color="danger">{loginError}</Alert>}
+            <form onSubmit={handleLogin}>
+              <div className="mb-3">
+                <label className="form-label small fw-semibold">Email</label>
+                <Input
+                  type="email" placeholder="admin@gmail.com"
+                  value={email} onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="form-label small fw-semibold">Password</label>
+                <Input
+                  type="password" placeholder="••••••••"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <Button
+                type="submit" className="w-100 fw-bold"
+                style={{ background: "linear-gradient(90deg,#0a9e8f,#0d6efd)", border: "none", borderRadius: 8, padding: "10px" }}
+              >
+                Sign In
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── Dashboard ─────────────────────────────────────────────────
+  return (
+    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+      {/* Top bar */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #e9ecef", padding: "14px 24px" }}
+        className="d-flex align-items-center justify-content-between">
+        <div className="d-flex align-items-center gap-2">
+          <span style={{ fontSize: 22 }}>🛡️</span>
+          <span className="fw-bold" style={{ fontSize: 18 }}>Batjee Admin</span>
+        </div>
+        <div className="d-flex align-items-center gap-3">
+          {successMsg && (
+            <span style={{ fontSize: 13, color: "#0a9e8f", fontWeight: 500 }}>✓ {successMsg}</span>
+          )}
+          <Button size="sm" color="light" className="border" onClick={handleLogout}>Sign Out</Button>
+        </div>
+      </div>
+
+      <Container className="py-4">
+        {/* Stats */}
+        <Row className="g-3 mb-4">
+          <Col xs={6} md={3}>
+            <StatCard label="Total Users" value={users.length} color="#0d6efd" />
+          </Col>
+          <Col xs={6} md={3}>
+            <StatCard label="Active Users" value={activeUsers} color="#198754" />
+          </Col>
+          <Col xs={6} md={3}>
+            <StatCard label="Total Products" value={listings.length} color="#6610f2" />
+          </Col>
+          <Col xs={6} md={3}>
+            <StatCard label="Active Products" value={activeProducts} color="#0a9e8f" />
+          </Col>
+        </Row>
+
+        {/* Tabs */}
+        <Card className="border-0 shadow-sm">
+          <CardBody>
+            <Nav tabs className="mb-4">
+              <NavItem>
+                <NavLink
+                  href="#" active={activeTab === "users"}
+                  onClick={() => setActiveTab("users")}
+                  style={{ cursor: "pointer", fontWeight: activeTab === "users" ? 700 : 400 }}
+                >
+                  👤 Users
+                  <Badge color="secondary" pill className="ms-2">{users.length}</Badge>
+                </NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink
+                  href="#" active={activeTab === "products"}
+                  onClick={() => setActiveTab("products")}
+                  style={{ cursor: "pointer", fontWeight: activeTab === "products" ? 700 : 400 }}
+                >
+                  📦 Products
+                  <Badge color="secondary" pill className="ms-2">{listings.length}</Badge>
+                </NavLink>
+              </NavItem>
+            </Nav>
+
+            <TabContent activeTab={activeTab}>
+              {/* ── Users tab ── */}
+              <TabPane tabId="users">
+                <Input
+                  placeholder="Search users by name or email..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="mb-3"
+                  style={{ maxWidth: 360 }}
+                />
+                {filteredUsers.length === 0 ? (
+                  <div className="text-center text-muted py-4">No users found.</div>
+                ) : (
+                  <div className="table-responsive">
+                    <Table hover className="align-middle mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Listings</th>
+                          <th>Status</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUsers.map((u) => {
+                          const userListings = listings.filter((l) => l.sellerEmail === u.email).length;
+                          return (
+                            <tr key={u.email} style={{ opacity: u.deactivated ? 0.5 : 1 }}>
+                              <td>
+                                <div className="d-flex align-items-center gap-2">
+                                  <div style={{
+                                    width: 34, height: 34, borderRadius: "50%",
+                                    background: u.deactivated ? "#adb5bd" : "#0d6efd",
+                                    color: "#fff", display: "flex", alignItems: "center",
+                                    justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0,
+                                  }}>
+                                    {u.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <span className="fw-semibold">{u.name}</span>
+                                </div>
+                              </td>
+                              <td className="text-muted">{u.email}</td>
+                              <td>{userListings}</td>
+                              <td>
+                                <Badge
+                                  pill
+                                  color={u.deactivated ? "secondary" : "success"}
+                                  style={{ fontSize: 11 }}
+                                >
+                                  {u.deactivated ? "Deactivated" : "Active"}
+                                </Badge>
+                              </td>
+                              <td>
+                                <Button
+                                  size="sm"
+                                  color={u.deactivated ? "success" : "danger"}
+                                  outline
+                                  onClick={() => toggleUser(u.email)}
+                                >
+                                  {u.deactivated ? "Activate" : "Deactivate"}
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                  </div>
+                )}
+              </TabPane>
+
+              {/* ── Products tab ── */}
+              <TabPane tabId="products">
+                <Input
+                  placeholder="Search products by title, seller or category..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  className="mb-3"
+                  style={{ maxWidth: 420 }}
+                />
+                {filteredListings.length === 0 ? (
+                  <div className="text-center text-muted py-4">No products found.</div>
+                ) : (
+                  <div className="table-responsive">
+                    <Table hover className="align-middle mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Product</th>
+                          <th>Category</th>
+                          <th>Price</th>
+                          <th>Seller</th>
+                          <th>Date</th>
+                          <th>Status</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredListings.map((l) => (
+                          <tr key={l.id} style={{ opacity: l.deactivated ? 0.5 : 1 }}>
+                            <td>
+                              <div className="d-flex align-items-center gap-2">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={l.imageUrl || FALLBACK_IMG}
+                                  alt={l.title}
+                                  onError={(e) => { e.target.src = FALLBACK_IMG; }}
+                                  style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6 }}
+                                />
+                                <span className="fw-semibold" style={{ maxWidth: 160 }}>{l.title}</span>
+                              </div>
+                            </td>
+                            <td className="text-muted">{l.category}</td>
+                            <td className="text-primary fw-semibold">₱{Number(l.price).toLocaleString()}</td>
+                            <td className="text-muted">{l.seller}</td>
+                            <td className="text-muted" style={{ whiteSpace: "nowrap" }}>{l.date}</td>
+                            <td>
+                              <Badge
+                                pill
+                                color={l.deactivated ? "secondary" : "success"}
+                                style={{ fontSize: 11 }}
+                              >
+                                {l.deactivated ? "Deactivated" : "Active"}
+                              </Badge>
+                            </td>
+                            <td>
+                              <Button
+                                size="sm"
+                                color={l.deactivated ? "success" : "danger"}
+                                outline
+                                onClick={() => toggleListing(l.id)}
+                              >
+                                {l.deactivated ? "Activate" : "Deactivate"}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                )}
+              </TabPane>
+            </TabContent>
+          </CardBody>
+        </Card>
+      </Container>
+    </div>
+  );
+}
