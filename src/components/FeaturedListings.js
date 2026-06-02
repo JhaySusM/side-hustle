@@ -7,6 +7,7 @@ import {
   Modal, ModalHeader, ModalBody, ModalFooter,
   Button, Input, Alert, InputGroup,
 } from "reactstrap";
+import { sendMessage } from "@/lib/message-client";
 
 const FALLBACK_IMG = "https://placehold.co/400x180?text=No+Image";
 
@@ -23,24 +24,37 @@ function ListingImage({ src, alt, style }) {
   );
 }
 
-function DetailModal({ listing, isOpen, toggle }) {
+function DetailModal({ listing, isOpen, toggle, viewer }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [lightbox, setLightbox] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
-
-  // Reset to first image whenever the listing changes
-  useEffect(() => { setActiveImg(0); }, [listing?.id]);
+  const [sending, setSending] = useState(false);
 
   function handleClose() { setSent(false); setError(""); setMessage(""); toggle(); }
 
-  function handleSend() {
+  async function handleSend() {
     setError("");
     if (!message.trim()) { setError("Please enter a message."); return; }
-    setSent(true);
-    setMessage("");
+    if (!viewer) { setError("Please sign in to send a message."); return; }
+    if (!listing?.user?.id) { setError("Seller information is unavailable."); return; }
+
+    setSending(true);
+    try {
+      await sendMessage({
+        listingId: listing.id,
+        recipientId: listing.user.id,
+        body: message.trim(),
+      });
+      setSent(true);
+      setMessage("");
+    } catch (sendError) {
+      setError(sendError.message || "Failed to send message.");
+    } finally {
+      setSending(false);
+    }
   }
 
   if (!listing) return null;
@@ -177,9 +191,10 @@ function DetailModal({ listing, isOpen, toggle }) {
                 />
                 <Button
                   onClick={handleSend}
+                  disabled={sending}
                   style={{ backgroundColor: "#0a9e8f", border: "none", fontWeight: 600, whiteSpace: "nowrap" }}
                 >
-                  Send
+                  {sending ? "Sending..." : "Send"}
                 </Button>
               </div>
             </>
@@ -191,18 +206,34 @@ function DetailModal({ listing, isOpen, toggle }) {
   );
 }
 
-function ContactModal({ listing, isOpen, toggle }) {
+function ContactModal({ listing, isOpen, toggle, viewer }) {
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
 
   function handleClose() { setSent(false); setError(""); setMessage(""); toggle(); }
 
-  function handleSend() {
+  async function handleSend() {
     setError("");
     if (!message.trim()) { setError("Please enter a message."); return; }
-    setSent(true);
-    setMessage("");
+    if (!viewer) { setError("Please sign in to send a message."); return; }
+    if (!listing?.user?.id) { setError("Seller information is unavailable."); return; }
+
+    setSending(true);
+    try {
+      await sendMessage({
+        listingId: listing.id,
+        recipientId: listing.user.id,
+        body: message.trim(),
+      });
+      setSent(true);
+      setMessage("");
+    } catch (sendError) {
+      setError(sendError.message || "Failed to send message.");
+    } finally {
+      setSending(false);
+    }
   }
 
   if (!listing) return null;
@@ -245,8 +276,8 @@ function ContactModal({ listing, isOpen, toggle }) {
         ) : (
           <>
             <Button color="secondary" outline onClick={handleClose}>Cancel</Button>
-            <Button onClick={handleSend} style={{ backgroundColor: "#0a9e8f", border: "none", fontWeight: 600 }}>
-              Send Message
+            <Button onClick={handleSend} disabled={sending} style={{ backgroundColor: "#0a9e8f", border: "none", fontWeight: 600 }}>
+              {sending ? "Sending..." : "Send Message"}
             </Button>
           </>
         )}
@@ -258,6 +289,7 @@ function ContactModal({ listing, isOpen, toggle }) {
 function FeaturedListings({ filter, search: searchProp }) {
   const router = useRouter();
   const [listings, setListings] = useState([]);
+  const [viewer, setViewer] = useState(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const pageSize = 5;
@@ -285,6 +317,24 @@ function FeaturedListings({ filter, search: searchProp }) {
     }
     fetchListings();
   }, [page]);
+
+  useEffect(() => {
+    async function fetchViewer() {
+      try {
+        const response = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await response.json();
+        if (response.ok && data.user) {
+          setViewer(data.user);
+        } else {
+          setViewer(null);
+        }
+      } catch {
+        setViewer(null);
+      }
+    }
+
+    fetchViewer();
+  }, []);
 
   function scrollRight() {
     scrollRef.current?.scrollBy({ left: 320, behavior: "smooth" });
@@ -407,14 +457,18 @@ function FeaturedListings({ filter, search: searchProp }) {
       )}
 
       <ContactModal
+        key={selectedListing?.id || "empty-contact"}
         listing={selectedListing}
         isOpen={!!selectedListing}
         toggle={() => setSelectedListing(null)}
+        viewer={viewer}
       />
       <DetailModal
+        key={detailListing?.id || "empty-detail"}
         listing={detailListing}
         isOpen={!!detailListing}
         toggle={() => setDetailListing(null)}
+        viewer={viewer}
       />
     </section>
   );

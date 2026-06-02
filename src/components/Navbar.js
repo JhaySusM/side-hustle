@@ -18,6 +18,7 @@ import {
   DropdownItem,
 } from "reactstrap";
 import AuthModal from "./AuthModal";
+import { fetchInbox, subscribeToInbox } from "@/lib/message-client";
 
 export default function Navbar() {
   const router = useRouter();
@@ -47,32 +48,20 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!user) return;
-    function calcUnread() {
-      const allMsgs = JSON.parse(localStorage.getItem("batjee_messages") || "[]");
-      const readIds = JSON.parse(localStorage.getItem("batjee_read_messages") || "[]");
-
-      // Unread initial messages (buyer contacted this seller)
-      const unreadInitial = allMsgs.filter(
-        (m) => m.sellerEmail === user.email && !readIds.includes(m.id)
-      ).length;
-
-      // Unread replies (someone replied in a thread I'm part of, and I haven't read it)
-      let unreadReplies = 0;
-      allMsgs.forEach((m) => {
-        if (m.sellerEmail !== user.email && m.buyerEmail !== user.email) return;
-        (m.replies || []).forEach((r) => {
-          if (r.senderEmail !== user.email && !r.readBy.includes(user.email)) {
-            unreadReplies++;
-          }
-        });
-      });
-
-      setUnreadCount(unreadInitial + unreadReplies);
+    async function calcUnread() {
+      try {
+        const inbox = await fetchInbox();
+        setUnreadCount(inbox.unreadCount || 0);
+      } catch {
+        setUnreadCount(0);
+      }
     }
+
     calcUnread();
-    window.addEventListener("storage", calcUnread);
-    const interval = setInterval(calcUnread, 3000);
-    return () => { window.removeEventListener("storage", calcUnread); clearInterval(interval); };
+
+    return subscribeToInbox(() => {
+      calcUnread();
+    });
   }, [user]);
 
   // Close mobile menu on outside click

@@ -11,6 +11,7 @@ model ProductList {
   user_id           Int
   category          Category @relation(fields: [category_table_id], references: [id])
   user              User     @relation(fields: [user_id], references: [id])
+  conversations     Conversation[]
 }
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -35,10 +36,46 @@ model User {
   user_type String        @default("user")
   status    String        @default("active")
   products  ProductList[]
+  buyerConversations Conversation[]    @relation("BuyerConversations")
+  sellerConversations Conversation[]   @relation("SellerConversations")
+  sentMessages       ConversationMessage[] @relation("SentMessages")
 }
 
 model Category {
   id            Int           @id @default(autoincrement())
   category_name String        @unique
   products      ProductList[]
+}
+
+model Conversation {
+  id         Int                   @id @default(autoincrement())
+  listingId  Int
+  buyerId    Int
+  sellerId   Int
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  listing    ProductList           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer      User                  @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller     User                  @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
+  messages   ConversationMessage[]
+
+  @@unique([listingId, buyerId, sellerId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([updatedAt])
+}
+
+model ConversationMessage {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  senderId       Int
+  body           String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([readAt])
 }

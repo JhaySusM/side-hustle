@@ -7,6 +7,7 @@ import {
 } from "reactstrap";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { sendMessage } from "@/lib/message-client";
 
 const FALLBACK_IMG = "https://placehold.co/400x180?text=No+Image";
 
@@ -23,24 +24,35 @@ function ListingImage({ src, alt, style }) {
   );
 }
 
-function ListingModal({ item, isOpen, toggle, sellerName }) {
+function ListingModal({ item, isOpen, toggle, seller, viewer }) {
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [lightbox, setLightbox] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
-
-  useEffect(() => { setActiveImg(0); }, [item?.id]);
+  const sellerName = seller?.name || seller?.email || "Seller";
 
   function handleClose() {
     setSent(false); setError(""); setMessage(""); toggle();
   }
 
-  function handleContact() {
+  async function handleContact() {
     setError("");
     if (!message.trim()) { setError("Please enter a message."); return; }
-    setSent(true);
-    setMessage("");
+    if (!viewer) { setError("Please sign in to send a message."); return; }
+    if (!seller?.id) { setError("Seller information is unavailable."); return; }
+
+    try {
+      await sendMessage({
+        listingId: item.id,
+        recipientId: seller.id,
+        body: message.trim(),
+      });
+      setSent(true);
+      setMessage("");
+    } catch (contactError) {
+      setError(contactError.message || "Failed to send message.");
+    }
   }
 
   if (!item) return null;
@@ -181,6 +193,7 @@ export default function SellerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("all");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [viewer, setViewer] = useState(null);
 
   useEffect(() => {
     async function fetchSeller() {
@@ -201,6 +214,22 @@ export default function SellerProfilePage() {
     fetchSeller();
   }, [id]);
 
+  useEffect(() => {
+    async function fetchViewer() {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await res.json();
+        if (res.ok && data.user) {
+          setViewer(data.user);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    fetchViewer();
+  }, []);
+
   const activeProducts = products.filter((p) => p.product_status !== "Sold");
   const soldProducts = products.filter((p) => p.product_status === "Sold");
 
@@ -209,7 +238,7 @@ export default function SellerProfilePage() {
     tab === "sold" ? soldProducts :
     products;
 
-  const sellerName = seller?.name || id;
+  const sellerName = seller?.name || String(id);
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
@@ -335,10 +364,12 @@ export default function SellerProfilePage() {
       <Footer />
 
       <ListingModal
+        key={selectedItem?.id || "empty-listing"}
         item={selectedItem}
         isOpen={!!selectedItem}
         toggle={() => setSelectedItem(null)}
-        sellerName={sellerName}
+        seller={seller}
+        viewer={viewer}
       />
     </div>
   );

@@ -1,34 +1,54 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Container, Card, CardBody, Badge, Button, Input } from "reactstrap";
-import Navbar from "@/components/Navbar";
+import { Badge, Button, Card, CardBody, Container, Input } from "reactstrap";
 import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
+import {
+  fetchInbox,
+  getConversationPreview,
+  markConversationRead,
+  sendMessage,
+  subscribeToInbox,
+} from "@/lib/message-client";
 
-function Avatar({ name, color }) {
+function Avatar({ name, color, size = 36 }) {
+  const label = name || "U";
+
   return (
-    <div style={{
-      width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-      background: color, color: "#fff", display: "flex",
-      alignItems: "center", justifyContent: "center",
-      fontWeight: 700, fontSize: 14,
-    }}>
-      {name.charAt(0).toUpperCase()}
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        flexShrink: 0,
+        background: color,
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 700,
+        fontSize: size * 0.42,
+      }}
+    >
+      {label.charAt(0).toUpperCase()}
     </div>
   );
 }
 
-function Bubble({ text, isMe, senderName, date, avatarColor }) {
+function Bubble({ message, currentUserId }) {
+  const isMe = message.senderId === currentUserId;
+
   return (
     <div
-      className="d-flex align-items-end gap-2 mb-2"
+      className="d-flex align-items-end gap-2 mb-3"
       style={{ flexDirection: isMe ? "row-reverse" : "row" }}
     >
-      <Avatar name={senderName} color={avatarColor} />
-      <div style={{ maxWidth: "65%" }}>
+      <Avatar name={message.senderName} color={isMe ? "#0d6efd" : "#0a9e8f"} size={32} />
+      <div style={{ maxWidth: "70%" }}>
         {!isMe && (
           <div className="text-muted mb-1" style={{ fontSize: 11, paddingLeft: 4 }}>
-            {senderName}
+            {message.senderName}
           </div>
         )}
         <div
@@ -42,179 +62,143 @@ function Bubble({ text, isMe, senderName, date, avatarColor }) {
             wordBreak: "break-word",
           }}
         >
-          {text}
+          {message.body}
         </div>
         <div
           className="text-muted mt-1"
-          style={{ fontSize: 11, textAlign: isMe ? "right" : "left", paddingLeft: isMe ? 0 : 4, paddingRight: isMe ? 4 : 0 }}
+          style={{
+            fontSize: 11,
+            textAlign: isMe ? "right" : "left",
+            paddingLeft: isMe ? 0 : 4,
+            paddingRight: isMe ? 4 : 0,
+          }}
         >
-          {date}
+          {message.date}
         </div>
       </div>
     </div>
   );
 }
 
-function Thread({ msg, user, onReply }) {
-  const [replyText, setReplyText] = useState("");
-  const [sending, setSending] = useState(false);
-
-  const isSeller = msg.sellerEmail === user.email;
-  const otherParty = isSeller ? msg.buyerName : msg.sellerName;
-  const otherRole = isSeller ? "Buyer" : "Seller";
-  const otherColor = isSeller ? "#0d6efd" : "#6c757d";
-
-  function handleSend() {
-    if (!replyText.trim()) return;
-    setSending(true);
-    onReply(msg.id, replyText.trim());
-    setReplyText("");
-    setSending(false);
-  }
-
-  // Build all bubbles: original message + replies
-  const allBubbles = [
-    { id: msg.id + "_orig", senderEmail: msg.buyerEmail, senderName: msg.buyerName, message: msg.message, date: msg.date },
-    ...(msg.replies || []),
-  ];
-
-  return (
-    <Card className="border-0 shadow-sm overflow-hidden">
-      {/* Chat header */}
-      <div
-        className="d-flex align-items-center gap-2 px-4 py-3"
-        style={{ background: "#fff", borderBottom: "1px solid #f0f0f0" }}
-      >
-        <Avatar name={otherParty} color={otherColor} />
-        <div>
-          <div className="d-flex align-items-center gap-2">
-            <span className="fw-semibold" style={{ fontSize: 15 }}>{otherParty}</span>
-            <Badge color={isSeller ? "primary" : "success"} pill style={{ fontSize: 10 }}>
-              {otherRole}
-            </Badge>
-          </div>
-          <div className="text-muted" style={{ fontSize: 12 }}>
-            Re: <span className="fw-semibold text-dark">{msg.listingTitle}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bubbles */}
-      <CardBody
-        style={{
-          background: "#f8fafc",
-          padding: "20px 20px 12px",
-          maxHeight: 420,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {allBubbles.map((b) => {
-          const isMe = b.senderEmail === user.email;
-          const avatarColor = isMe ? "#0d6efd" : otherColor;
-          return (
-            <Bubble
-              key={b.id}
-              text={b.message}
-              isMe={isMe}
-              senderName={b.senderName}
-              date={b.date}
-              avatarColor={avatarColor}
-            />
-          );
-        })}
-      </CardBody>
-
-      {/* Reply input */}
-      <div
-        className="d-flex gap-2 align-items-center px-3 py-3"
-        style={{ background: "#fff", borderTop: "1px solid #f0f0f0" }}
-      >
-        <Avatar name={user.name} color="#0d6efd" />
-        <Input
-          type="text"
-          placeholder="Write a message..."
-          value={replyText}
-          onChange={(e) => setReplyText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          style={{ fontSize: 14, borderRadius: 20, background: "#f1f5f9", border: "none" }}
-        />
-        <Button
-          onClick={handleSend}
-          disabled={sending || !replyText.trim()}
-          style={{
-            backgroundColor: "#0a9e8f", border: "none", fontWeight: 600,
-            borderRadius: 20, padding: "8px 20px", whiteSpace: "nowrap",
-          }}
-        >
-          Send
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
 export default function MessagesPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const threadEndRef = useRef(null);
 
-  const loadMessages = useCallback((u) => {
-    const allMsgs = JSON.parse(localStorage.getItem("batjee_messages") || "[]");
-    const mine = allMsgs.filter(
-      (m) => m.sellerEmail === u.email || m.buyerEmail === u.email
-    );
-    setMessages(mine);
+  const loadMessages = useCallback(async () => {
+    const inbox = await fetchInbox();
+    const nextConversations = inbox.conversations || [];
+    setConversations(nextConversations);
+    setActiveConversationId((currentId) => {
+      if (!nextConversations.length) {
+        return null;
+      }
 
-    // Mark initial messages as read (for seller)
-    const readIds = JSON.parse(localStorage.getItem("batjee_read_messages") || "[]");
-    const newReadIds = [...new Set([...readIds, ...mine.map((m) => m.id)])];
-    localStorage.setItem("batjee_read_messages", JSON.stringify(newReadIds));
+      if (currentId && nextConversations.some((conversation) => conversation.id === currentId)) {
+        return currentId;
+      }
 
-    // Mark all replies as read for current user
-    let changed = false;
-    const updated = allMsgs.map((m) => {
-      if (!m.replies) return m;
-      const updatedReplies = m.replies.map((r) => {
-        if (!r.readBy.includes(u.email)) {
-          changed = true;
-          return { ...r, readBy: [...r.readBy, u.email] };
-        }
-        return r;
-      });
-      return { ...m, replies: updatedReplies };
+      return nextConversations[0].id;
     });
-    if (changed) localStorage.setItem("batjee_messages", JSON.stringify(updated));
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("batjee_user");
-    if (!stored) { router.push("/"); return; }
-    const u = JSON.parse(stored);
-    setUser(u);
-    loadMessages(u);
+    let cancelled = false;
+
+    async function loadPage() {
+      try {
+        const response = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await response.json();
+
+        if (!response.ok || !data.user) {
+          router.push("/");
+          return;
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        setUser(data.user);
+        await loadMessages();
+      } catch {
+        if (!cancelled) {
+          router.push("/");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadPage();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router, loadMessages]);
 
-  function handleReply(msgId, text) {
-    const allMsgs = JSON.parse(localStorage.getItem("batjee_messages") || "[]");
-    const updated = allMsgs.map((m) => {
-      if (m.id !== msgId) return m;
-      const reply = {
-        id: Date.now(),
-        senderEmail: user.email,
-        senderName: user.name,
-        message: text,
-        date: new Date().toLocaleString(),
-        readBy: [user.email], // sender has already read their own reply
-      };
-      return { ...m, replies: [...(m.replies || []), reply] };
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    return subscribeToInbox(() => {
+      loadMessages().catch(() => {
+        // Ignore transient stream failures.
+      });
     });
-    localStorage.setItem("batjee_messages", JSON.stringify(updated));
-    loadMessages(user);
+  }, [user, loadMessages]);
+
+  const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId) || null;
+
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeConversation]);
+
+  useEffect(() => {
+    if (!activeConversation || !activeConversation.unreadCount) {
+      return;
+    }
+
+    markConversationRead(activeConversation.id)
+      .then(() => loadMessages())
+      .catch(() => {
+        // Ignore passive read-state failures.
+      });
+  }, [activeConversation, loadMessages]);
+
+  async function handleReply() {
+    if (!activeConversation || !draft.trim()) {
+      return;
+    }
+
+    setSending(true);
+    setError("");
+    try {
+      await sendMessage({
+        conversationId: activeConversation.id,
+        body: draft.trim(),
+      });
+      setDraft("");
+      await loadMessages();
+    } catch (replyError) {
+      setError(replyError.message || "Failed to send message.");
+    } finally {
+      setSending(false);
+    }
   }
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
@@ -223,14 +207,18 @@ export default function MessagesPage() {
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
             <h4 className="fw-bold mb-0">Messages</h4>
-            <p className="text-muted small mb-0">Your conversations about listings</p>
+            <p className="text-muted small mb-0">Real-time conversations about your listings and inquiries</p>
           </div>
           <Button color="light" className="border" size="sm" onClick={() => router.back()}>
             ← Back
           </Button>
         </div>
 
-        {messages.length === 0 ? (
+        {loading ? (
+          <Card className="border-0 shadow-sm">
+            <CardBody className="text-center py-5 text-muted">Loading messages...</CardBody>
+          </Card>
+        ) : conversations.length === 0 ? (
           <Card className="border-0 shadow-sm">
             <CardBody className="text-center py-5 text-muted">
               <div style={{ fontSize: 48 }}>💬</div>
@@ -239,11 +227,117 @@ export default function MessagesPage() {
             </CardBody>
           </Card>
         ) : (
-          <div className="d-flex flex-column gap-3">
-            {messages.map((msg) => (
-              <Thread key={msg.id} msg={msg} user={user} onReply={handleReply} />
-            ))}
-          </div>
+          <Card className="border-0 shadow-sm overflow-hidden">
+            <div className="d-flex flex-column flex-lg-row" style={{ minHeight: 560 }}>
+              <div style={{ width: "100%", maxWidth: 360, borderRight: "1px solid #eef2f7", background: "#fff" }}>
+                <div className="px-3 py-3 border-bottom">
+                  <div className="fw-semibold">Inbox</div>
+                  <div className="text-muted small">
+                    {conversations.length} conversation{conversations.length !== 1 ? "s" : ""}
+                  </div>
+                </div>
+
+                <div style={{ maxHeight: 500, overflowY: "auto" }}>
+                  {conversations.map((conversation) => {
+                    const active = conversation.id === activeConversationId;
+                    return (
+                      <button
+                        key={conversation.id}
+                        type="button"
+                        onClick={() => setActiveConversationId(conversation.id)}
+                        className="w-100 text-start border-0"
+                        style={{
+                          background: active ? "#f0fdf9" : "#fff",
+                          padding: "16px 18px",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        <div className="d-flex align-items-start gap-3">
+                          <Avatar name={conversation.otherParty.name} color={active ? "#0a9e8f" : "#0d6efd"} />
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div className="d-flex align-items-center justify-content-between gap-2">
+                              <div className="fw-semibold text-truncate">{conversation.otherParty.name}</div>
+                              {conversation.unreadCount > 0 && <Badge pill color="success">{conversation.unreadCount}</Badge>}
+                            </div>
+                            <div className="text-muted small text-truncate">{conversation.listingTitle}</div>
+                            <div
+                              className="small mt-1 text-truncate"
+                              style={{
+                                color: conversation.unreadCount ? "#212529" : "#6c757d",
+                                fontWeight: conversation.unreadCount ? 600 : 400,
+                              }}
+                            >
+                              {getConversationPreview(conversation)}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="d-flex flex-column flex-grow-1" style={{ background: "#f8fafc" }}>
+                {activeConversation && (
+                  <>
+                    <div
+                      className="d-flex align-items-center gap-3 px-4 py-3"
+                      style={{ background: "#fff", borderBottom: "1px solid #eef2f7" }}
+                    >
+                      <Avatar name={activeConversation.otherParty.name} color="#0a9e8f" />
+                      <div>
+                        <div className="fw-semibold">{activeConversation.otherParty.name}</div>
+                        <div className="text-muted small">Re: {activeConversation.listingTitle}</div>
+                      </div>
+                    </div>
+
+                    <CardBody
+                      style={{
+                        flex: 1,
+                        background: "linear-gradient(180deg, #fbfdff 0%, #f4f8fb 100%)",
+                        padding: "20px",
+                        overflowY: "auto",
+                      }}
+                    >
+                      {activeConversation.messages.map((message) => (
+                        <Bubble key={message.id} message={message} currentUserId={user.id} />
+                      ))}
+                      <div ref={threadEndRef} />
+                    </CardBody>
+
+                    <div className="px-3 py-3 border-top bg-white">
+                      {error && <div className="text-danger small mb-2">{error}</div>}
+                      <div className="d-flex gap-2 align-items-center">
+                        <Avatar name={user.name || user.email} color="#0d6efd" />
+                        <Input
+                          type="text"
+                          placeholder="Write a message..."
+                          value={draft}
+                          onChange={(event) => setDraft(event.target.value)}
+                          onKeyDown={(event) => event.key === "Enter" && handleReply()}
+                          style={{ fontSize: 14, borderRadius: 20, background: "#f1f5f9", border: "none" }}
+                        />
+                        <Button
+                          onClick={handleReply}
+                          disabled={sending || !draft.trim()}
+                          style={{
+                            backgroundColor: "#0a9e8f",
+                            border: "none",
+                            fontWeight: 600,
+                            borderRadius: 20,
+                            padding: "8px 20px",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Send
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </Card>
         )}
       </Container>
       <Footer />

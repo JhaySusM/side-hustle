@@ -1,9 +1,18 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Input, Button, Badge } from "reactstrap";
+import { Input } from "reactstrap";
+import {
+  fetchInbox,
+  getConversationPreview,
+  markConversationRead,
+  sendMessage,
+  subscribeToInbox,
+} from "@/lib/message-client";
 
 function Avatar({ name, color, size = 36 }) {
+  const label = name || "U";
+
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%", flexShrink: 0,
@@ -11,7 +20,7 @@ function Avatar({ name, color, size = 36 }) {
       alignItems: "center", justifyContent: "center",
       fontWeight: 700, fontSize: size * 0.4,
     }}>
-      {name.charAt(0).toUpperCase()}
+      {label.charAt(0).toUpperCase()}
     </div>
   );
 }
@@ -37,43 +46,53 @@ export default function ChatWidget() {
   // Hide on /messages page
   const hidden = pathname === "/messages";
 
-  const loadData = useCallback((u) => {
-    const allMsgs = JSON.parse(localStorage.getItem("batjee_messages") || "[]");
-    const mine = allMsgs.filter(
-      (m) => m.sellerEmail === u.email || m.buyerEmail === u.email
-    );
+  const loadData = useCallback(async () => {
+    const inbox = await fetchInbox();
+    const mine = inbox.conversations || [];
     setMessages(mine);
+    setUnreadCount(inbox.unreadCount || 0);
 
-    // Calc unread
-    const readIds = JSON.parse(localStorage.getItem("batjee_read_messages") || "[]");
-    let count = allMsgs.filter(
-      (m) => m.sellerEmail === u.email && !readIds.includes(m.id)
-    ).length;
-    allMsgs.forEach((m) => {
-      if (m.sellerEmail !== u.email && m.buyerEmail !== u.email) return;
-      (m.replies || []).forEach((r) => {
-        if (r.senderEmail !== u.email && !r.readBy.includes(u.email)) count++;
-      });
-    });
-    setUnreadCount(count);
-
-    // Refresh active thread using ref (avoids circular dependency)
     const activeId = activeThreadIdRef.current;
     if (activeId) {
-      const refreshed = mine.find((m) => m.id === activeId);
-      if (refreshed) setActiveThread(refreshed);
+      const refreshed = mine.find((conversation) => conversation.id === activeId) || null;
+      setActiveThread(refreshed);
     }
-  }, []); // no dependency on activeThread state
+  }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("batjee_user");
-    if (!stored) return;
-    const u = JSON.parse(stored);
-    setUser(u);
-    loadData(u);
-    const interval = setInterval(() => loadData(u), 3000);
-    return () => clearInterval(interval);
+    let cancelled = false;
+
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.user) return;
+        if (cancelled) return;
+        setUser(data.user);
+        await loadData();
+      } catch {
+        // ignore
+      }
+    }
+
+    loadUser();
+
+    return () => {
+      cancelled = true;
+    };
   }, [loadData]);
+
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    return subscribeToInbox(() => {
+      loadData().catch(() => {
+        // Ignore transient stream refresh failures.
+      });
+    });
+  }, [user, loadData]);
 
   // Scroll to bottom when thread opens or new message arrives
   useEffect(() => {
@@ -81,64 +100,38 @@ export default function ChatWidget() {
   }, [activeThread]);
 
   // Mark thread as read when opened
-  function openThread(msg) {
+  async function openThread(msg) {
     setActiveThread(msg);
     if (!user) return;
 
-    const allMsgs = JSON.parse(localStorage.getItem("batjee_messages") || "[]");
-
-    // Mark initial message as read
-    const readIds = JSON.parse(localStorage.getItem("batjee_read_messages") || "[]");
-    if (!readIds.includes(msg.id)) {
-      localStorage.setItem("batjee_read_messages", JSON.stringify([...readIds, msg.id]));
+    if (!msg.unreadCount) {
+      return;
     }
 
-    // Mark replies as read
-    let changed = false;
-    const updated = allMsgs.map((m) => {
-      if (m.id !== msg.id || !m.replies) return m;
-      const updatedReplies = m.replies.map((r) => {
-        if (!r.readBy.includes(user.email)) {
-          changed = true;
-          return { ...r, readBy: [...r.readBy, user.email] };
-        }
-        return r;
-      });
-      return { ...m, replies: updatedReplies };
-    });
-    if (changed) localStorage.setItem("batjee_messages", JSON.stringify(updated));
-    loadData(user);
+    try {
+      await markConversationRead(msg.id);
+      await loadData();
+    } catch {
+      // ignore
+    }
   }
 
-  function handleSend() {
+  async function handleSend() {
     if (!replyText.trim() || !activeThread || !user) return;
-    const allMsgs = JSON.parse(localStorage.getItem("batjee_messages") || "[]");
-    const reply = {
-      id: Date.now(),
-      senderEmail: user.email,
-      senderName: user.name,
-      message: replyText.trim(),
-      date: new Date().toLocaleString(),
-      readBy: [user.email],
-    };
-    const updated = allMsgs.map((m) =>
-      m.id === activeThread.id ? { ...m, replies: [...(m.replies || []), reply] } : m
-    );
-    localStorage.setItem("batjee_messages", JSON.stringify(updated));
-    setReplyText("");
-    loadData(user);
-    // Scroll after send
-    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+
+    try {
+      await sendMessage({ conversationId: activeThread.id, body: replyText.trim() });
+      setReplyText("");
+      await loadData();
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    } catch {
+      // ignore
+    }
   }
 
   if (!user || hidden) return null;
 
-  const allBubbles = activeThread
-    ? [
-        { id: activeThread.id + "_orig", senderEmail: activeThread.buyerEmail, senderName: activeThread.buyerName, message: activeThread.message, date: activeThread.date },
-        ...(activeThread.replies || []),
-      ]
-    : [];
+  const allBubbles = activeThread?.messages || [];
 
   return (
     <>
@@ -168,27 +161,14 @@ export default function ChatWidget() {
                 >
                   ←
                 </button>
-                {/* Clickable seller profile */}
-                <div
-                  className="d-flex align-items-center gap-2"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    const profileEmail = activeThread.sellerEmail === user.email
-                      ? activeThread.buyerEmail
-                      : activeThread.sellerEmail;
-                    router.push(`/seller/${encodeURIComponent(profileEmail)}`);
-                    setOpen(false);
-                  }}
-                >
+                <div className="d-flex align-items-center gap-2">
                   <Avatar
-                    name={activeThread.sellerEmail === user.email ? activeThread.buyerName : activeThread.sellerName}
+                    name={activeThread.otherParty.name}
                     color="rgba(255,255,255,0.3)"
                     size={30}
                   />
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 14, textDecoration: "underline", textUnderlineOffset: 2 }}>
-                      {activeThread.sellerEmail === user.email ? activeThread.buyerName : activeThread.sellerName}
-                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{activeThread.otherParty.name}</div>
                     <div style={{ fontSize: 11, opacity: 0.85 }}>{activeThread.listingTitle}</div>
                   </div>
                 </div>
@@ -216,16 +196,8 @@ export default function ChatWidget() {
                 </div>
               ) : (
                 messages.map((msg) => {
-                  const isSeller = msg.sellerEmail === user.email;
-                  const otherName = isSeller ? msg.buyerName : msg.sellerName;
-                  const lastReply = (msg.replies || []).slice(-1)[0];
-                  const preview = lastReply ? lastReply.message : msg.message;
-
-                  // Check if unread
-                  const readIds = JSON.parse(localStorage.getItem("batjee_read_messages") || "[]");
-                  const hasUnread =
-                    (isSeller && !readIds.includes(msg.id)) ||
-                    (msg.replies || []).some((r) => r.senderEmail !== user.email && !r.readBy.includes(user.email));
+                  const otherName = msg.otherParty.name;
+                  const hasUnread = msg.unreadCount > 0;
 
                   return (
                     <div
@@ -241,15 +213,18 @@ export default function ChatWidget() {
                       onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"}
                       onMouseLeave={(e) => e.currentTarget.style.background = hasUnread ? "#f0fdf9" : "#fff"}
                     >
-                      <Avatar name={otherName} color={isSeller ? "#0d6efd" : "#0a9e8f"} size={40} />
+                      <Avatar name={otherName} color={hasUnread ? "#0a9e8f" : "#0d6efd"} size={40} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: hasUnread ? 700 : 500, fontSize: 14 }}>{otherName}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {msg.listingTitle}
+                        </div>
                         <div style={{
                           fontSize: 12, color: hasUnread ? "#333" : "#888",
                           fontWeight: hasUnread ? 600 : 400,
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         }}>
-                          {preview}
+                          {getConversationPreview(msg)}
                         </div>
                       </div>
                       {hasUnread && (
@@ -278,7 +253,7 @@ export default function ChatWidget() {
               {/* Bubbles */}
               <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 4px", background: "#f8fafc" }}>
                 {allBubbles.map((b) => {
-                  const isMe = b.senderEmail === user.email;
+                  const isMe = b.senderId === user.id;
                   return (
                     <div
                       key={b.id}
@@ -296,7 +271,7 @@ export default function ChatWidget() {
                           padding: "8px 12px", fontSize: 13, lineHeight: 1.5,
                           wordBreak: "break-word",
                         }}>
-                          {b.message}
+                          {b.body}
                         </div>
                         <div style={{ fontSize: 10, color: "#aaa", marginTop: 2, textAlign: isMe ? "right" : "left" }}>
                           {b.date}
