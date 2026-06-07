@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -338,7 +338,7 @@ function ListingsBrowser({ initialQuery, initialCategory }) {
   );
 }
 
-export default function ListingsPage() {
+function ListingsPageContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const initialCategory = searchParams.get("category") || "";
@@ -349,5 +349,13 @@ export default function ListingsPage() {
       initialQuery={initialQuery}
       initialCategory={initialCategory}
     />
+  );
+}
+
+export default function ListingsPage() {
+  return (
+    <Suspense fallback={<div className="listing-browser-page"><Navbar /><section className="pb-5"><Container className="py-5"><div className="listing-browser-loader-block"><Spinner color="primary" /><p className="mb-0 text-muted">Loading listings...</p></div></Container></section><Footer /></div>}>
+      <ListingsPageContent />
+    </Suspense>
   );
 }
