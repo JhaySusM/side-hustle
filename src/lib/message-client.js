@@ -16,6 +16,8 @@ async function readJsonResponse(response, fallbackMessage) {
 
 let inboxEventSource = null;
 const inboxListeners = new Set();
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 function handleInboxMessage(event) {
   try {
@@ -75,6 +77,41 @@ export async function sendMessage(payload) {
   return readJsonResponse(response, "Failed to send message");
 }
 
+export async function uploadMessageImage(file) {
+  if (!file) {
+    throw new Error("Image file is required");
+  }
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Only image files are supported");
+  }
+
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
+    throw new Error("Image upload is not configured");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await readJsonResponse(response, "Failed to upload image");
+  return data.secure_url;
+}
+
+export async function openSupportConversation() {
+  const response = await fetch("/api/messages/support", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  return readJsonResponse(response, "Failed to open support conversation");
+}
+
 export async function markConversationRead(conversationId) {
   const response = await fetch("/api/messages", {
     method: "PATCH",
@@ -97,5 +134,13 @@ export function subscribeToInbox(onRefresh) {
 }
 
 export function getConversationPreview(conversation) {
-  return conversation.lastMessage?.body || `Conversation about ${conversation.listingTitle}`;
+  if (conversation.lastMessage?.body) {
+    return conversation.lastMessage.body;
+  }
+
+  if (conversation.lastMessage?.imageUrl) {
+    return "Sent an image";
+  }
+
+  return `Conversation about ${conversation.listingTitle}`;
 }

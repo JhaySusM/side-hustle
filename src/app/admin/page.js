@@ -1,12 +1,38 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Container, Row, Col, Card, CardBody, Button, Badge,
-  Input, Table, Nav, NavItem, NavLink, TabContent, TabPane, Alert,
+  Input, Table, Nav, NavItem, NavLink, TabContent, TabPane, Alert, Modal, ModalBody, ModalFooter,
 } from "reactstrap";
+import ChatImageModal from "@/components/ChatImageModal";
+import { getConversationPreview, uploadMessageImage } from "@/lib/message-client";
 
 const ADMIN_EMAIL = "admin@gmail.com";
 const ADMIN_PASSWORD = "admin1234";
+
+function Avatar({ name, color = "#0a9e8f", size = 34 }) {
+  const label = name || "U";
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: color,
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 700,
+        fontSize: Math.round(size * 0.4),
+        flexShrink: 0,
+      }}
+    >
+      {label.charAt(0).toUpperCase()}
+    </div>
+  );
+}
 
 const FALLBACK_IMG = "https://placehold.co/60x60?text=No+Img";
 
@@ -23,6 +49,7 @@ function StatCard({ label, value, color }) {
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -30,38 +57,106 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [listings, setListings] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [conversations, setConversations] = useState([]);
   const [userSearch, setUserSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [categoryError, setCategoryError] = useState("");
+  const [messageError, setMessageError] = useState("");
+  const [messageDraft, setMessageDraft] = useState("");
+  const [messageImage, setMessageImage] = useState(null);
+  const [messageImagePreview, setMessageImagePreview] = useState("");
+  const [viewerImage, setViewerImage] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const imageInputRef = useRef(null);
+
+  const adminHeaders = useMemo(
+    () => ({
+      "Content-Type": "application/json",
+      "x-admin-email": ADMIN_EMAIL,
+      "x-admin-password": ADMIN_PASSWORD,
+    }),
+    []
+  );
 
   useEffect(() => {
-    const session = sessionStorage.getItem("batjee_admin");
-    if (session === "true") setAuthed(true);
+    const restoreId = window.setTimeout(() => {
+      setAuthed(sessionStorage.getItem("batjee_admin") === "true");
+      setAuthChecked(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(restoreId);
+    };
   }, []);
 
-  useEffect(() => {
-    if (authed) loadData();
-  }, [authed]);
+  function clearMessageImage() {
+    if (messageImagePreview) {
+      URL.revokeObjectURL(messageImagePreview);
+    }
 
-  async function loadData() {
-    try {
-      const [uRes, pRes, cRes] = await Promise.all([
-        fetch("/api/users"),
-        fetch("/api/products"),
-        fetch("/api/categories"),
-      ]);
-      const uData = await uRes.json();
-      const pData = await pRes.json();
-      const cData = await cRes.json();
-      setUsers(uData.users || []);
-      setListings(pData.products || []);
-      setCategories(cData.categories || []);
-    } catch {
-      // silently fail — table will show empty
+    setMessageImage(null);
+    setMessageImagePreview("");
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
     }
   }
+
+  function handleMessageImageChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (messageImagePreview) {
+      URL.revokeObjectURL(messageImagePreview);
+    }
+
+    setMessageImage(file);
+    setMessageImagePreview(URL.createObjectURL(file));
+  }
+
+  useEffect(() => {
+    if (!authed) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadData() {
+      try {
+        const [uRes, pRes, cRes, mRes] = await Promise.all([
+          fetch("/api/users"),
+          fetch("/api/products"),
+          fetch("/api/categories"),
+          fetch("/api/admin/messages", { headers: adminHeaders }),
+        ]);
+        const uData = await uRes.json();
+        const pData = await pRes.json();
+        const cData = await cRes.json();
+        const mData = await mRes.json();
+
+        if (cancelled) {
+          return;
+        }
+
+        setUsers(uData.users || []);
+        setListings(pData.products || []);
+        setCategories(cData.categories || []);
+        setConversations(mData.conversations || []);
+      } catch {
+        // silently fail — table will show empty
+      }
+    }
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [adminHeaders, authed]);
 
   function handleLogin(e) {
     e.preventDefault();
@@ -77,6 +172,7 @@ export default function AdminPage() {
   function handleLogout() {
     sessionStorage.removeItem("batjee_admin");
     setAuthed(false);
+    setLogoutModalOpen(false);
   }
 
   function flash(msg) {
@@ -144,6 +240,79 @@ export default function AdminPage() {
     flash(`Category "${name}" deleted.`);
   }
 
+  async function openConversation(conversationId) {
+    setActiveTab("messages");
+    setMessageError("");
+    setActiveConversationId(conversationId);
+
+    try {
+      await fetch("/api/admin/messages", {
+        method: "PATCH",
+        headers: adminHeaders,
+        body: JSON.stringify({ conversationId }),
+      });
+
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === conversationId
+            ? {
+                ...conversation,
+                unreadCount: 0,
+                messages: conversation.messages.map((message) => ({
+                  ...message,
+                  isRead: true,
+                })),
+              }
+            : conversation
+        )
+      );
+    } catch {
+      setMessageError("Failed to mark messages as read.");
+    }
+  }
+
+  async function handleAdminReply() {
+    if (!activeConversation || (!messageDraft.trim() && !messageImage)) {
+      return;
+    }
+
+    setSendingReply(true);
+    setMessageError("");
+
+    try {
+      const imageUrl = messageImage ? await uploadMessageImage(messageImage) : null;
+
+      const response = await fetch("/api/admin/messages", {
+        method: "POST",
+        headers: adminHeaders,
+        body: JSON.stringify({
+          conversationId: activeConversation.id,
+          body: messageDraft.trim(),
+          imageUrl,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessageError(data.error || "Failed to send reply.");
+        return;
+      }
+
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === data.conversation.id ? data.conversation : conversation
+        )
+      );
+      setMessageDraft("");
+      clearMessageImage();
+      flash("Reply sent.");
+    } catch {
+      setMessageError("Failed to send reply.");
+    } finally {
+      setSendingReply(false);
+    }
+  }
+
   const filteredUsers = users.filter(
     (u) =>
       (u.name || "").toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -159,6 +328,16 @@ export default function AdminPage() {
 
   const activeUsers = users.filter((u) => u.status === "active").length;
   const activeProducts = listings.filter((l) => l.product_status === "Active").length;
+  const [activeConversationId, setActiveConversationId] = useState(null);
+  const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId) || conversations[0] || null;
+
+  if (!authChecked) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="text-muted small">Loading admin panel...</div>
+      </div>
+    );
+  }
 
   // ── Login screen ──────────────────────────────────────────────
   if (!authed) {
@@ -211,6 +390,7 @@ export default function AdminPage() {
   // ── Dashboard ─────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+      <ChatImageModal isOpen={Boolean(viewerImage)} toggle={() => setViewerImage("")} imageUrl={viewerImage} />
       {/* Top bar */}
       <div style={{ background: "#fff", borderBottom: "1px solid #e9ecef", padding: "14px 24px" }}
         className="d-flex align-items-center justify-content-between">
@@ -222,9 +402,29 @@ export default function AdminPage() {
           {successMsg && (
             <span style={{ fontSize: 13, color: "#0a9e8f", fontWeight: 500 }}>✓ {successMsg}</span>
           )}
-          <Button size="sm" color="light" className="border" onClick={handleLogout}>Sign Out</Button>
+          <Button size="sm" color="light" className="border" onClick={() => setLogoutModalOpen(true)}>Sign Out</Button>
         </div>
       </div>
+
+      <Modal isOpen={logoutModalOpen} toggle={() => setLogoutModalOpen(false)} centered>
+        <ModalBody className="p-0">
+          <div className="logout-modal-panel logout-modal-panel-admin">
+            <div className="logout-modal-icon logout-modal-icon-admin">↪</div>
+            <h5 className="logout-modal-title">Leave the admin panel?</h5>
+            <p className="logout-modal-copy">
+              Your admin session will end now. Sign in again if you need to manage users, products, or categories later.
+            </p>
+          </div>
+        </ModalBody>
+        <ModalFooter className="border-0 pt-0 px-4 pb-4 d-flex justify-content-center gap-2">
+          <Button color="light" className="logout-modal-cancel" onClick={() => setLogoutModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button className="logout-modal-confirm logout-modal-confirm-admin" onClick={handleLogout}>
+            Yes, sign out
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       <Container className="py-4">
         {/* Stats */}
@@ -275,6 +475,16 @@ export default function AdminPage() {
                 >
                   🏷️ Categories
                   <Badge color="secondary" pill className="ms-2">{categories.length}</Badge>
+                </NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink
+                  href="#" active={activeTab === "messages"}
+                  onClick={() => setActiveTab("messages")}
+                  style={{ cursor: "pointer", fontWeight: activeTab === "messages" ? 700 : 400 }}
+                >
+                  💬 Messages
+                  <Badge color="secondary" pill className="ms-2">{conversations.length}</Badge>
                 </NavLink>
               </NavItem>
             </Nav>
@@ -454,6 +664,170 @@ export default function AdminPage() {
                         ))}
                       </tbody>
                     </Table>
+                  </div>
+                )}
+              </TabPane>
+
+              <TabPane tabId="messages">
+                {conversations.length === 0 ? (
+                  <div className="text-center text-muted py-4">No support messages yet.</div>
+                ) : (
+                  <div className="d-flex flex-column flex-lg-row border rounded overflow-hidden" style={{ minHeight: 540 }}>
+                    <div style={{ width: "100%", maxWidth: 360, borderRight: "1px solid #eef2f7", background: "#fff" }}>
+                      <div className="px-3 py-3 border-bottom">
+                        <div className="fw-semibold">Support Inbox</div>
+                        <div className="text-muted small">
+                          {conversations.length} conversation{conversations.length !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+
+                      <div style={{ maxHeight: 480, overflowY: "auto" }}>
+                        {conversations.map((conversation) => {
+                          const active = conversation.id === activeConversation?.id;
+                          return (
+                            <button
+                              key={conversation.id}
+                              type="button"
+                              onClick={() => openConversation(conversation.id)}
+                              className="w-100 text-start border-0"
+                              style={{
+                                background: active ? "#f0fdf9" : "#fff",
+                                padding: "16px 18px",
+                                borderBottom: "1px solid #f3f4f6",
+                              }}
+                            >
+                              <div className="d-flex align-items-start gap-3">
+                                <Avatar name={conversation.otherParty.name} color={active ? "#0a9e8f" : "#0d6efd"} />
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div className="d-flex align-items-center justify-content-between gap-2">
+                                    <div className="fw-semibold text-truncate">{conversation.otherParty.name}</div>
+                                    {conversation.unreadCount > 0 && (
+                                      <Badge pill color="success">{conversation.unreadCount}</Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-muted small text-truncate">{conversation.listingTitle}</div>
+                                  <div className="small mt-1 text-truncate" style={{ color: conversation.unreadCount ? "#212529" : "#6c757d", fontWeight: conversation.unreadCount ? 600 : 400 }}>
+                                    {getConversationPreview(conversation) || "No messages yet"}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="d-flex flex-column flex-grow-1" style={{ background: "#f8fafc" }}>
+                      {activeConversation && (
+                        <>
+                          <div className="d-flex align-items-center gap-3 px-4 py-3" style={{ background: "#fff", borderBottom: "1px solid #eef2f7" }}>
+                            <Avatar name={activeConversation.otherParty.name} color="#0a9e8f" />
+                            <div>
+                              <div className="fw-semibold">{activeConversation.otherParty.name}</div>
+                              <div className="text-muted small">Re: {activeConversation.listingTitle}</div>
+                            </div>
+                          </div>
+
+                          <div style={{ flex: 1, padding: 20, overflowY: "auto", background: "linear-gradient(180deg, #fbfdff 0%, #f4f8fb 100%)" }}>
+                            {activeConversation.messages.map((message) => {
+                              const isAdmin = message.senderEmail === ADMIN_EMAIL;
+                              return (
+                                <div
+                                  key={message.id}
+                                  className="d-flex align-items-end gap-2 mb-3"
+                                  style={{ flexDirection: isAdmin ? "row-reverse" : "row" }}
+                                >
+                                  <Avatar name={message.senderName} color={isAdmin ? "#0d6efd" : "#0a9e8f"} size={32} />
+                                  <div style={{ maxWidth: "72%" }}>
+                                    {!isAdmin && (
+                                      <div className="text-muted mb-1" style={{ fontSize: 11, paddingLeft: 4 }}>
+                                        {message.senderName}
+                                      </div>
+                                    )}
+                                    <div style={{ background: isAdmin ? "#0a9e8f" : "#e9ecef", color: isAdmin ? "#fff" : "#212529", borderRadius: isAdmin ? "18px 18px 4px 18px" : "18px 18px 18px 4px", padding: "10px 14px", fontSize: 14, lineHeight: 1.5, wordBreak: "break-word" }}>
+                                      {message.imageUrl && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setViewerImage(message.imageUrl)}
+                                          style={{ display: "block", padding: 0, border: "none", background: "transparent", cursor: "zoom-in", width: "100%" }}
+                                        >
+                                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                                          <img
+                                            src={message.imageUrl}
+                                            alt="Shared in conversation"
+                                            style={{ display: "block", maxWidth: 260, width: "100%", borderRadius: 12, marginBottom: message.body ? 10 : 0 }}
+                                          />
+                                        </button>
+                                      )}
+                                      {message.body && <div>{message.body}</div>}
+                                    </div>
+                                    <div className="text-muted mt-1" style={{ fontSize: 11, textAlign: isAdmin ? "right" : "left", paddingLeft: isAdmin ? 0 : 4, paddingRight: isAdmin ? 4 : 0 }}>
+                                      {message.date}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="px-3 py-3 border-top bg-white">
+                            {messageError && <div className="text-danger small mb-2">{messageError}</div>}
+                            {messageImagePreview && (
+                              <div className="mb-2 position-relative" style={{ width: 120 }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={messageImagePreview}
+                                  alt="Selected attachment preview"
+                                  style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 14, border: "1px solid #dbe3ea" }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={clearMessageImage}
+                                  style={{ position: "absolute", top: -8, right: -8, width: 24, height: 24, borderRadius: "50%", border: "none", background: "#dc3545", color: "#fff", fontWeight: 700, lineHeight: 1 }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            )}
+                            <div className="d-flex gap-2 align-items-center">
+                              <Avatar name="Batjee Admin" color="#0d6efd" />
+                              <input
+                                ref={imageInputRef}
+                                type="file"
+                                accept="image/*"
+                                style={{ display: "none" }}
+                                onChange={handleMessageImageChange}
+                              />
+                              <Button
+                                type="button"
+                                color="light"
+                                className="border"
+                                onClick={() => imageInputRef.current?.click()}
+                                title="Attach image"
+                                style={{ width: 42, height: 42, borderRadius: "50%", padding: 0, flexShrink: 0 }}
+                              >
+                                📷
+                              </Button>
+                              <Input
+                                type="text"
+                                placeholder="Reply to this concern..."
+                                value={messageDraft}
+                                onChange={(e) => setMessageDraft(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleAdminReply()}
+                                style={{ fontSize: 14, borderRadius: 20, background: "#f1f5f9", border: "none" }}
+                              />
+                              <Button
+                                onClick={handleAdminReply}
+                                disabled={sendingReply || (!messageDraft.trim() && !messageImage)}
+                                style={{ backgroundColor: "#0a9e8f", border: "none", fontWeight: 600, borderRadius: 20, padding: "8px 20px", whiteSpace: "nowrap" }}
+                              >
+                                {sendingReply ? "Sending..." : "Send"}
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </TabPane>

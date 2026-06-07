@@ -151,6 +151,9 @@ function ListingModal({ item, isOpen, toggle, seller, viewer }) {
               <div className="text-muted" style={{ fontSize: 12 }}>
                 Posted {item.upload_date_time ? new Date(item.upload_date_time).toLocaleDateString() : ""}
               </div>
+              {seller?.address ? (
+                <div className="text-muted" style={{ fontSize: 12 }}>{seller.address}</div>
+              ) : null}
             </div>
           </div>
           {sent ? (
@@ -260,6 +263,7 @@ export default function SellerProfilePage() {
               <div>
                 <h4 className="fw-bold mb-1">{sellerName}</h4>
                 <div className="text-muted small mb-2">{seller?.email}</div>
+                {seller?.address ? <div className="text-muted small mb-2">{seller.address}</div> : null}
                 <div className="d-flex gap-2 flex-wrap">
                   <span className="badge rounded-pill" style={{ background: "#e8f5e9", color: "#2e7d32", fontSize: 12 }}>
                     {products.length} listing{products.length !== 1 ? "s" : ""}

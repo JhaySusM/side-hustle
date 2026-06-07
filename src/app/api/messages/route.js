@@ -87,12 +87,13 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const messageBody = body.body?.trim();
+    const imageUrl = body.imageUrl?.trim() || null;
     const conversationId = body.conversationId ? Number(body.conversationId) : null;
     const listingId = body.listingId ? Number(body.listingId) : null;
     const recipientId = body.recipientId ? Number(body.recipientId) : null;
 
-    if (!messageBody) {
-      return Response.json({ error: "Message body is required" }, { status: 400 });
+    if (!messageBody && !imageUrl) {
+      return Response.json({ error: "A message or image is required" }, { status: 400 });
     }
 
     let conversation;
@@ -116,7 +117,8 @@ export async function POST(request) {
           messages: {
             create: {
               senderId: user.id,
-              body: messageBody,
+              body: messageBody || "",
+              imageUrl,
             },
           },
         },
@@ -176,7 +178,8 @@ export async function POST(request) {
             messages: {
               create: {
                 senderId: user.id,
-                body: messageBody,
+                body: messageBody || "",
+                imageUrl,
               },
             },
           },
@@ -191,7 +194,8 @@ export async function POST(request) {
             messages: {
               create: {
                 senderId: user.id,
-                body: messageBody,
+                body: messageBody || "",
+                imageUrl,
               },
             },
           },

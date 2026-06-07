@@ -18,11 +18,11 @@ import {
   Alert,
 } from "reactstrap";
 
-export default function AuthModal({ isOpen, toggle, onAuthSuccess }) {
+export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSuccess, onRegisterSuccess }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("login");
   const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [registerData, setRegisterData] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [registerData, setRegisterData] = useState({ name: "", email: "", address: "", password: "", confirm: "" });
   const [error, setError] = useState("");
 
   // Seed default credential
@@ -54,8 +54,11 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess }) {
         return;
       }
       onAuthSuccess(data.user);
+      onLoginSuccess?.(data.user);
       toggle();
-      router.push("/dashboard");
+      if (!onLoginSuccess) {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setError("Login failed. Please try again.");
     }
@@ -64,7 +67,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess }) {
   async function handleRegister(e) {
     e.preventDefault();
     setError("");
-    if (!registerData.name || !registerData.email || !registerData.password || !registerData.confirm) {
+    if (!registerData.name || !registerData.email || !registerData.address.trim() || !registerData.password || !registerData.confirm) {
       setError("Please fill in all fields.");
       return;
     }
@@ -79,6 +82,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess }) {
         body: JSON.stringify({
           name: registerData.name,
           email: registerData.email,
+          address: registerData.address.trim(),
           password: registerData.password
         })
       });
@@ -88,8 +92,11 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess }) {
         return;
       }
       onAuthSuccess(data.user);
+      onRegisterSuccess?.(data.user);
       toggle();
-      router.push("/dashboard");
+      if (!onRegisterSuccess) {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setError("Registration failed. Please try again.");
     }
@@ -191,6 +198,18 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess }) {
                   value={registerData.email}
                   onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                   autoComplete="email"
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-address">Address</Label>
+                <Input
+                  id="reg-address"
+                  type="text"
+                  placeholder="Street, city, barangay"
+                  value={registerData.address}
+                  onChange={(e) => setRegisterData({ ...registerData, address: e.target.value })}
+                  autoComplete="street-address"
+                  required
                 />
               </FormGroup>
               <FormGroup>

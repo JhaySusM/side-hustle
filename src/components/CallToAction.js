@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Row, Col, Button } from "reactstrap";
 import Image from "next/image";
 import AuthModal from "./AuthModal";
@@ -7,13 +7,15 @@ import { useRouter } from "next/navigation";
 
 export default function CallToAction() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [authOpen, setAuthOpen] = useState(false);
+  const [user, setUser] = useState(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
 
-  useEffect(() => {
-    const stored = localStorage.getItem("batjee_user");
-    if (stored) setUser(JSON.parse(stored));
-  }, []);
+    const storedUser = localStorage.getItem("batjee_user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [authOpen, setAuthOpen] = useState(false);
 
   function handleClick() {
     if (user) {
@@ -47,7 +49,11 @@ export default function CallToAction() {
       <AuthModal
         isOpen={authOpen}
         toggle={() => setAuthOpen(false)}
-        onAuthSuccess={(u) => { setUser(u); setAuthOpen(false); router.push("/post"); }}
+        onAuthSuccess={(u) => setUser(u)}
+        onLoginSuccess={() => {
+          setAuthOpen(false);
+          router.push("/post");
+        }}
       />
     </section>
   );

@@ -2,6 +2,22 @@ export function formatMessageDate(value) {
   return new Date(value).toLocaleString();
 }
 
+export function getMessagePreview(message) {
+  if (!message) {
+    return "";
+  }
+
+  if (message.body) {
+    return message.body;
+  }
+
+  if (message.imageUrl) {
+    return "Sent an image";
+  }
+
+  return "";
+}
+
 export function serializeConversation(conversation, currentUserId) {
   const isSeller = conversation.sellerId === currentUserId;
   const otherParty = isSeller ? conversation.buyer : conversation.seller;
@@ -12,6 +28,7 @@ export function serializeConversation(conversation, currentUserId) {
     senderEmail: message.sender?.email || "",
     body: message.body,
     date: formatMessageDate(message.createdAt),
+    imageUrl: message.imageUrl || "",
     createdAt: message.createdAt,
     isRead: Boolean(message.readAt) || message.senderId === currentUserId,
   }));

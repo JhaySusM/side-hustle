@@ -11,6 +11,54 @@ import { sendMessage } from "@/lib/message-client";
 
 const FALLBACK_IMG = "https://placehold.co/400x180?text=No+Image";
 
+function LocationPinIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 21s6-5.686 6-11a6 6 0 1 0-12 0c0 5.314 6 11 6 11Z"
+        stroke="#3b82f6"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="10" r="2.5" fill="#3b82f6" />
+    </svg>
+  );
+}
+
+function formatPostedDate(value) {
+  if (!value) {
+    return "Recently listed";
+  }
+
+  const postedAt = new Date(value);
+  const now = new Date();
+  const diffMs = now.getTime() - postedAt.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) {
+    return "Today";
+  }
+
+  if (diffDays === 1) {
+    return "1 day ago";
+  }
+
+  if (diffDays < 7) {
+    return `${diffDays} days ago`;
+  }
+
+  if (diffDays < 14) {
+    return "1 week ago";
+  }
+
+  return postedAt.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function ListingImage({ src, alt, style }) {
   const [imgSrc, setImgSrc] = useState(src || FALLBACK_IMG);
   return (
@@ -21,188 +69,6 @@ function ListingImage({ src, alt, style }) {
       onError={() => setImgSrc(FALLBACK_IMG)}
       style={style || { width: "100%", height: 180, objectFit: "cover" }}
     />
-  );
-}
-
-function DetailModal({ listing, isOpen, toggle, viewer }) {
-  const router = useRouter();
-  const [message, setMessage] = useState("");
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
-  const [lightbox, setLightbox] = useState(false);
-  const [activeImg, setActiveImg] = useState(0);
-  const [sending, setSending] = useState(false);
-
-  function handleClose() { setSent(false); setError(""); setMessage(""); toggle(); }
-
-  async function handleSend() {
-    setError("");
-    if (!message.trim()) { setError("Please enter a message."); return; }
-    if (!viewer) { setError("Please sign in to send a message."); return; }
-    if (!listing?.user?.id) { setError("Seller information is unavailable."); return; }
-
-    setSending(true);
-    try {
-      await sendMessage({
-        listingId: listing.id,
-        recipientId: listing.user.id,
-        body: message.trim(),
-      });
-      setSent(true);
-      setMessage("");
-    } catch (sendError) {
-      setError(sendError.message || "Failed to send message.");
-    } finally {
-      setSending(false);
-    }
-  }
-
-  if (!listing) return null;
-
-  // Build gallery: primary image + extra images from JSON field
-  let extraImages = [];
-  try { extraImages = listing.images ? JSON.parse(listing.images) : []; } catch (_) {}
-  const gallery = [listing.image, ...extraImages].filter(Boolean);
-  const currentSrc = gallery[activeImg] || listing.image;
-
-  return (
-    <>
-      {lightbox && (
-        <div
-          onClick={() => setLightbox(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 9999,
-            background: "rgba(0,0,0,0.92)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "zoom-out",
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={currentSrc}
-            alt={listing.product_name}
-            style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8, boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }}
-          />
-          {gallery.length > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setActiveImg((activeImg - 1 + gallery.length) % gallery.length); }}
-                style={{ position: "absolute", left: 24, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 28, borderRadius: "50%", width: 48, height: 48, cursor: "pointer" }}
-              >&#8249;</button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setActiveImg((activeImg + 1) % gallery.length); }}
-                style={{ position: "absolute", right: 24, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 28, borderRadius: "50%", width: 48, height: 48, cursor: "pointer" }}
-              >&#8250;</button>
-              <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", color: "#fff", fontSize: 13 }}>
-                {activeImg + 1} / {gallery.length}
-              </div>
-            </>
-          )}
-          <button
-            onClick={() => setLightbox(false)}
-            style={{ position: "absolute", top: 20, right: 24, background: "none", border: "none", color: "#fff", fontSize: 32, cursor: "pointer", lineHeight: 1 }}
-          >&times;</button>
-        </div>
-      )}
-    <Modal isOpen={isOpen} toggle={handleClose} centered size="lg">
-      <ModalHeader toggle={handleClose}>Listing Details</ModalHeader>
-      <ModalBody className="p-0">
-        {/* Main image */}
-        <div style={{ position: "relative", cursor: "zoom-in", background: "#000" }} onClick={() => setLightbox(true)}>
-          <ListingImage
-            src={currentSrc}
-            alt={listing.product_name}
-            style={{ width: "100%", maxHeight: 300, objectFit: "cover", opacity: 1 }}
-          />
-          <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: 11, padding: "3px 8px", borderRadius: 20, pointerEvents: "none" }}>
-            {gallery.length > 1 ? `${activeImg + 1} / ${gallery.length} — ` : ""}Click to zoom
-          </div>
-        </div>
-        {/* Thumbnail strip */}
-        {gallery.length > 1 && (
-          <div className="d-flex gap-2 px-4 pt-3" style={{ overflowX: "auto" }}>
-            {gallery.map((src, i) => (
-              <div
-                key={i}
-                onClick={() => setActiveImg(i)}
-                style={{
-                  flexShrink: 0, width: 64, height: 64, borderRadius: 6, overflow: "hidden",
-                  border: i === activeImg ? "2px solid #0a9e8f" : "2px solid #dee2e6",
-                  cursor: "pointer", opacity: i === activeImg ? 1 : 0.65,
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`img ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="p-4">
-          <div className="d-flex gap-2 mb-3 flex-wrap">
-            <Badge pill color={listing.status === "Sold" ? "secondary" : "success"} style={{ fontSize: 12 }}>
-              {listing.status || "Active"}
-            </Badge>
-            <Badge pill color="light" className="text-muted border" style={{ fontSize: 12 }}>
-              {listing.category?.category_name}
-            </Badge>
-          </div>
-          <h5 className="fw-bold mb-1">{listing.product_name}</h5>
-          <div className="fw-bold mb-3" style={{ fontSize: 22, color: "#0d6efd" }}>
-            {String.fromCharCode(8369)}{Number(listing.price).toLocaleString()}
-          </div>
-          {listing.description && (
-            <div className="mb-3">
-              <div className="fw-semibold small text-muted mb-1">Description</div>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#444" }}>{listing.description}</p>
-            </div>
-          )}
-          <div
-            className="d-flex align-items-center gap-3 p-3 rounded-3 mb-4"
-            style={{ background: "#f8fafc", border: "1px solid #e9ecef", cursor: "pointer" }}
-            onClick={() => { handleClose(); router.push(`/seller/${listing.user?.id || ""}`); }}
-          >
-            <div style={{
-              width: 42, height: 42, borderRadius: "50%",
-              background: "linear-gradient(135deg, #0a9e8f, #0d6efd)",
-              color: "#fff", display: "flex", alignItems: "center",
-              justifyContent: "center", fontWeight: 700, fontSize: 18, flexShrink: 0,
-            }}>
-              {(listing.user?.name || "?").charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <div className="fw-semibold" style={{ fontSize: 14 }}>{listing.user?.name || "Unknown"}</div>
-              <div className="text-muted" style={{ fontSize: 12 }}>View profile {String.fromCharCode(8594)}</div>
-            </div>
-          </div>
-          {sent ? (
-            <Alert color="success">Message sent! The seller will get back to you soon.</Alert>
-          ) : (
-            <>
-              {error && <Alert color="danger">{error}</Alert>}
-              <div className="fw-semibold small mb-1">Send a Message to Seller</div>
-              <div className="d-flex gap-2">
-                <Input
-                  type="text"
-                  placeholder={`Hi, is "${listing.product_name}" still available?`}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  style={{ fontSize: 14 }}
-                />
-                <Button
-                  onClick={handleSend}
-                  disabled={sending}
-                  style={{ backgroundColor: "#0a9e8f", border: "none", fontWeight: 600, whiteSpace: "nowrap" }}
-                >
-                  {sending ? "Sending..." : "Send"}
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-      </ModalBody>
-    </Modal>
-    </>
   );
 }
 
@@ -294,14 +160,30 @@ function FeaturedListings({ filter, search: searchProp }) {
   const [page, setPage] = useState(1);
   const pageSize = 5;
   const [selectedListing, setSelectedListing] = useState(null);
-  const [detailListing, setDetailListing] = useState(null);
   const [search, setSearch] = useState(searchProp || "");
   const scrollRef = useRef(null);
+  const normalizedSearch = search.trim();
+  const isGroupedHome = !filter && !normalizedSearch;
+  const requestPage = isGroupedHome ? 1 : page;
+  const requestPageSize = isGroupedHome ? 48 : pageSize;
 
   useEffect(() => {
     async function fetchListings() {
       try {
-        const res = await fetch(`/api/products/active?page=${page}&pageSize=${pageSize}`);
+        const params = new URLSearchParams({
+          page: String(requestPage),
+          pageSize: String(requestPageSize),
+        });
+
+        if (filter) {
+          params.set("category", filter);
+        }
+
+        if (normalizedSearch) {
+          params.set("q", normalizedSearch);
+        }
+
+        const res = await fetch(`/api/products/active?${params.toString()}`);
         const data = await res.json();
         if (res.ok && data.products) {
           setListings(data.products);
@@ -316,7 +198,7 @@ function FeaturedListings({ filter, search: searchProp }) {
       }
     }
     fetchListings();
-  }, [page]);
+  }, [filter, normalizedSearch, requestPage, requestPageSize]);
 
   useEffect(() => {
     async function fetchViewer() {
@@ -340,11 +222,17 @@ function FeaturedListings({ filter, search: searchProp }) {
     scrollRef.current?.scrollBy({ left: 320, behavior: "smooth" });
   }
 
-  let displayed = filter ? listings.filter((l) => l.category?.category_name === filter) : listings;
-  if (search) {
-    const q = search.toLowerCase();
-    displayed = displayed.filter((l) => l.product_name?.toLowerCase().includes(q));
-  }
+  const displayed = listings;
+  const groupedListings = Object.entries(
+    displayed.reduce((accumulator, item) => {
+      const categoryName = item.category?.category_name || "General";
+      if (!accumulator[categoryName]) {
+        accumulator[categoryName] = [];
+      }
+      accumulator[categoryName].push(item);
+      return accumulator;
+    }, {})
+  );
 
   const heading = search
     ? `Results for "${search}"`
@@ -352,9 +240,81 @@ function FeaturedListings({ filter, search: searchProp }) {
     ? `${filter} Listings`
     : "Featured Listings";
 
+  function openListingsPage() {
+    const params = new URLSearchParams();
+    if (filter) {
+      params.set("category", filter);
+    }
+    if (search.trim()) {
+      params.set("q", search.trim());
+    }
+
+    const target = params.toString() ? `/listings?${params.toString()}` : "/listings";
+    router.push(target);
+  }
+
+  function openCategoryListings(categoryName) {
+    const params = new URLSearchParams({ category: categoryName });
+    router.push(`/listings?${params.toString()}`);
+  }
+
+  function renderListingCard(item) {
+    return (
+      <div key={item.id} className="featured-listings-card" style={{ minWidth: 220, maxWidth: 220, flexShrink: 0 }}>
+        <Card
+          className="h-100 shadow-sm d-flex flex-column"
+          style={{ cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
+          onClick={() => router.push(`/product/${item.id}`)}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
+        >
+          <ListingImage src={item.image} alt={item.product_name} />
+          <CardBody className="d-flex flex-column">
+            <Badge color="secondary" pill className="mb-2 align-self-start">{item.category?.category_name}</Badge>
+            <CardTitle tag="h6" className="fw-semibold">{item.product_name}</CardTitle>
+            <CardText className="text-primary fw-bold">{String.fromCharCode(8369)}{Number(item.price).toLocaleString()}</CardText>
+            <div className="text-muted small mb-3">
+              by{" "}
+              <span
+                style={{ color: "#0a9e8f", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+                onClick={(e) => { e.stopPropagation(); router.push(`/seller/${item.user?.id || ""}`); }}
+              >
+                {item.user?.name || "Unknown"}
+              </span>
+            </div>
+            {item.user?.address ? (
+              <div className="featured-listings-location text-muted small mb-3">
+                <LocationPinIcon />
+                <span>{item.user.address}</span>
+              </div>
+            ) : null}
+            <div className="text-muted small mb-3">Posted {formatPostedDate(item.upload_date_time)}</div>
+            <Button
+              size="sm"
+              className="mt-auto w-100"
+              onClick={(e) => { e.stopPropagation(); setSelectedListing(item); }}
+              style={{ backgroundColor: "#0a9e8f", border: "none", fontWeight: 600 }}
+            >
+              Contact Seller
+            </Button>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <section className="container py-4">
-      <h3 className="fw-bold mb-1">{heading}</h3>
+      <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-1">
+        <h3 className="fw-bold mb-0">{heading}</h3>
+        <Button
+          color="light"
+          className="featured-listings-see-more"
+          onClick={openListingsPage}
+        >
+          See more
+        </Button>
+      </div>
       <div className="mb-3" style={{ maxWidth: 420 }}>
         <InputGroup>
           <Input
@@ -378,71 +338,59 @@ function FeaturedListings({ filter, search: searchProp }) {
             ? `No listings found in "${filter}" yet.`
             : "No listings yet. Be the first to post an ad!"}
         </div>
+      ) : isGroupedHome ? (
+        <div className="featured-category-list">
+          {groupedListings.map(([categoryName, items]) => (
+            <div key={categoryName} className="featured-category-section">
+              <div className="featured-category-header">
+                <h4 className="featured-category-title">{categoryName}</h4>
+                <button
+                  type="button"
+                  className="featured-category-link"
+                  onClick={() => openCategoryListings(categoryName)}
+                >
+                  View More
+                </button>
+              </div>
+              <div className="featured-category-grid listings-scroll">
+                {items.slice(0, 4).map((item) => renderListingCard(item))}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
-        <div style={{ position: "relative" }}>
-          <div className="d-flex align-items-center justify-content-center gap-2">
+        <div className="featured-listings-shell">
+          <div className="featured-listings-row d-flex align-items-center justify-content-center gap-2">
             <Button
               size="sm"
               color="light"
+              className="featured-listings-arrow"
               disabled={page === 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               style={{ flexShrink: 0, width: 36, height: 36, padding: 0, fontSize: 18, fontWeight: 700 }}
             >
               &#8249;
             </Button>
-          <div
-            ref={scrollRef}
-            className="listings-scroll"
-            style={{
-              display: "flex",
-              gap: 16,
-              overflowX: "auto",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              padding: "8px 4px",
-              flex: 1,
-              justifyContent: "center",
-            }}
-          >
-            {displayed.map((item) => (
-              <div key={item.id} style={{ minWidth: 220, maxWidth: 220, flexShrink: 0 }}>
-                <Card
-                  className="h-100 shadow-sm d-flex flex-column"
-                  style={{ cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
-                  onClick={() => setDetailListing(item)}
-                  onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
-                >
-                  <ListingImage src={item.image} alt={item.product_name} />
-                  <CardBody className="d-flex flex-column">
-                    <Badge color="secondary" pill className="mb-2 align-self-start">{item.category?.category_name}</Badge>
-                    <CardTitle tag="h6" className="fw-semibold">{item.product_name}</CardTitle>
-                    <CardText className="text-primary fw-bold">{String.fromCharCode(8369)}{Number(item.price).toLocaleString()}</CardText>
-                    <div className="text-muted small mb-3">
-                      by{" "}
-                      <span
-                        style={{ color: "#0a9e8f", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
-                        onClick={(e) => { e.stopPropagation(); router.push(`/seller/${item.user?.id || ""}`); }}
-                      >
-                        {item.user?.name || "Unknown"}
-                      </span>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="mt-auto w-100"
-                      onClick={(e) => { e.stopPropagation(); setSelectedListing(item); }}
-                      style={{ backgroundColor: "#0a9e8f", border: "none", fontWeight: 600 }}
-                    >
-                      Contact Seller
-                    </Button>
-                  </CardBody>
-                </Card>
-              </div>
-            ))}
-          </div>
+            <div
+              ref={scrollRef}
+              className="listings-scroll featured-listings-track"
+              style={{
+                display: "flex",
+                gap: 16,
+                overflowX: "auto",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                padding: "8px 4px",
+                flex: 1,
+                justifyContent: "center",
+              }}
+            >
+              {displayed.map((item) => renderListingCard(item))}
+            </div>
             <Button
               size="sm"
               color="light"
+              className="featured-listings-arrow"
               disabled={page >= Math.ceil(total / pageSize)}
               onClick={() => setPage((p) => p + 1)}
               style={{ flexShrink: 0, width: 36, height: 36, padding: 0, fontSize: 18, fontWeight: 700 }}
@@ -461,13 +409,6 @@ function FeaturedListings({ filter, search: searchProp }) {
         listing={selectedListing}
         isOpen={!!selectedListing}
         toggle={() => setSelectedListing(null)}
-        viewer={viewer}
-      />
-      <DetailModal
-        key={detailListing?.id || "empty-detail"}
-        listing={detailListing}
-        isOpen={!!detailListing}
-        toggle={() => setDetailListing(null)}
         viewer={viewer}
       />
     </section>

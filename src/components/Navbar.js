@@ -16,6 +16,9 @@ import {
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
+  Modal,
+  ModalBody,
+  ModalFooter,
 } from "reactstrap";
 import AuthModal from "./AuthModal";
 import { fetchInbox, subscribeToInbox } from "@/lib/message-client";
@@ -27,6 +30,7 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const mobileMenuRef = useRef(null);
 
   useEffect(() => {
@@ -89,6 +93,13 @@ export default function Navbar() {
     setUser(null);
     router.push("/");
     setIsOpen(false);
+    setDropdownOpen(false);
+    setLogoutModalOpen(false);
+  }
+
+  function openLogoutModal() {
+    setDropdownOpen(false);
+    setLogoutModalOpen(true);
   }
 
   const userAvatar = user && (
@@ -164,7 +175,7 @@ export default function Navbar() {
                         <span className="badge bg-danger ms-2 rounded-pill" style={{ fontSize: 11 }}>{unreadCount}</span>
                       )}
                     </DropdownItem>
-                    <DropdownItem onClick={handleLogout}>Sign Out</DropdownItem>
+                    <DropdownItem onClick={openLogoutModal}>Sign Out</DropdownItem>
                   </DropdownMenu>
                 </Dropdown>
               </div>
@@ -235,7 +246,7 @@ export default function Navbar() {
                     <span className="badge bg-danger rounded-pill" style={{ fontSize: 11 }}>{unreadCount}</span>
                   )}
                 </Button>
-                <Button size="sm" color="danger" outline className="w-100" onClick={handleLogout}>
+                <Button size="sm" color="danger" outline className="w-100" onClick={openLogoutModal}>
                   Sign Out
                 </Button>
               </div>
@@ -259,6 +270,26 @@ export default function Navbar() {
         toggle={() => setAuthOpen(false)}
         onAuthSuccess={(u) => setUser(u)}
       />
+
+      <Modal isOpen={logoutModalOpen} toggle={() => setLogoutModalOpen(false)} centered>
+        <ModalBody className="p-0">
+          <div className="logout-modal-panel">
+            <div className="logout-modal-icon">↪</div>
+            <h5 className="logout-modal-title">Sign out of your account?</h5>
+            <p className="logout-modal-copy">
+              You will need to sign in again to check messages, manage listings, and continue your activity.
+            </p>
+          </div>
+        </ModalBody>
+        <ModalFooter className="border-0 pt-0 px-4 pb-4 d-flex justify-content-center gap-2">
+          <Button color="light" className="logout-modal-cancel" onClick={() => setLogoutModalOpen(false)}>
+            Stay signed in
+          </Button>
+          <Button className="logout-modal-confirm" onClick={handleLogout}>
+            Yes, sign out
+          </Button>
+        </ModalFooter>
+      </Modal>
     </>
   );
 }

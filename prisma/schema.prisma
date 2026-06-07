@@ -32,6 +32,7 @@ model User {
   id        Int           @id @default(autoincrement())
   email     String        @unique
   name      String?
+  address   String?
   password  String
   user_type String        @default("user")
   status    String        @default("active")
@@ -70,6 +71,7 @@ model ConversationMessage {
   conversationId Int
   senderId       Int
   body           String
+  imageUrl       String?
   createdAt      DateTime     @default(now())
   readAt         DateTime?
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)

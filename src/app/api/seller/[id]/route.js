@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // GET: Get seller by ID with their products
 export async function GET(request, { params }) {
@@ -11,7 +10,7 @@ export async function GET(request, { params }) {
     }
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, name: true, email: true, user_type: true },
+      select: { id: true, name: true, email: true, address: true, user_type: true },
     });
     if (!user) {
       return Response.json({ error: 'Seller not found' }, { status: 404 });

@@ -2,12 +2,15 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Input } from "reactstrap";
+import ChatImageModal from "@/components/ChatImageModal";
 import {
   fetchInbox,
   getConversationPreview,
   markConversationRead,
+  openSupportConversation,
   sendMessage,
   subscribeToInbox,
+  uploadMessageImage,
 } from "@/lib/message-client";
 
 function Avatar({ name, color, size = 36 }) {
@@ -34,17 +37,46 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [activeThread, setActiveThread] = useState(null);
   const [replyText, setReplyText] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState("");
+  const [viewerImage, setViewerImage] = useState("");
+  const [sending, setSending] = useState(false);
   const bubbleRef = useRef(null);
   const messagesEndRef = useRef(null);
   const activeThreadIdRef = useRef(null);
+  const imageInputRef = useRef(null);
 
-  // Keep ref in sync with state
   useEffect(() => {
     activeThreadIdRef.current = activeThread?.id ?? null;
   }, [activeThread]);
 
-  // Hide on /messages page
-  const hidden = pathname === "/messages";
+  const hidden = pathname === "/messages" || pathname.startsWith("/admin");
+
+  const clearSelectedImage = useCallback(() => {
+    if (selectedImagePreview) {
+      URL.revokeObjectURL(selectedImagePreview);
+    }
+
+    setSelectedImage(null);
+    setSelectedImagePreview("");
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  }, [selectedImagePreview]);
+
+  const handleImageChange = useCallback((event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (selectedImagePreview) {
+      URL.revokeObjectURL(selectedImagePreview);
+    }
+
+    setSelectedImage(file);
+    setSelectedImagePreview(URL.createObjectURL(file));
+  }, [selectedImagePreview]);
 
   const loadData = useCallback(async () => {
     const inbox = await fetchInbox();
@@ -94,12 +126,10 @@ export default function ChatWidget() {
     });
   }, [user, loadData]);
 
-  // Scroll to bottom when thread opens or new message arrives
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeThread]);
 
-  // Mark thread as read when opened
   async function openThread(msg) {
     setActiveThread(msg);
     if (!user) return;
@@ -117,13 +147,33 @@ export default function ChatWidget() {
   }
 
   async function handleSend() {
-    if (!replyText.trim() || !activeThread || !user) return;
+    if ((!replyText.trim() && !selectedImage) || !activeThread || !user) return;
 
     try {
-      await sendMessage({ conversationId: activeThread.id, body: replyText.trim() });
+      setSending(true);
+      const imageUrl = selectedImage ? await uploadMessageImage(selectedImage) : null;
+      await sendMessage({ conversationId: activeThread.id, body: replyText.trim(), imageUrl });
       setReplyText("");
+      clearSelectedImage();
       await loadData();
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    } catch {
+      // ignore
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleContactAdmin() {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const result = await openSupportConversation();
+      setOpen(true);
+      setActiveThread(result.conversation);
+      await loadData();
     } catch {
       // ignore
     }
@@ -135,7 +185,7 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Chat panel */}
+      <ChatImageModal isOpen={Boolean(viewerImage)} toggle={() => setViewerImage("")} imageUrl={viewerImage} />
       {open && (
         <div
           style={{
@@ -147,14 +197,13 @@ export default function ChatWidget() {
             overflow: "hidden",
           }}
         >
-          {/* Panel header */}
           <div style={{
             background: "#0a9e8f", color: "#fff",
             padding: "14px 16px",
             display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
             {activeThread ? (
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
                 <button
                   onClick={() => setActiveThread(null)}
                   style={{ background: "none", border: "none", color: "#fff", fontSize: 18, cursor: "pointer", padding: 0, lineHeight: 1 }}
@@ -162,33 +211,105 @@ export default function ChatWidget() {
                   ←
                 </button>
                 <div className="d-flex align-items-center gap-2">
-                  <Avatar
-                    name={activeThread.otherParty.name}
-                    color="rgba(255,255,255,0.3)"
-                    size={30}
-                  />
+                  <Avatar name={activeThread.otherParty.name} color="rgba(255,255,255,0.3)" size={30} />
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{activeThread.otherParty.name}</div>
                     <div style={{ fontSize: 11, opacity: 0.85 }}>{activeThread.listingTitle}</div>
                   </div>
                 </div>
+                <a
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleContactAdmin();
+                  }}
+                  style={{
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    background: "rgba(255,255,255,0.18)",
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    whiteSpace: "nowrap",
+                    marginLeft: "auto",
+                  }}
+                >
+                  Contact Admin
+                </a>
               </div>
             ) : (
-              <span style={{ fontWeight: 700, fontSize: 15 }}>
-                💬 Messages {unreadCount > 0 && <span style={{ fontSize: 12, background: "#e53935", borderRadius: 10, padding: "1px 7px", marginLeft: 6 }}>{unreadCount}</span>}
-              </span>
+              <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: 15 }}>
+                  💬 Messages {unreadCount > 0 && <span style={{ fontSize: 12, background: "#e53935", borderRadius: 10, padding: "1px 7px", marginLeft: 6 }}>{unreadCount}</span>}
+                </span>
+                <a
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleContactAdmin();
+                  }}
+                  style={{
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    background: "rgba(255,255,255,0.18)",
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Contact Admin
+                </a>
+              </div>
             )}
             <button
-              onClick={() => { setOpen(false); setActiveThread(null); }}
+              onClick={() => { setOpen(false); setActiveThread(null); clearSelectedImage(); }}
               style={{ background: "none", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", lineHeight: 1 }}
             >
               ×
             </button>
           </div>
 
-          {/* Conversation list */}
           {!activeThread && (
             <div style={{ flex: 1, overflowY: "auto" }}>
+              <div
+                style={{
+                  margin: 12,
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+                  Need admin help?
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+                  Open a direct support chat with Batjee Admin.
+                </div>
+                <a
+                  href="#"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    handleContactAdmin();
+                  }}
+                  style={{
+                    display: "inline-block",
+                    marginTop: 8,
+                    color: "#0a9e8f",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                  }}
+                >
+                  Contact Admin →
+                </a>
+              </div>
+
               {messages.length === 0 ? (
                 <div className="text-center text-muted py-5" style={{ fontSize: 14 }}>
                   <div style={{ fontSize: 36 }}>💬</div>
@@ -247,10 +368,8 @@ export default function ChatWidget() {
             </div>
           )}
 
-          {/* Active thread */}
           {activeThread && (
             <>
-              {/* Bubbles */}
               <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 4px", background: "#f8fafc" }}>
                 {allBubbles.map((b) => {
                   const isMe = b.senderId === user.id;
@@ -271,7 +390,21 @@ export default function ChatWidget() {
                           padding: "8px 12px", fontSize: 13, lineHeight: 1.5,
                           wordBreak: "break-word",
                         }}>
-                          {b.body}
+                          {b.imageUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setViewerImage(b.imageUrl)}
+                              style={{ display: "block", padding: 0, border: "none", background: "transparent", cursor: "zoom-in", width: "100%" }}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={b.imageUrl}
+                                alt="Shared in conversation"
+                                style={{ display: "block", width: "100%", maxWidth: 200, borderRadius: 10, marginBottom: b.body ? 8 : 0 }}
+                              />
+                            </button>
+                          )}
+                          {b.body && <div>{b.body}</div>}
                         </div>
                         <div style={{ fontSize: 10, color: "#aaa", marginTop: 2, textAlign: isMe ? "right" : "left" }}>
                           {b.date}
@@ -283,29 +416,60 @@ export default function ChatWidget() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
               <div style={{
                 display: "flex", gap: 8, padding: "10px 12px",
                 background: "#fff", borderTop: "1px solid #f0f0f0",
-                alignItems: "center",
+                alignItems: "center", flexWrap: "wrap",
               }}>
+                {selectedImagePreview && (
+                  <div style={{ width: "100%", position: "relative", marginBottom: 4 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={selectedImagePreview}
+                      alt="Selected attachment preview"
+                      style={{ width: 96, height: 96, objectFit: "cover", borderRadius: 12, border: "1px solid #dbe3ea" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={clearSelectedImage}
+                      style={{ position: "absolute", top: -8, left: 80, width: 22, height: 22, borderRadius: "50%", border: "none", background: "#dc3545", color: "#fff", fontWeight: 700, lineHeight: 1 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleImageChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  style={{ background: "#eef2f7", border: "none", borderRadius: "50%", width: 36, height: 36, flexShrink: 0 }}
+                  title="Attach image"
+                >
+                  📷
+                </button>
                 <Input
                   type="text"
                   placeholder="Write a message..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  style={{ fontSize: 13, borderRadius: 20, background: "#f1f5f9", border: "none" }}
+                  style={{ fontSize: 13, borderRadius: 20, background: "#f1f5f9", border: "none", flex: 1 }}
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!replyText.trim()}
+                  disabled={sending || (!replyText.trim() && !selectedImage)}
                   style={{
-                    background: replyText.trim() ? "#0a9e8f" : "#ccc",
+                    background: replyText.trim() || selectedImage ? "#0a9e8f" : "#ccc",
                     border: "none", borderRadius: "50%",
                     width: 36, height: 36, flexShrink: 0,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: replyText.trim() ? "pointer" : "default",
+                    cursor: replyText.trim() || selectedImage ? "pointer" : "default",
                     transition: "background 0.15s",
                   }}
                 >
@@ -319,7 +483,6 @@ export default function ChatWidget() {
         </div>
       )}
 
-      {/* Floating bubble button */}
       <button
         ref={bubbleRef}
         onClick={() => { setOpen((v) => !v); if (!open) setActiveThread(null); }}
@@ -344,7 +507,6 @@ export default function ChatWidget() {
             <path d="M16 8c0 3.866-3.582 7-8 7a9.06 9.06 0 0 1-2.347-.306c-.584.296-1.925.864-4.181 1.234-.2.032-.352-.176-.273-.362.354-.836.674-1.95.77-2.966C.744 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7z"/>
           </svg>
         )}
-        {/* Unread badge */}
         {!open && unreadCount > 0 && (
           <span style={{
             position: "absolute", top: 2, right: 2,

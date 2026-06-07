@@ -2,14 +2,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, CardBody, Container, Input } from "reactstrap";
+import ChatImageModal from "@/components/ChatImageModal";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import {
   fetchInbox,
   getConversationPreview,
   markConversationRead,
+  openSupportConversation,
   sendMessage,
   subscribeToInbox,
+  uploadMessageImage,
 } from "@/lib/message-client";
 
 function Avatar({ name, color, size = 36 }) {
@@ -36,7 +39,7 @@ function Avatar({ name, color, size = 36 }) {
   );
 }
 
-function Bubble({ message, currentUserId }) {
+function Bubble({ message, currentUserId, onImageClick }) {
   const isMe = message.senderId === currentUserId;
 
   return (
@@ -62,7 +65,21 @@ function Bubble({ message, currentUserId }) {
             wordBreak: "break-word",
           }}
         >
-          {message.body}
+          {message.imageUrl && (
+            <button
+              type="button"
+              onClick={() => onImageClick(message.imageUrl)}
+              style={{ display: "block", padding: 0, border: "none", background: "transparent", cursor: "zoom-in", width: "100%" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={message.imageUrl}
+                alt="Shared in conversation"
+                style={{ display: "block", maxWidth: 260, width: "100%", borderRadius: 12, marginBottom: message.body ? 10 : 0 }}
+              />
+            </button>
+          )}
+          {message.body && <div>{message.body}</div>}
         </div>
         <div
           className="text-muted mt-1"
@@ -86,10 +103,40 @@ export default function MessagesPage() {
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [draft, setDraft] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState("");
+  const [viewerImage, setViewerImage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const threadEndRef = useRef(null);
+  const imageInputRef = useRef(null);
+
+  function clearSelectedImage() {
+    if (selectedImagePreview) {
+      URL.revokeObjectURL(selectedImagePreview);
+    }
+
+    setSelectedImage(null);
+    setSelectedImagePreview("");
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  }
+
+  function handleImageChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (selectedImagePreview) {
+      URL.revokeObjectURL(selectedImagePreview);
+    }
+
+    setSelectedImage(file);
+    setSelectedImagePreview(URL.createObjectURL(file));
+  }
 
   const loadMessages = useCallback(async () => {
     const inbox = await fetchInbox();
@@ -176,23 +223,38 @@ export default function MessagesPage() {
   }, [activeConversation, loadMessages]);
 
   async function handleReply() {
-    if (!activeConversation || !draft.trim()) {
+    if (!activeConversation || (!draft.trim() && !selectedImage)) {
       return;
     }
 
     setSending(true);
     setError("");
     try {
+      const imageUrl = selectedImage ? await uploadMessageImage(selectedImage) : null;
       await sendMessage({
         conversationId: activeConversation.id,
         body: draft.trim(),
+        imageUrl,
       });
       setDraft("");
+      clearSelectedImage();
       await loadMessages();
     } catch (replyError) {
       setError(replyError.message || "Failed to send message.");
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleContactAdmin() {
+    setError("");
+
+    try {
+      const result = await openSupportConversation();
+      setActiveConversationId(result.conversation.id);
+      await loadMessages();
+    } catch (supportError) {
+      setError(supportError.message || "Failed to open admin support chat.");
     }
   }
 
@@ -202,6 +264,7 @@ export default function MessagesPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+      <ChatImageModal isOpen={Boolean(viewerImage)} toggle={() => setViewerImage("")} imageUrl={viewerImage} />
       <Navbar />
       <Container className="py-5">
         <div className="d-flex align-items-center justify-content-between mb-4">
@@ -213,6 +276,23 @@ export default function MessagesPage() {
             ← Back
           </Button>
         </div>
+
+        <Card className="border-0 shadow-sm mb-4">
+          <CardBody className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+              <div className="fw-semibold" style={{ color: "#0f172a" }}>Need help with a concern?</div>
+              <div className="text-muted small">
+                Open an in-app support chat with Batjee Admin for account, listing, or platform concerns.
+              </div>
+            </div>
+            <Button
+              onClick={handleContactAdmin}
+              style={{ backgroundColor: "#0a9e8f", border: "none", fontWeight: 600, whiteSpace: "nowrap" }}
+            >
+              Contact Admin
+            </Button>
+          </CardBody>
+        </Card>
 
         {loading ? (
           <Card className="border-0 shadow-sm">
@@ -231,9 +311,21 @@ export default function MessagesPage() {
             <div className="d-flex flex-column flex-lg-row" style={{ minHeight: 560 }}>
               <div style={{ width: "100%", maxWidth: 360, borderRight: "1px solid #eef2f7", background: "#fff" }}>
                 <div className="px-3 py-3 border-bottom">
-                  <div className="fw-semibold">Inbox</div>
-                  <div className="text-muted small">
-                    {conversations.length} conversation{conversations.length !== 1 ? "s" : ""}
+                  <div className="d-flex align-items-start justify-content-between gap-2">
+                    <div>
+                      <div className="fw-semibold">Inbox</div>
+                      <div className="text-muted small">
+                        {conversations.length} conversation{conversations.length !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleContactAdmin}
+                      color="light"
+                      size="sm"
+                      className="border"
+                    >
+                      Contact Admin
+                    </Button>
                   </div>
                 </div>
 
@@ -289,6 +381,14 @@ export default function MessagesPage() {
                         <div className="fw-semibold">{activeConversation.otherParty.name}</div>
                         <div className="text-muted small">Re: {activeConversation.listingTitle}</div>
                       </div>
+                      <Button
+                        onClick={handleContactAdmin}
+                        color="light"
+                        size="sm"
+                        className="border ms-auto"
+                      >
+                        Contact Admin
+                      </Button>
                     </div>
 
                     <CardBody
@@ -300,15 +400,54 @@ export default function MessagesPage() {
                       }}
                     >
                       {activeConversation.messages.map((message) => (
-                        <Bubble key={message.id} message={message} currentUserId={user.id} />
+                        <Bubble
+                          key={message.id}
+                          message={message}
+                          currentUserId={user.id}
+                          onImageClick={setViewerImage}
+                        />
                       ))}
                       <div ref={threadEndRef} />
                     </CardBody>
 
                     <div className="px-3 py-3 border-top bg-white">
                       {error && <div className="text-danger small mb-2">{error}</div>}
+                      {selectedImagePreview && (
+                        <div className="mb-2 position-relative" style={{ width: 120 }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={selectedImagePreview}
+                            alt="Selected attachment preview"
+                            style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 14, border: "1px solid #dbe3ea" }}
+                          />
+                          <button
+                            type="button"
+                            onClick={clearSelectedImage}
+                            style={{ position: "absolute", top: -8, right: -8, width: 24, height: 24, borderRadius: "50%", border: "none", background: "#dc3545", color: "#fff", fontWeight: 700, lineHeight: 1 }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
                       <div className="d-flex gap-2 align-items-center">
                         <Avatar name={user.name || user.email} color="#0d6efd" />
+                        <input
+                          ref={imageInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={handleImageChange}
+                        />
+                        <Button
+                          type="button"
+                          color="light"
+                          className="border"
+                          onClick={() => imageInputRef.current?.click()}
+                          title="Attach image"
+                          style={{ width: 42, height: 42, borderRadius: "50%", padding: 0, flexShrink: 0 }}
+                        >
+                          📷
+                        </Button>
                         <Input
                           type="text"
                           placeholder="Write a message..."
@@ -319,7 +458,7 @@ export default function MessagesPage() {
                         />
                         <Button
                           onClick={handleReply}
-                          disabled={sending || !draft.trim()}
+                          disabled={sending || (!draft.trim() && !selectedImage)}
                           style={{
                             backgroundColor: "#0a9e8f",
                             border: "none",
@@ -329,7 +468,7 @@ export default function MessagesPage() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          Send
+                          {sending ? "Sending..." : "Send"}
                         </Button>
                       </div>
                     </div>

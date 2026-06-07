@@ -245,6 +245,10 @@ export default function DashboardPage() {
                 <div className="fw-semibold">{user.email}</div>
               </Col>
               <Col md={6}>
+                <label className="text-muted small d-block mb-1">Address</label>
+                <div className="fw-semibold">{user.address || "Not added yet"}</div>
+              </Col>
+              <Col md={6}>
                 <label className="text-muted small d-block mb-1">Member Since</label>
                 <div className="fw-semibold">May 2026</div>
               </Col>

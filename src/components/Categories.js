@@ -2,6 +2,7 @@
 import { Row, Col } from "reactstrap";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const ICONS = {
   Electronics: "https://img.icons8.com/ios-filled/50/000000/laptop.png",
@@ -15,8 +16,10 @@ const ICONS = {
 };
 const FALLBACK_ICON = "https://img.icons8.com/ios-filled/50/000000/category.png";
 
-export default function Categories({ selected, onSelect }) {
+export default function Categories() {
+  const router = useRouter();
   const [categories, setCategories] = useState([]);
+
   useEffect(() => {
     async function fetchCategories() {
       try {
@@ -35,19 +38,18 @@ export default function Categories({ selected, onSelect }) {
       <h3 className="fw-bold mb-4">Browse Categories</h3>
       <Row className="g-3">
         {categories.map((cat) => {
-          const isActive = selected === cat.category_name;
           const icon = ICONS[cat.category_name] || FALLBACK_ICON;
           return (
             <Col key={cat.id} xs={6} md={3} className="text-center">
               <div
-                onClick={() => onSelect(cat.category_name)}
+                  onClick={() => router.push(`/listings?category=${encodeURIComponent(cat.category_name)}`)}
                 style={{ cursor: "pointer" }}
-                className={`py-3 rounded-3 ${isActive ? "border border-primary bg-primary bg-opacity-10" : "border border-transparent"}`}
+                  className="py-3 rounded-3 border border-transparent"
               >
-                <div className="category-icon mb-2" style={{ margin: "0 auto", background: isActive ? "#dbeafe" : undefined }}>
+                  <div className="category-icon mb-2" style={{ margin: "0 auto" }}>
                   <Image src={icon} width={40} height={40} alt={cat.category_name} />
                 </div>
-                <div style={{ fontWeight: isActive ? 700 : 400, color: isActive ? "#0d6efd" : "inherit" }}>
+                  <div style={{ fontWeight: 400 }}>
                   {cat.category_name}
                 </div>
               </div>
@@ -55,16 +57,6 @@ export default function Categories({ selected, onSelect }) {
           );
         })}
       </Row>
-      {selected && (
-        <div className="text-center mt-3">
-          <span
-            style={{ cursor: "pointer", color: "#0d6efd", fontSize: 14 }}
-            onClick={() => onSelect(null)}
-          >
-            ✕ Clear filter
-          </span>
-        </div>
-      )}
     </section>
   );
 }
