@@ -4,6 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Row, Col } from "reactstrap";
 import { fetchInbox, subscribeToInbox } from "@/lib/message-client";
+import AuthModal from "@/components/AuthModal";
 
 const POPULAR_CATEGORIES = ["Cars", "Flats for rent", "Mobile Phones", "Jobs"];
 
@@ -37,6 +38,7 @@ export default function Footer() {
   const [isMobile, setIsMobile] = useState(false);
   const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 575.98px)");
@@ -124,6 +126,17 @@ export default function Footer() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handleMobileNavClick(event, item) {
+    const requiresAuth = item.label === "Acc" || item.label === "My Ads";
+
+    if (!requiresAuth || user) {
+      return;
+    }
+
+    event.preventDefault();
+    setAuthOpen(true);
+  }
+
   const showMobileFooter = isMobile;
 
   return (
@@ -193,6 +206,7 @@ export default function Footer() {
               key={item.label}
               href={item.href}
               className={`footer-mobile-bottom-link${item.accent ? " footer-mobile-bottom-link-accent" : ""}`}
+              onClick={(event) => handleMobileNavClick(event, item)}
             >
               <span className="footer-mobile-bottom-icon" aria-hidden="true">
                 {item.accent ? item.icon : (
@@ -213,6 +227,12 @@ export default function Footer() {
           ))}
         </nav>
       ) : null}
+
+      <AuthModal
+        isOpen={authOpen}
+        toggle={() => setAuthOpen(false)}
+        onAuthSuccess={(nextUser) => setUser(nextUser)}
+      />
     </>
   );
 }
