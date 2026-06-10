@@ -34,6 +34,7 @@ export default function ChatWidget() {
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeThread, setActiveThread] = useState(null);
   const [replyText, setReplyText] = useState("");
@@ -47,10 +48,38 @@ export default function ChatWidget() {
   const imageInputRef = useRef(null);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 575.98px)");
+
+    function syncViewport() {
+      setIsMobile(mediaQuery.matches);
+    }
+
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncViewport);
+    };
+  }, []);
+
+  useEffect(() => {
     activeThreadIdRef.current = activeThread?.id ?? null;
   }, [activeThread]);
 
   const hidden = pathname === "/messages" || pathname.startsWith("/admin");
+
+  useEffect(() => {
+    function handleOpenChat() {
+      setOpen(true);
+      setActiveThread(null);
+    }
+
+    window.addEventListener("tradigo:open-chat", handleOpenChat);
+
+    return () => {
+      window.removeEventListener("tradigo:open-chat", handleOpenChat);
+    };
+  }, []);
 
   const clearSelectedImage = useCallback(() => {
     if (selectedImagePreview) {
@@ -189,12 +218,20 @@ export default function ChatWidget() {
       {open && (
         <div
           style={{
-            position: "fixed", bottom: 80, right: 24, zIndex: 9999,
-            width: 340, maxHeight: 520,
+            position: "fixed",
+            bottom: isMobile ? 0 : 80,
+            right: isMobile ? 0 : 24,
+            top: isMobile ? 0 : "auto",
+            left: isMobile ? 0 : "auto",
+            zIndex: 9999,
+            width: isMobile ? "100vw" : 340,
+            maxHeight: isMobile ? "100dvh" : 520,
+            height: isMobile ? "100dvh" : "auto",
             background: "#fff", borderRadius: 16,
             boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
             display: "flex", flexDirection: "column",
             overflow: "hidden",
+            borderRadius: isMobile ? 0 : 16,
           }}
         >
           <div style={{
@@ -494,6 +531,8 @@ export default function ChatWidget() {
           cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           transition: "transform 0.15s",
+          visibility: isMobile ? "hidden" : "visible",
+          pointerEvents: isMobile ? "none" : "auto",
         }}
         onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.08)"}
         onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}

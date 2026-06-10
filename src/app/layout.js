@@ -3,10 +3,10 @@ import "./globals.css";
 import ChatWidget from "@/components/ChatWidget";
 
 export const metadata = {
-  title: "Batjee.com — Post • Talk • Deal",
+  title: "TradiGo",
   description: "The modern marketplace to post, talk, and deal. Buy and sell anything locally with confidence.",
   icons: {
-    icon: "/img/batjee logo Icon Site.png",
+    icon: "/img/TGo%20LOGO%202.0.png",
   },
 };
 

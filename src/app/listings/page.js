@@ -10,13 +10,12 @@ import {
   CardBody,
   Col,
   Container,
-  Input,
-  InputGroup,
   Row,
   Spinner,
 } from "reactstrap";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import FavoriteButton from "@/components/FavoriteButton";
 
 const FALLBACK_IMG = "https://placehold.co/640x420?text=No+Image";
 
@@ -67,21 +66,48 @@ function formatDate(value) {
   });
 }
 
-function ListingsBrowser({ initialQuery, initialCategory }) {
+function ListingsBrowser({ initialQuery, initialCategory, initialLocation }) {
   const router = useRouter();
 
-  const [draftQuery, setDraftQuery] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState(initialCategory);
+  const [location, setLocation] = useState(initialLocation);
   const [items, setItems] = useState([]);
+  const [viewer, setViewer] = useState(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [favoriteError, setFavoriteError] = useState("");
+  const [favoritePendingId, setFavoritePendingId] = useState(null);
 
   const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadViewer() {
+      try {
+        const response = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await response.json();
+        if (!cancelled) {
+          setViewer(response.ok && data.user ? data.user : null);
+        }
+      } catch {
+        if (!cancelled) {
+          setViewer(null);
+        }
+      }
+    }
+
+    loadViewer();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,6 +131,10 @@ function ListingsBrowser({ initialQuery, initialCategory }) {
 
         if (category.trim()) {
           params.set("category", category.trim());
+        }
+
+        if (location.trim()) {
+          params.set("location", location.trim());
         }
 
         const response = await fetch(`/api/products/active?${params.toString()}`, {
@@ -157,7 +187,7 @@ function ListingsBrowser({ initialQuery, initialCategory }) {
     return () => {
       cancelled = true;
     };
-  }, [page, query, category]);
+  }, [page, query, category, location]);
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -183,52 +213,50 @@ function ListingsBrowser({ initialQuery, initialCategory }) {
     };
   }, [hasMore, initialLoading, loadingMore]);
 
-  function applySearch() {
-    const params = new URLSearchParams();
-    if (draftQuery.trim()) {
-      params.set("q", draftQuery.trim());
-    }
-    if (category.trim()) {
-      params.set("category", category.trim());
+  async function handleFavoriteToggle(event, item) {
+    event.stopPropagation();
+    setFavoriteError("");
+
+    if (!viewer) {
+      setFavoriteError("Please sign in to save listings to your favorites.");
+      return;
     }
 
-    const target = params.toString() ? `/listings?${params.toString()}` : "/listings";
-    router.push(target);
+    if (viewer.id === item.user?.id) {
+      setFavoriteError("You cannot favorite your own listing.");
+      return;
+    }
+
+    const nextFavorited = !item.isFavorited;
+    setFavoritePendingId(item.id);
+    setItems((current) => current.map((listing) => (
+      listing.id === item.id ? { ...listing, isFavorited: nextFavorited } : listing
+    )));
+
+    try {
+      const response = await fetch("/api/favorites", {
+        method: nextFavorited ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: item.id }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update favorites.");
+      }
+    } catch (toggleError) {
+      setItems((current) => current.map((listing) => (
+        listing.id === item.id ? { ...listing, isFavorited: item.isFavorited } : listing
+      )));
+      setFavoriteError(toggleError.message || "Failed to update favorites.");
+    } finally {
+      setFavoritePendingId(null);
+    }
   }
 
   return (
     <div className="listing-browser-page">
       <Navbar />
-      <section className="listing-browser-hero">
-        <Container>
-          <div className="listing-browser-hero-card">
-            <div>
-              <p className="listing-browser-kicker">Marketplace listings</p>
-              <h1 className="listing-browser-title">Browse more ads without leaving the scroll.</h1>
-              <p className="listing-browser-copy">
-                This page follows the OLX-style browse flow: a dedicated results view, a clear &quot;See more&quot; entry point, and automatic loading as you approach the end of the list.
-              </p>
-            </div>
-            <div className="listing-browser-searchbar">
-              <InputGroup>
-                <Input
-                  type="text"
-                  value={draftQuery}
-                  placeholder="Search listings, categories, or keywords"
-                  onChange={(event) => setDraftQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      applySearch();
-                    }
-                  }}
-                />
-                <Button color="primary" onClick={applySearch}>Search</Button>
-              </InputGroup>
-            </div>
-          </div>
-        </Container>
-      </section>
-
       <section className="pb-5">
         <Container>
           <div className="listing-browser-toolbar">
@@ -240,6 +268,7 @@ function ListingsBrowser({ initialQuery, initialCategory }) {
             </div>
             <div className="d-flex align-items-center gap-2 flex-wrap">
               {query ? <Badge pill className="listing-browser-chip">Search: {query}</Badge> : null}
+              {location ? <Badge pill className="listing-browser-chip">Location: {location}</Badge> : null}
               {category ? (
                 <Badge pill className="listing-browser-chip-button">
                   Category: {category}
@@ -249,6 +278,7 @@ function ListingsBrowser({ initialQuery, initialCategory }) {
           </div>
 
           {error ? <Alert color="danger">{error}</Alert> : null}
+          {favoriteError ? <Alert color="danger">{favoriteError}</Alert> : null}
 
           {initialLoading ? (
             <div className="listing-browser-loader-block">
@@ -279,7 +309,17 @@ function ListingsBrowser({ initialQuery, initialCategory }) {
                       <CardBody className="d-flex flex-column gap-3">
                         <div className="d-flex justify-content-between gap-3 align-items-start">
                           <div>
-                            <h3 className="listing-browser-card-title">{item.product_name}</h3>
+                            <div className="d-flex align-items-start justify-content-between gap-2">
+                              <h3 className="listing-browser-card-title mb-0">{item.product_name}</h3>
+                              <FavoriteButton
+                                className="listing-browser-favorite-btn"
+                                isFavorited={Boolean(item.isFavorited)}
+                                iconOnly
+                                disabled={favoritePendingId === item.id || viewer?.id === item.user?.id}
+                                title={viewer?.id === item.user?.id ? "You cannot favorite your own listing" : undefined}
+                                onClick={(event) => handleFavoriteToggle(event, item)}
+                              />
+                            </div>
                             <p className="listing-browser-card-meta mb-0">
                               Sold by {item.user?.name || "Unknown seller"}
                             </p>
@@ -342,12 +382,14 @@ function ListingsPageContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const initialCategory = searchParams.get("category") || "";
+  const initialLocation = searchParams.get("location") || "";
 
   return (
     <ListingsBrowser
-      key={`${initialQuery}::${initialCategory}`}
+      key={`${initialQuery}::${initialCategory}::${initialLocation}`}
       initialQuery={initialQuery}
       initialCategory={initialCategory}
+      initialLocation={initialLocation}
     />
   );
 }

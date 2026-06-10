@@ -99,6 +99,7 @@ function Bubble({ message, currentUserId, onImageClick }) {
 
 export default function MessagesPage() {
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
   const [user, setUser] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -151,8 +152,27 @@ export default function MessagesPage() {
         return currentId;
       }
 
+      if (isMobile) {
+        return null;
+      }
+
       return nextConversations[0].id;
     });
+  }, [isMobile]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 575.98px)");
+
+    function syncViewport() {
+      setIsMobile(mediaQuery.matches);
+    }
+
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncViewport);
+    };
   }, []);
 
   useEffect(() => {
@@ -205,6 +225,8 @@ export default function MessagesPage() {
   }, [user, loadMessages]);
 
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId) || null;
+  const showInboxList = !isMobile || !activeConversation;
+  const showThreadPane = !isMobile || Boolean(activeConversation);
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -263,11 +285,12 @@ export default function MessagesPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+    <div style={{ minHeight: "100vh", background: isMobile ? "#ffffff" : "#f8fafc" }}>
       <ChatImageModal isOpen={Boolean(viewerImage)} toggle={() => setViewerImage("")} imageUrl={viewerImage} />
       <Navbar />
-      <Container className="py-5">
-        <div className="d-flex align-items-center justify-content-between mb-4">
+      <Container className={isMobile ? "px-0 py-0" : "py-5"}>
+        {!isMobile ? (
+          <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
             <h4 className="fw-bold mb-0">Messages</h4>
             <p className="text-muted small mb-0">Real-time conversations about your listings and inquiries</p>
@@ -275,8 +298,10 @@ export default function MessagesPage() {
           <Button color="light" className="border" size="sm" onClick={() => router.back()}>
             ← Back
           </Button>
-        </div>
+          </div>
+        ) : null}
 
+        {!isMobile ? (
         <Card className="border-0 shadow-sm mb-4">
           <CardBody className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
             <div>
@@ -293,13 +318,14 @@ export default function MessagesPage() {
             </Button>
           </CardBody>
         </Card>
+        ) : null}
 
         {loading ? (
-          <Card className="border-0 shadow-sm">
+          <Card className={`border-0 ${isMobile ? "shadow-none rounded-0" : "shadow-sm"}`}>
             <CardBody className="text-center py-5 text-muted">Loading messages...</CardBody>
           </Card>
         ) : conversations.length === 0 ? (
-          <Card className="border-0 shadow-sm">
+          <Card className={`border-0 ${isMobile ? "shadow-none rounded-0" : "shadow-sm"}`}>
             <CardBody className="text-center py-5 text-muted">
               <div style={{ fontSize: 48 }}>💬</div>
               <div className="fw-semibold mt-2">No messages yet</div>
@@ -307,13 +333,14 @@ export default function MessagesPage() {
             </CardBody>
           </Card>
         ) : (
-          <Card className="border-0 shadow-sm overflow-hidden">
-            <div className="d-flex flex-column flex-lg-row" style={{ minHeight: 560 }}>
-              <div style={{ width: "100%", maxWidth: 360, borderRight: "1px solid #eef2f7", background: "#fff" }}>
+          <Card className={`border-0 overflow-hidden ${isMobile ? "shadow-none rounded-0" : "shadow-sm"}`}>
+            <div className="d-flex flex-column flex-lg-row" style={{ minHeight: isMobile ? "100dvh" : 560 }}>
+              {showInboxList ? (
+              <div style={{ width: "100%", maxWidth: isMobile ? "none" : 360, borderRight: isMobile ? "none" : "1px solid #eef2f7", background: "#fff" }}>
                 <div className="px-3 py-3 border-bottom">
                   <div className="d-flex align-items-start justify-content-between gap-2">
                     <div>
-                      <div className="fw-semibold">Inbox</div>
+                      <div className="fw-semibold">{isMobile ? "Messages" : "Inbox"}</div>
                       <div className="text-muted small">
                         {conversations.length} conversation{conversations.length !== 1 ? "s" : ""}
                       </div>
@@ -329,7 +356,25 @@ export default function MessagesPage() {
                   </div>
                 </div>
 
-                <div style={{ maxHeight: 500, overflowY: "auto" }}>
+                {isMobile ? (
+                  <div style={{ margin: 12, padding: "12px 14px", borderRadius: 14, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+                      Need admin help?
+                    </div>
+                    <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+                      Open a direct support chat with Batjee Admin.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleContactAdmin}
+                      style={{ display: "inline-block", marginTop: 8, color: "#0a9e8f", fontSize: 12, fontWeight: 700, textDecoration: "none", border: "none", background: "transparent", padding: 0 }}
+                    >
+                      Contact Admin →
+                    </button>
+                  </div>
+                ) : null}
+
+                <div style={{ maxHeight: isMobile ? "calc(100dvh - 160px)" : 500, overflowY: "auto" }}>
                   {conversations.map((conversation) => {
                     const active = conversation.id === activeConversationId;
                     return (
@@ -368,14 +413,26 @@ export default function MessagesPage() {
                   })}
                 </div>
               </div>
+              ) : null}
 
-              <div className="d-flex flex-column flex-grow-1" style={{ background: "#f8fafc" }}>
-                {activeConversation && (
+              {showThreadPane ? (
+              <div className="d-flex flex-column flex-grow-1" style={{ background: "#f8fafc", minHeight: isMobile ? "100dvh" : undefined }}>
+                {activeConversation ? (
                   <>
                     <div
                       className="d-flex align-items-center gap-3 px-4 py-3"
                       style={{ background: "#fff", borderBottom: "1px solid #eef2f7" }}
                     >
+                      {isMobile ? (
+                        <Button
+                          onClick={() => setActiveConversationId(null)}
+                          color="light"
+                          size="sm"
+                          className="border"
+                        >
+                          ←
+                        </Button>
+                      ) : null}
                       <Avatar name={activeConversation.otherParty.name} color="#0a9e8f" />
                       <div>
                         <div className="fw-semibold">{activeConversation.otherParty.name}</div>
@@ -395,7 +452,7 @@ export default function MessagesPage() {
                       style={{
                         flex: 1,
                         background: "linear-gradient(180deg, #fbfdff 0%, #f4f8fb 100%)",
-                        padding: "20px",
+                        padding: isMobile ? "16px" : "20px",
                         overflowY: "auto",
                       }}
                     >
@@ -464,7 +521,7 @@ export default function MessagesPage() {
                             border: "none",
                             fontWeight: 600,
                             borderRadius: 20,
-                            padding: "8px 20px",
+                            padding: isMobile ? "8px 14px" : "8px 20px",
                             whiteSpace: "nowrap",
                           }}
                         >
@@ -473,8 +530,9 @@ export default function MessagesPage() {
                       </div>
                     </div>
                   </>
-                )}
+                ) : null}
               </div>
+              ) : null}
             </div>
           </Card>
         )}

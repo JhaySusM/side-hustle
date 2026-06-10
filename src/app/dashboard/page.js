@@ -6,13 +6,54 @@ import { Container, Row, Col, Card, CardBody, Button, Badge } from "reactstrap";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+const FALLBACK_IMG = "https://placehold.co/640x420?text=No+Image";
+
+function FavoriteImage({ src, alt }) {
+  const [imgSrc, setImgSrc] = useState(src || FALLBACK_IMG);
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={imgSrc}
+      alt={alt}
+      onError={() => setImgSrc(FALLBACK_IMG)}
+      style={{
+        width: "100%",
+        height: 180,
+        objectFit: "cover",
+        borderTopLeftRadius: "inherit",
+        borderTopRightRadius: "inherit",
+        background: "#e2e8f0",
+      }}
+    />
+  );
+}
+
 export default function DashboardPage() {
   const [showSoldModal, setShowSoldModal] = useState(false);
   const [pendingSoldId, setPendingSoldId] = useState(null);
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [listings, setListings] = useState([]);
-  const [msgCount, setMsgCount] = useState(0);
+  const [favorites, setFavorites] = useState([]);
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch("/api/dashboard", { cache: "no-store" });
+      const data = await res.json();
+      if (res.ok) {
+        setListings(data.products || []);
+        setFavorites(data.favorites || []);
+      } else {
+        setListings([]);
+        setFavorites([]);
+      }
+    } catch {
+      setListings([]);
+      setFavorites([]);
+    }
+  }
+
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -22,6 +63,7 @@ export default function DashboardPage() {
           router.push("/");
         } else {
           setUser(data.user);
+          await loadDashboard();
         }
       } catch {
         router.push("/");
@@ -29,33 +71,6 @@ export default function DashboardPage() {
     }
     checkAuth();
   }, [router]);
-
-  useEffect(() => {
-    if (!user) return;
-    async function fetchListings() {
-      try {
-        const res = await fetch("/api/dashboard");
-        const data = await res.json();
-        if (res.ok && data.products) {
-          setListings(data.products);
-        } else {
-          setListings([]);
-        }
-      } catch {
-        setListings([]);
-      }
-      // TODO: Replace message count logic with API if needed
-      setMsgCount(0);
-    }
-    fetchListings();
-  }, [user]);
-
-  function handleDelete(id) {
-    const all = JSON.parse(localStorage.getItem("batjee_listings") || "[]");
-    const updated = all.filter((l) => l.id !== id);
-    localStorage.setItem("batjee_listings", JSON.stringify(updated));
-    setListings(updated.filter((l) => l.sellerEmail === user.email));
-  }
 
   if (!user) return null;
 
@@ -101,8 +116,8 @@ export default function DashboardPage() {
           <Col xs={6} md={3}>
             <Card className="border-0 shadow-sm text-center h-100">
               <CardBody>
-                <div style={{ fontSize: 32, fontWeight: 700, color: "#fd7e14" }}>{msgCount}</div>
-                <div className="text-muted small">Messages</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#dc3545" }}>{favorites.length}</div>
+                <div className="text-muted small">Favorites</div>
               </CardBody>
             </Card>
           </Col>
@@ -154,9 +169,7 @@ export default function DashboardPage() {
                                     headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({ id: listing.id, product_status: "Active" })
                                   });
-                                  const res = await fetch("/api/dashboard");
-                                  const data = await res.json();
-                                  if (res.ok && data.products) setListings(data.products);
+                                  await loadDashboard();
                                 }
                               }}
                             >
@@ -174,9 +187,7 @@ export default function DashboardPage() {
                                     headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({ id: listing.id, product_status: "Inactive" })
                                   });
-                                  const res = await fetch("/api/dashboard");
-                                  const data = await res.json();
-                                  if (res.ok && data.products) setListings(data.products);
+                                  await loadDashboard();
                                 }
                               }}
                             >
@@ -217,10 +228,7 @@ export default function DashboardPage() {
                               });
                               setShowSoldModal(false);
                               setPendingSoldId(null);
-                              // Refresh listings
-                              const res = await fetch("/api/dashboard");
-                              const data = await res.json();
-                              if (res.ok && data.products) setListings(data.products);
+                              await loadDashboard();
                             }
                           }}>Yes, mark as Sold</Button>
                         </ModalFooter>
@@ -230,6 +238,60 @@ export default function DashboardPage() {
             )}
           </CardBody>
         </Card>
+
+        <div className="d-flex align-items-center justify-content-between mt-5 mb-3">
+          <h5 className="fw-bold mb-0">Favorites</h5>
+          <Button color="light" size="sm" onClick={() => router.push("/listings")}>Browse listings</Button>
+        </div>
+        <Row className="g-4">
+          {favorites.length === 0 ? (
+            <Col xs={12}>
+              <Card className="border-0 shadow-sm">
+                <CardBody className="py-5 text-center text-muted">
+                  You have no saved favorites yet. Save listings with the heart button to see them here.
+                </CardBody>
+              </Card>
+            </Col>
+          ) : favorites.map((favorite) => (
+            <Col key={favorite.id} md={6} xl={4}>
+              <Card className="border-0 shadow-sm h-100">
+                <FavoriteImage src={favorite.image} alt={favorite.product_name} />
+                <CardBody className="d-flex flex-column gap-3">
+                  <div className="d-flex justify-content-between gap-3 align-items-start">
+                    <div>
+                      <Badge color="secondary" pill className="mb-2">{favorite.category_name || "General"}</Badge>
+                      <h6 className="fw-semibold mb-1">{favorite.product_name}</h6>
+                      <div className="text-muted small">by {favorite.user?.name || "Unknown seller"}</div>
+                      {favorite.user?.address ? <div className="text-muted small">{favorite.user.address}</div> : null}
+                    </div>
+                    <div className="fw-bold text-primary">₱{Number(favorite.price).toLocaleString()}</div>
+                  </div>
+                  <div className="text-muted small">
+                    Saved {favorite.favoriteCreatedAt ? new Date(favorite.favoriteCreatedAt).toLocaleDateString() : "recently"}
+                  </div>
+                  <div className="d-flex gap-2 mt-auto">
+                    <Button color="primary" className="flex-grow-1" onClick={() => router.push(`/product/${favorite.id}`)}>
+                      View listing
+                    </Button>
+                    <Button
+                      color="light"
+                      onClick={async () => {
+                        await fetch("/api/favorites", {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ productId: favorite.id }),
+                        });
+                        setFavorites((current) => current.filter((item) => item.id !== favorite.id));
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            </Col>
+          ))}
+        </Row>
 
         {/* Account Details */}
         <h5 className="fw-bold mt-5 mb-3">Account Details</h5>

@@ -12,6 +12,7 @@ model ProductList {
   category          Category @relation(fields: [category_table_id], references: [id])
   user              User     @relation(fields: [user_id], references: [id])
   conversations     Conversation[]
+  favorites         Favorite[]
 }
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -37,6 +38,7 @@ model User {
   user_type String        @default("user")
   status    String        @default("active")
   products  ProductList[]
+  favorites Favorite[]
   buyerConversations Conversation[]    @relation("BuyerConversations")
   sellerConversations Conversation[]   @relation("SellerConversations")
   sentMessages       ConversationMessage[] @relation("SentMessages")
@@ -80,4 +82,17 @@ model ConversationMessage {
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@index([readAt])
+}
+
+model Favorite {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   ProductList @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+  @@index([productId])
 }

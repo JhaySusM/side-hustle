@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Navbar as RSNavbar,
@@ -22,9 +22,11 @@ import {
 } from "reactstrap";
 import AuthModal from "./AuthModal";
 import { fetchInbox, subscribeToInbox } from "@/lib/message-client";
+import HeroSearchBar from "@/components/HeroSearchBar";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -112,26 +114,56 @@ export default function Navbar() {
     </div>
   );
 
+  const brandLogo = (
+    <Image
+      src="/img/header/Logo TradiGo.png"
+      alt="TradiGo Logo"
+      width={140}
+      height={44}
+      priority
+      style={{ width: "auto", height: "44px", marginTop: "5px", marginBottom: "5px" }}
+    />
+  );
+
+  const loginButtonImage = (
+    <Image
+      src="/img/header/Login Button.png"
+      alt="Login"
+      width={92}
+      height={34}
+      style={{ width: "auto", height: "34px", marginTop: "5px", marginBottom: "5px" }}
+    />
+  );
+
+  const showGlobalSearch = pathname !== "/" && !pathname.startsWith("/admin");
+
   return (
     <>
-      <RSNavbar light expand="lg" className="bg-white shadow-sm py-0" style={{ position: "relative" }}>
-        <Container className="d-flex align-items-center">
+      <RSNavbar
+        light
+        expand="lg"
+        className={`py-0 tradigo-navbar${pathname === "/" ? " tradigo-navbar-home" : ""}`}
+        style={{
+          position: "relative",
+          background: "#0d1f67",
+          minHeight: 42,
+          boxShadow: "0 2px 8px rgba(8, 18, 58, 0.18)",
+        }}
+      >
+        <Container className="d-flex align-items-center tradigo-navbar-container">
 
           {/* Brand */}
-          <NavbarBrand href="/" className="me-3 d-flex align-items-center gap-3">
-            <Image src="/img/batjee logo 2.png" alt="Batjee Logo" width={160} height={64} style={{ objectFit: "contain" }} />
-            <span className="d-none d-lg-inline" style={{ fontSize: "0.85rem", color: "#555", border: "1px solid #ccc", borderRadius: "999px", padding: "3px 12px", whiteSpace: "nowrap" }}>
-              Post • Talk • Deal
-            </span>
+          <NavbarBrand href="/" className="me-3 d-flex align-items-center tradigo-navbar-brand" style={{ paddingTop: 4, paddingBottom: 4 }}>
+            {brandLogo}
           </NavbarBrand>
 
           {/* Desktop nav */}
-          <Collapse navbar className="d-none d-lg-flex">
-            <Nav className="mx-auto" navbar>
-              <NavItem><NavLink href="/#home">Home</NavLink></NavItem>
-              <NavItem><NavLink href="/#marketplace">Marketplace</NavLink></NavItem>
-              <NavItem><NavLink href="/#about">About</NavLink></NavItem>
-              <NavItem><NavLink href="/#contact">Contact</NavLink></NavItem>
+          <Collapse navbar className="d-none d-lg-flex flex-grow-1 justify-content-end">
+            <Nav className="align-items-center me-3" navbar>
+              <NavItem><NavLink href="/#home" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>Home</NavLink></NavItem>
+              <NavItem><NavLink href="/#marketplace" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>Marketplace</NavLink></NavItem>
+              <NavItem><NavLink href="/#about" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>About</NavLink></NavItem>
+              <NavItem><NavLink href="/#contact" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>Contact</NavLink></NavItem>
             </Nav>
 
             {user ? (
@@ -182,16 +214,17 @@ export default function Navbar() {
             ) : (
               <Button
                 onClick={handlePostClick}
-                style={{ backgroundColor: "#0a9e8f", border: "none", borderRadius: "8px", fontWeight: 600, padding: "8px 20px", whiteSpace: "nowrap" }}
+                style={{ background: "transparent", border: "none", padding: 0, whiteSpace: "nowrap" }}
               >
-                Login
+                {loginButtonImage}
               </Button>
             )}
           </Collapse>
 
           {/* Mobile toggler — pushed to right */}
           <NavbarToggler
-            className="d-lg-none ms-auto border-0"
+            className="d-lg-none ms-auto border-0 tradigo-navbar-toggler"
+            style={{ filter: "invert(1)" }}
             onClick={() => setIsOpen(!isOpen)}
           />
         </Container>
@@ -200,7 +233,7 @@ export default function Navbar() {
         {isOpen && (
           <div
             ref={mobileMenuRef}
-            className="d-lg-none"
+            className="d-lg-none tradigo-mobile-menu"
             style={{
               position: "absolute",
               top: "100%",
@@ -255,15 +288,23 @@ export default function Navbar() {
                 <Button
                   className="w-100"
                   onClick={handlePostClick}
-                  style={{ backgroundColor: "#0a9e8f", border: "none", borderRadius: "8px", fontWeight: 600 }}
+                  style={{ background: "transparent", border: "none", padding: 0 }}
                 >
-                  Login
+                  {loginButtonImage}
                 </Button>
               </div>
             )}
           </div>
         )}
       </RSNavbar>
+
+      {showGlobalSearch ? (
+        <section className="pt-3 pb-2">
+          <Container>
+            <HeroSearchBar />
+          </Container>
+        </section>
+      ) : null}
 
       <AuthModal
         isOpen={authOpen}

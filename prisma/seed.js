@@ -5,12 +5,16 @@ async function main() {
   const categories = [
     'Electronics',
     'Vehicles',
+    'Property For Rent',
+    'Clothes',
+    'Property',
+    'Service',
+    'Food',
     'Furniture',
-    'Fashion',
-    'Sports',
     'Books',
-    'Music',
-    'Gaming',
+    'Sports',
+    'Toys',
+    'Tools',
   ];
 
   for (const name of categories) {

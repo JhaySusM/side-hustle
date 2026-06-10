@@ -1,12 +1,16 @@
 "use client";
-import { useState } from "react";
-import { Row, Col, Button } from "reactstrap";
+import { useEffect, useState } from "react";
+import { Button } from "reactstrap";
 import Image from "next/image";
 import AuthModal from "./AuthModal";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+
+const MOBILE_LINKS = ["How It Works?", "Popular Categories", "Trending Searches", "About Us", "TradiGo"];
 
 export default function CallToAction() {
   const router = useRouter();
+  const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
   const [user, setUser] = useState(() => {
     if (typeof window === "undefined") {
       return null;
@@ -17,6 +21,21 @@ export default function CallToAction() {
   });
   const [authOpen, setAuthOpen] = useState(false);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 575.98px)");
+
+    function syncViewport() {
+      setIsMobile(mediaQuery.matches);
+    }
+
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncViewport);
+    };
+  }, []);
+
   function handleClick() {
     if (user) {
       router.push("/post");
@@ -25,26 +44,63 @@ export default function CallToAction() {
     }
   }
 
+  const showMobileHome = pathname === "/" && isMobile;
+
   return (
-    <section className="container py-5">
-      <Row className="align-items-center">
-        <Col md={7}>
-          <h3 className="fw-bold mb-3">Ready to Start Selling?</h3>
-          <p>Join thousands of sellers on Batjee.com and reach buyers in your area today.</p>
-          <Button color="success" size="lg" onClick={handleClick}>
-            Post Your First Ad — Free
-          </Button>
-        </Col>
-        <Col md={5} className="text-center mt-4 mt-md-0">
+    <section id="about" className="container py-4 py-md-5">
+      {showMobileHome ? (
+        <div className="cta-mobile-shell">
+          {MOBILE_LINKS.map((item) => (
+            <button key={item} type="button" className="cta-mobile-link-row">
+              <span>{item}</span>
+              <span className="cta-mobile-link-arrow" aria-hidden="true">›</span>
+            </button>
+          ))}
+
+          <div className="cta-app-banner cta-mobile-app-banner">
+            <Image
+              src="/img/banner/buttom_banner.png"
+              alt="Download TradiGo Today"
+              width={1180}
+              height={240}
+              className="cta-app-image"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {!showMobileHome ? (
+        <div className="cta-promo-stack">
+        <div className="cta-sell-card">
+          <div className="cta-sell-copy">
+            <h3 className="cta-sell-title">Ready to Start Selling?</h3>
+            <p className="cta-sell-text">Join thousands of sellers on TradiGo.com and reach buyers in your area today.</p>
+            <Button className="cta-sell-button" onClick={handleClick}>
+              Post your Ad- Free
+            </Button>
+          </div>
+          <div className="cta-sell-banner">
+            <Image
+              src="/img/banner/shop_banner.png"
+              alt="Shopping online banner"
+              width={520}
+              height={220}
+              className="cta-sell-image"
+            />
+          </div>
+        </div>
+
+        <div className="cta-app-banner">
           <Image
-            src="https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80"
-            alt="Woman shopping"
-            width={400}
-            height={280}
-            className="img-fluid rounded shadow"
+            src="/img/banner/buttom_banner.png"
+            alt="Download TradiGo Today"
+            width={1180}
+            height={240}
+            className="cta-app-image"
           />
-        </Col>
-      </Row>
+        </div>
+        </div>
+      ) : null}
 
       <AuthModal
         isOpen={authOpen}

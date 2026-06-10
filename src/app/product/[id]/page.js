@@ -230,6 +230,18 @@ export default function ProductDetailPage() {
                     ) : null}
                   </CardBody>
                 </Card>
+
+                <Card className="product-detail-card border-0 mt-4">
+                  <CardBody className="p-4">
+                    <h2 className="product-detail-safety-title mb-3">Your safety matters to us!</h2>
+                    <ul className="product-detail-safety-list mb-0">
+                      <li>Only meet in public / crowded places such as metro stations and malls.</li>
+                      <li>Never go alone to meet a buyer / seller, always take someone with you.</li>
+                      <li>Check and inspect the product properly before purchasing it.</li>
+                      <li>Never pay / transfer any money in advance before inspecting the product.</li>
+                    </ul>
+                  </CardBody>
+                </Card>
               </Col>
 
               <Col lg={5}>
