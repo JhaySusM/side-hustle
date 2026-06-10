@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const LOCATION_OPTIONS = [
   "Pakistan",
@@ -32,11 +32,17 @@ function LocationPinIcon() {
 
 export default function HeroSearchBar({ homepage = false }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialQuery = useMemo(() => searchParams.get("q") || "", [searchParams]);
-  const initialLocation = useMemo(() => searchParams.get("location") || "Pakistan", [searchParams]);
-  const [location, setLocation] = useState(initialLocation);
-  const [query, setQuery] = useState(initialQuery);
+  const [location, setLocation] = useState("Pakistan");
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextQuery = params.get("q") || "";
+    const nextLocation = params.get("location") || "Pakistan";
+
+    setQuery(nextQuery);
+    setLocation(nextLocation);
+  }, []);
 
   function handleSearch(event) {
     event.preventDefault();
