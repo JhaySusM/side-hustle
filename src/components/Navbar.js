@@ -1,11 +1,10 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Navbar as RSNavbar,
   NavbarBrand,
-  NavbarToggler,
   Collapse,
   Nav,
   NavItem,
@@ -27,13 +26,11 @@ import HeroSearchBar from "@/components/HeroSearchBar";
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
-  const mobileMenuRef = useRef(null);
 
   useEffect(() => {
     async function fetchUser() {
@@ -70,31 +67,18 @@ export default function Navbar() {
     });
   }, [user]);
 
-  // Close mobile menu on outside click
-  useEffect(() => {
-    function handleOutsideClick(e) {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    }
-    if (isOpen) document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, [isOpen]);
-
   function handlePostClick() {
     if (!user) {
       setAuthOpen(true);
     } else {
       router.push("/post");
     }
-    setIsOpen(false);
   }
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     router.push("/");
-    setIsOpen(false);
     setDropdownOpen(false);
     setLogoutModalOpen(false);
   }
@@ -151,13 +135,10 @@ export default function Navbar() {
         }}
       >
         <Container className="d-flex align-items-center tradigo-navbar-container">
-
-          {/* Brand */}
           <NavbarBrand href="/" className="me-3 d-flex align-items-center tradigo-navbar-brand" style={{ paddingTop: 4, paddingBottom: 4 }}>
             {brandLogo}
           </NavbarBrand>
 
-          {/* Desktop nav */}
           <Collapse navbar className="d-none d-lg-flex flex-grow-1 justify-content-end">
             <Nav className="align-items-center me-3" navbar>
               <NavItem><NavLink href="/#home" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>Home</NavLink></NavItem>
@@ -168,7 +149,6 @@ export default function Navbar() {
 
             {user ? (
               <div className="d-flex align-items-center gap-2">
-                {/* Bell icon */}
                 <div
                   onClick={() => router.push("/messages")}
                   style={{ position: "relative", cursor: "pointer", padding: "4px 6px" }}
@@ -220,82 +200,7 @@ export default function Navbar() {
               </Button>
             )}
           </Collapse>
-
-          {/* Mobile toggler — pushed to right */}
-          <NavbarToggler
-            className="d-lg-none ms-auto border-0 tradigo-navbar-toggler"
-            style={{ filter: "invert(1)" }}
-            onClick={() => setIsOpen(!isOpen)}
-          />
         </Container>
-
-        {/* Mobile dropdown panel */}
-        {isOpen && (
-          <div
-            ref={mobileMenuRef}
-            className="d-lg-none tradigo-mobile-menu"
-            style={{
-              position: "absolute",
-              top: "100%",
-              right: 0,
-              width: 240,
-              background: "#fff",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-              borderRadius: "0 0 0 12px",
-              zIndex: 1050,
-              padding: "8px 0",
-            }}
-          >
-            <Nav vertical>
-              <NavItem>
-                <NavLink href="/#home" className="px-4 py-2" onClick={() => setIsOpen(false)}>Home</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink href="/#marketplace" className="px-4 py-2" onClick={() => setIsOpen(false)}>Marketplace</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink href="/#about" className="px-4 py-2" onClick={() => setIsOpen(false)}>About</NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink href="/#contact" className="px-4 py-2" onClick={() => setIsOpen(false)}>Contact</NavLink>
-              </NavItem>
-            </Nav>
-            <hr className="my-2" />
-            {user ? (
-              <div className="px-4 pb-2">
-                <div className="d-flex align-items-center gap-2 mb-2">
-                  {userAvatar}
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{user.name}</div>
-                    <div style={{ fontSize: 12, color: "#888" }}>{user.email}</div>
-                  </div>
-                </div>
-                <Button size="sm" color="light" className="w-100 mb-1 border" onClick={() => { router.push("/dashboard"); setIsOpen(false); }}>
-                  My Dashboard
-                </Button>
-                <Button size="sm" color="light" className="w-100 mb-1 border d-flex align-items-center justify-content-center gap-2" onClick={() => { router.push("/messages"); setIsOpen(false); }}>
-                  My Messages
-                  {unreadCount > 0 && (
-                    <span className="badge bg-danger rounded-pill" style={{ fontSize: 11 }}>{unreadCount}</span>
-                  )}
-                </Button>
-                <Button size="sm" color="danger" outline className="w-100" onClick={openLogoutModal}>
-                  Sign Out
-                </Button>
-              </div>
-            ) : (
-              <div className="px-4 pb-2">
-                <Button
-                  className="w-100"
-                  onClick={handlePostClick}
-                  style={{ background: "transparent", border: "none", padding: 0 }}
-                >
-                  {loginButtonImage}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
       </RSNavbar>
 
       {showGlobalSearch ? (
