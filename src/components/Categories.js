@@ -86,8 +86,8 @@ export default function Categories() {
                 >
                   <Image
                     src={cat.image_url}
-                    width={72}
-                    height={72}
+                    width={78}
+                    height={78}
                     alt={cat.display_name || cat.category_name}
                     className="category-mobile-icon-image"
                   />

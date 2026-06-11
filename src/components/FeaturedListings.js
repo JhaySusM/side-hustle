@@ -347,7 +347,7 @@ function FeaturedListings({ filter, search: searchProp }) {
           <div className="featured-mobile-home-shell">
             <div className="featured-mid-banner featured-mobile-home-banner">
               <Image
-                src="/img/banner/mid_banner.png"
+                src="/img/banner/mobile_view/mid_banner_mobile.png"
                 alt="Post your first ad"
                 width={1180}
                 height={220}
