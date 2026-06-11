@@ -105,7 +105,7 @@ export default function Navbar() {
       width={140}
       height={44}
       priority
-      style={{ width: "auto", height: "44px", marginTop: "5px", marginBottom: "5px" }}
+      className="tradigo-navbar-logo-image"
     />
   );
 
@@ -115,7 +115,7 @@ export default function Navbar() {
       alt="Login"
       width={92}
       height={34}
-      style={{ width: "auto", height: "34px", marginTop: "5px", marginBottom: "5px" }}
+      className="tradigo-navbar-login-image"
     />
   );
 
@@ -202,6 +202,8 @@ export default function Navbar() {
           </Collapse>
         </Container>
       </RSNavbar>
+
+      <div className="tradigo-navbar-mobile-spacer" aria-hidden="true" />
 
       {showGlobalSearch ? (
         <section className="pt-3 pb-2">

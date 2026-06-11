@@ -127,7 +127,35 @@ body {
   display: none;
 }
 
+.tradigo-navbar-logo-image {
+  width: 140px;
+  height: auto;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.tradigo-navbar-login-image {
+  width: 92px;
+  height: auto;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
 @media (max-width: 767.98px) {
+  .tradigo-navbar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 45;
+  }
+
+  .tradigo-navbar-mobile-spacer {
+    display: block;
+    height: 56px;
+  }
+
   .hero-search-shell {
     grid-template-columns: 1fr;
   }
@@ -208,6 +236,7 @@ body {
 
 .featured-mid-banner {
   margin: 10px 0 4px;
+  width: 100%;
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
@@ -215,7 +244,8 @@ body {
 
 .featured-mid-banner-image {
   width: 100%;
-  height: auto;
+  height: 320px;
+  object-fit: cover;
   display: block;
 }
 
@@ -247,6 +277,18 @@ body {
   margin: 0 auto;
 }
 
+.category-icon-image {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.category-mobile-icon-image {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
 .categories-panel {
   padding-top: 8px;
 }
@@ -266,17 +308,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  border: 1px solid #d7e3ef;
-  border-radius: 8px;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  transition: transform 0.18s ease;
 }
 
 .category-tile:hover .category-icon-frame {
   transform: translateY(-2px);
-  border-color: #7db4e8;
-  box-shadow: 0 10px 22px rgba(14, 90, 160, 0.14);
 }
 
 .category-label {
@@ -477,15 +517,15 @@ body {
   }
 
   .category-mobile-tile {
-    min-height: 92px;
-    border: 1px solid #d4dce6;
-    border-radius: 8px;
-    background: #ffffff;
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+    min-height: 76px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    padding: 0;
   }
 
   .categories-mobile-dots {
@@ -722,6 +762,7 @@ body {
   }
 
   .tradigo-navbar-home .navbar-brand img {
+    width: auto !important;
     height: 42px !important;
   }
 

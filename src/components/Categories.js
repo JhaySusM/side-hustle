@@ -86,10 +86,10 @@ export default function Categories() {
                 >
                   <Image
                     src={cat.image_url}
-                    width={58}
-                    height={58}
+                    width={72}
+                    height={72}
                     alt={cat.display_name || cat.category_name}
-                    style={{ width: "auto", height: "auto", maxWidth: "100%", maxHeight: "100%" }}
+                    className="category-mobile-icon-image"
                   />
                 </button>
               ))}
@@ -124,7 +124,7 @@ export default function Categories() {
                       width={44}
                       height={44}
                       alt={cat.display_name || cat.category_name}
-                      style={{ width: "auto", height: "auto", maxWidth: "100%", maxHeight: "100%" }}
+                      className="category-icon-image"
                     />
                   </div>
                 </div>
