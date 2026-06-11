@@ -109,10 +109,10 @@ export default function Categories() {
         ))}
       </div>
 
-      <Row className="g-2 g-md-3 justify-content-start">
+      <Row className="g-2 g-md-3 justify-content-start categories-desktop-grid">
         {categories.map((cat) => {
           return (
-            <Col key={cat.id} xs={4} sm={3} md={2} lg={1} className="text-center">
+            <Col key={cat.id} xs={4} sm={3} md={2} lg={1} className="text-center categories-desktop-col">
               <div
                 onClick={() => router.push(`/listings?category=${encodeURIComponent(cat.category_name)}`)}
                 className="category-tile"
@@ -121,8 +121,8 @@ export default function Categories() {
                   <div className="category-icon mb-0">
                     <Image
                       src={cat.image_url}
-                      width={44}
-                      height={44}
+                      width={62}
+                      height={62}
                       alt={cat.display_name || cat.category_name}
                       className="category-icon-image"
                     />
