@@ -474,11 +474,56 @@ tr:hover td{background:#f5f9fc}
 .chip-input{display:flex;flex-wrap:wrap;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px;cursor:text}
 .chip-tag{background:var(--teal-l);color:var(--teal);border-radius:12px;padding:3px 10px;font-size:12px;
   font-weight:600;display:flex;align-items:center;gap:4px}
-.referral-card{background:linear-gradient(135deg,#0f766e 0%, #0b766e 50%, #0ea5a2 100%);color:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:var(--elev-soft)}
-.kpi-row{display:flex;gap:16px;flex-wrap:wrap}
-.kpi{background:rgba(255,255,255,.15);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:100px}
-.kpi .kv{font-size:22px;font-weight:800}
-.kpi .kl{font-size:11px;opacity:.75}
+.referral-shell{display:flex;flex-direction:column;gap:22px}
+.referral-card{background:linear-gradient(135deg,#101f3f 0%, #17345f 54%, #245286 100%);color:#fff;border-radius:24px;padding:0;box-shadow:0 24px 56px rgba(16,31,63,.24);overflow:hidden;position:relative}
+.referral-card::before{content:'';position:absolute;right:-70px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 72%)}
+.referral-card::after{content:'';position:absolute;left:24px;bottom:-96px;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle, rgba(239,108,47,.28) 0%, rgba(239,108,47,0) 74%)}
+.referral-hero{position:relative;z-index:1;padding:24px 26px 12px}
+.referral-kicker{font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:rgba(255,255,255,.68);margin-bottom:8px}
+.referral-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.referral-head h3{font-family:'Sora',sans-serif;font-size:28px;line-height:1.12;margin:0 0 10px}
+.referral-head p{max-width:540px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.8)}
+.referral-chip{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);font-size:12px;font-weight:700;white-space:nowrap}
+.referral-chip::before{content:'';width:8px;height:8px;border-radius:50%;background:#fbbf24;box-shadow:0 0 0 6px rgba(251,191,36,.14)}
+.kpi-row{position:relative;z-index:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;padding:12px 26px 26px}
+.kpi{background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:16px 14px;text-align:left;min-width:0}
+.kpi .kv{font-family:'Sora',sans-serif;font-size:28px;font-weight:800;line-height:1;color:#0f172a}
+.kpi .kl{margin-top:10px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#64748b;opacity:1}
+.referral-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr);gap:20px}
+.referral-panel{padding:0;overflow:hidden}
+.referral-panel-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid rgba(215,222,234,.95);background:linear-gradient(180deg,#ffffff 0%,#fbfcff 100%)}
+.referral-panel-head h3{margin:0;font-family:'Sora',sans-serif;font-size:18px}
+.referral-panel-head p{margin:4px 0 0;font-size:13px;color:var(--mut)}
+.referral-empty-card{padding:32px 22px;background:linear-gradient(180deg,#ffffff 0%,#fbfcff 100%)}
+.referral-empty-card strong{display:block;font-size:18px;color:#0f172a;margin-bottom:8px}
+.referral-empty-card p{font-size:13px;line-height:1.7;color:var(--mut);max-width:560px}
+.referral-empty-table{margin-top:18px;border:1px solid rgba(215,222,234,.95);border-radius:18px;padding:18px;background:#fff}
+.referral-empty-table .tbl-wrap{overflow:hidden}
+.referral-empty-table table{width:100%}
+.referral-empty-table td{padding:24px 12px;text-align:center;color:var(--mut)}
+.referral-side{display:flex;flex-direction:column;gap:20px}
+.referral-settings{padding:22px}
+.referral-settings .card-h{margin-bottom:16px}
+.referral-settings-note{margin-top:12px;font-size:12px;line-height:1.6;color:var(--mut)}
+.referral-month-card{padding:22px}
+.referral-month-empty{display:flex;flex-direction:column;gap:12px}
+.referral-month-row{padding:12px 14px;border:1px solid rgba(215,222,234,.95);border-radius:14px;background:#fff}
+.referral-month-row .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:8px}
+.referral-month-row .top span:last-child{font-weight:800;color:#475569}
+
+@media (max-width:1280px){
+  .kpi-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .referral-grid{grid-template-columns:1fr}
+}
+
+@media (max-width:860px){
+  .referral-head{flex-direction:column}
+  .kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (max-width:600px){
+  .kpi-row{grid-template-columns:1fr}
+}
 input[type=range]{accent-color:var(--teal);width:100%}
 .toggle{position:relative;width:40px;height:22px}
 .toggle input{opacity:0;width:0;height:0}
@@ -983,78 +1028,81 @@ input:checked+.slider:before{transform:translateX(18px)}
 
     <!-- ══════════════════ REFERRAL TRACKING ══════════════════ -->
     <div class="page" id="page-referrals">
-      <div class="referral-card">
-        <div style="font-size:18px;font-weight:800;margin-bottom:12px">🎁 Referral Program Overview</div>
-        <div class="kpi-row">
-          <div class="kpi"><div class="kv">48,210</div><div class="kl">Total Referrers</div></div>
-          <div class="kpi"><div class="kv">112,840</div><div class="kl">Total Referred Users</div></div>
-          <div class="kpi"><div class="kv">Rs 2.3 each</div><div class="kl">Avg Reward Paid</div></div>
-          <div class="kpi"><div class="kv">Rs 259K</div><div class="kl">Total Rewards Paid</div></div>
-          <div class="kpi"><div class="kv">34.2%</div><div class="kl">Referral Conversion</div></div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
-        <div class="card">
-          <div class="card-h"><h3>Top Referrers</h3><button class="btn btn-outline btn-sm">Export</button></div>
-          <div class="tbl-wrap">
-            <table>
-              <tr><th>User</th><th>Referrals</th><th>Converted</th><th>Rate</th><th>Rewards</th><th>Status</th></tr>
-              <tr>
-                <td><div class="flex"><div class="avatar" style="background:#0a6e6e">Z</div>Zara Hussain</div></td>
-                <td>842</td><td>312</td><td style="color:var(--ok);font-weight:700">37%</td><td>Rs 1,872</td>
-                <td><span class="tag tag-ok">Active</span></td>
-              </tr>
-              <tr>
-                <td><div class="flex"><div class="avatar" style="background:#ff6b35">M</div>Mohsin Ali</div></td>
-                <td>624</td><td>218</td><td style="color:var(--ok);font-weight:700">35%</td><td>Rs 1,308</td>
-                <td><span class="tag tag-ok">Active</span></td>
-              </tr>
-              <tr>
-                <td><div class="flex"><div class="avatar" style="background:#2563eb">F</div>Farhan Siddiqui</div></td>
-                <td>511</td><td>142</td><td style="color:var(--warn);font-weight:700">28%</td><td>Rs 852</td>
-                <td><span class="tag tag-ok">Active</span></td>
-              </tr>
-              <tr>
-                <td><div class="flex"><div class="avatar" style="background:#8b5cf6">I</div>Iqra Tariq</div></td>
-                <td>398</td><td>169</td><td style="color:var(--ok);font-weight:700">42%</td><td>Rs 1,014</td>
-                <td><span class="tag tag-ok">Active</span></td>
-              </tr>
-              <tr>
-                <td><div class="flex"><div class="avatar" style="background:#dc2626">X</div>Suspicious Bot</div></td>
-                <td>1,240</td><td>4</td><td style="color:var(--danger);font-weight:700">0.3%</td><td>Rs 0</td>
-                <td><span class="tag tag-danger">Flagged</span></td>
-              </tr>
-            </table>
+      <div class="referral-shell">
+        <div class="referral-card">
+          <div class="referral-hero">
+            <div class="referral-kicker">Referral Growth Desk</div>
+            <div class="referral-head">
+              <div>
+                <h3>Track referral adoption, rewards, and fraud checks from one place.</h3>
+                <p>This workspace is ready for live referral metrics, but there is no referral dataset connected yet. Use it as the designed control surface for the future program rollout.</p>
+              </div>
+              <div class="referral-chip">No live referral feed</div>
+            </div>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi"><div class="kv">—</div><div class="kl">Total Referrers</div></div>
+            <div class="kpi"><div class="kv">—</div><div class="kl">Referred Users</div></div>
+            <div class="kpi"><div class="kv">—</div><div class="kl">Avg Reward Paid</div></div>
+            <div class="kpi"><div class="kv">—</div><div class="kl">Rewards Released</div></div>
+            <div class="kpi"><div class="kv">—</div><div class="kl">Conversion Rate</div></div>
           </div>
         </div>
-        <div>
-          <div class="card" style="margin-bottom:20px">
-            <div class="card-h"><h3>⚙️ Program Settings</h3></div>
-            <div class="form-group" style="margin-bottom:12px">
-              <label>Reward Per Successful Referral</label>
-              <input type="number" value="6" placeholder="Rs">
+
+        <div class="referral-grid">
+          <div class="card referral-panel">
+            <div class="referral-panel-head">
+              <div>
+                <h3>Top Referrers</h3>
+                <p>Highest-performing advocates will appear here once referrals start syncing.</p>
+              </div>
+              <button class="btn btn-outline btn-sm">Export</button>
             </div>
-            <div class="form-group" style="margin-bottom:12px">
-              <label>Min. Listings to Qualify (Referred User)</label>
-              <input type="number" value="1">
+            <div class="referral-empty-card">
+              <strong>No referral leaderboard yet.</strong>
+              <p>Once the referral program begins collecting invitations, conversions, and rewards, this panel can highlight top referrers and flag suspicious accounts for review.</p>
+              <div class="referral-empty-table">
+                <div class="tbl-wrap">
+                  <table>
+                    <tr><th>User</th><th>Referrals</th><th>Converted</th><th>Rate</th><th>Rewards</th><th>Status</th></tr>
+                    <tr><td colspan="6">No referral data available.</td></tr>
+                  </table>
+                </div>
+              </div>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-              <span style="font-size:13px;font-weight:600">Fraud Detection</span>
-              <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-              <span style="font-size:13px;font-weight:600">Program Active</span>
-              <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
-            </div>
-            <button class="btn btn-teal" style="width:100%">Save Settings</button>
           </div>
-          <div class="card">
-            <div class="card-h"><h3>📊 This Month</h3></div>
-            <div style="display:flex;flex-direction:column;gap:10px">
-              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>New Referrals</span><span style="font-weight:700">8,412</span></div><div class="progress-bar"><div class="progress-fill" style="width:84%;background:var(--teal)"></div></div></div>
-              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Conversions</span><span style="font-weight:700">2,880</span></div><div class="progress-bar"><div class="progress-fill" style="width:34%;background:var(--ok)"></div></div></div>
-              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Rewards Paid</span><span style="font-weight:700">Rs 17,280</span></div><div class="progress-bar"><div class="progress-fill" style="width:55%;background:var(--warn)"></div></div></div>
-              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Fraud Blocked</span><span style="font-weight:700">142</span></div><div class="progress-bar"><div class="progress-fill" style="width:12%;background:var(--danger)"></div></div></div>
+
+          <div class="referral-side">
+            <div class="card referral-settings">
+              <div class="card-h"><h3>⚙️ Program Settings</h3></div>
+              <div class="form-group" style="margin-bottom:12px">
+                <label>Reward Per Successful Referral</label>
+                <input type="number" value="" placeholder="Set reward amount">
+              </div>
+              <div class="form-group" style="margin-bottom:12px">
+                <label>Min. Listings to Qualify (Referred User)</label>
+                <input type="number" value="" placeholder="Set minimum listing count">
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <span style="font-size:13px;font-weight:600">Fraud Detection</span>
+                <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <span style="font-size:13px;font-weight:600">Program Active</span>
+                <label class="toggle"><input type="checkbox"><span class="slider"></span></label>
+              </div>
+              <button class="btn btn-teal" style="width:100%">Save Settings</button>
+              <div class="referral-settings-note">Settings can be prepared now even if referral activity has not started yet.</div>
+            </div>
+
+            <div class="card referral-month-card">
+              <div class="card-h"><h3>📊 This Month</h3></div>
+              <div class="referral-month-empty">
+                <div class="referral-month-row"><div class="top"><span>New Referrals</span><span>—</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--teal)"></div></div></div>
+                <div class="referral-month-row"><div class="top"><span>Conversions</span><span>—</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--ok)"></div></div></div>
+                <div class="referral-month-row"><div class="top"><span>Rewards Paid</span><span>—</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--warn)"></div></div></div>
+                <div class="referral-month-row"><div class="top"><span>Fraud Blocked</span><span>—</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--danger)"></div></div></div>
+              </div>
             </div>
           </div>
         </div>
