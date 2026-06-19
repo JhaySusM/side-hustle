@@ -5,68 +5,69 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TradiGO — Backoffice</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Sora:wght@600;700;800&display=swap');
 
 :root {
-  --teal:#0d9488; --teal-d:#0b766e; --teal-l:#d7f3ef;
-  --ink:#0f172a; --mut:#64748b; --line:#d8e1ea;
-  --bg:#edf2fb; --card:#ffffff; --accent:#f97316;
+  --teal:#0f766e; --teal-d:#115e59; --teal-l:#d1fae5;
+  --ink:#111827; --mut:#6b7280; --line:#d7deea;
+  --bg:#f3f5fb; --card:#ffffff; --accent:#ef6c2f;
   --ok:#16a34a; --ok-l:#dcfce7;
   --warn:#d97706; --warn-l:#fef3c7;
   --danger:#dc2626; --danger-l:#fee2e2;
   --info:#2563eb; --info-l:#dbeafe;
-  --elev:0 16px 40px rgba(15,23,42,.08);
-  --elev-soft:0 6px 20px rgba(15,23,42,.08);
-  --sidebar:236px;
+  --elev:0 22px 55px rgba(17,24,39,.12);
+  --elev-soft:0 10px 28px rgba(17,24,39,.08);
+  --sidebar:250px;
 }
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Manrope',system-ui,Arial,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Plus Jakarta Sans',system-ui,Arial,sans-serif}
 body{background:
-  radial-gradient(900px 480px at 12% -10%, #d7e7ff 0%, transparent 60%),
-  radial-gradient(700px 420px at 100% 0%, #e8dcff 0%, transparent 60%),
+  radial-gradient(900px 500px at -5% -15%, #d7efe9 0%, transparent 62%),
+  radial-gradient(720px 460px at 110% -10%, #ffe5d4 0%, transparent 60%),
+  linear-gradient(180deg, #f8fafd 0%, #eef2f8 100%),
   var(--bg);
   color:var(--ink);display:flex;min-height:100vh}
 
 /* ── Sidebar ─────────────────────────────── */
 .sidebar{
   width:var(--sidebar);min-width:var(--sidebar);
-  background:linear-gradient(180deg,#0d1f67 0%, #1f3aa4 100%);
+  background:linear-gradient(180deg,#0d1b3c 0%, #132a56 55%, #1f3f78 100%);
   display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;
-  box-shadow:0 20px 40px rgba(13,31,103,.28);
-  border-right:1px solid rgba(255,255,255,.1);
+  box-shadow:0 26px 54px rgba(13,27,60,.35);
+  border-right:1px solid rgba(255,255,255,.14);
 }
 .sidebar::before{
   content:'';
   position:absolute;
-  right:-120px;
-  top:120px;
-  width:240px;
-  height:240px;
+  right:-140px;
+  top:90px;
+  width:280px;
+  height:280px;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(96,165,250,.22) 0%, rgba(96,165,250,0) 70%);
+  background:radial-gradient(circle, rgba(251,146,60,.2) 0%, rgba(251,146,60,0) 70%);
   pointer-events:none;
 }
-.sb-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.16)}
-.sb-logo .brand-row{display:flex;align-items:center;gap:6px}
+.sb-logo{padding:22px 16px 16px;border-bottom:1px solid rgba(255,255,255,.2)}
+.sb-logo .brand-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:12px;background:rgba(255,255,255,.06)}
 .sb-logo .brand-logo{display:block;height:19px;width:auto;max-width:none}
-.sb-logo .name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;color:#9ec3f5;letter-spacing:.2px}
+.sb-logo .name{font-family:'Sora',sans-serif;font-weight:700;font-size:19px;color:#dbeafe;letter-spacing:.2px}
 .sb-logo .name span{color:#60a5fa}
-.sb-logo .sub{font-size:11px;color:rgba(255,255,255,.72);margin-top:2px}
+.sb-logo .sub{font-size:11px;color:rgba(219,234,254,.88);margin-top:8px;padding-left:8px;letter-spacing:.35px;text-transform:uppercase}
 .sb-nav{flex:1;overflow-y:auto;padding:10px 0}
 .nav-section{font-size:10px;font-weight:700;color:rgba(255,255,255,.4);
-  padding:14px 18px 6px;letter-spacing:.8px;text-transform:uppercase}
+  padding:16px 18px 6px;letter-spacing:1.1px;text-transform:uppercase}
 .nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;margin:0 10px;cursor:pointer;
-  color:rgba(255,255,255,.84);font-size:13.5px;transition:.2s;border-radius:12px;border:1px solid transparent}
-.nav-item:hover{background:rgba(255,255,255,.12);color:#fff;transform:translateX(2px)}
-.nav-item.active{background:linear-gradient(135deg, rgba(96,165,250,.26), rgba(59,130,246,.12));
-  color:#fff;border-color:rgba(147,197,253,.45)}
+  color:rgba(224,231,255,.92);font-size:13.5px;transition:.2s;border-radius:12px;border:1px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.14);color:#fff;transform:translateX(3px)}
+.nav-item.active{background:linear-gradient(135deg, rgba(251,146,60,.26), rgba(251,146,60,.08));
+  color:#fff;border-color:rgba(253,186,116,.65)}
 .nav-item .ic{font-size:16px;width:20px;text-align:center}
 .sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.64)}
 
 /* ── Main ─────────────────────────────────── */
 .main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:0 24px;height:64px;
+.topbar{background:rgba(255,255,255,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:0 24px;height:70px;
   display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
-.topbar .page-title{font-size:20px;font-weight:800;letter-spacing:.1px;font-family:'Space Grotesk',sans-serif}
+.topbar .page-title{font-size:21px;font-weight:800;letter-spacing:.1px;font-family:'Sora',sans-serif}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .badge-dot{position:relative}
 .badge-dot .dot{position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--accent);border-radius:50%}
@@ -82,9 +83,9 @@ body{background:
 .profile-item.danger{color:var(--danger)}
 .search-top{position:relative}
 .search-top input{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);
-  border-radius:12px;padding:9px 12px 9px 32px;font-size:13px;color:var(--ink);outline:none;width:260px;
+  border-radius:14px;padding:10px 12px 10px 34px;font-size:13px;color:var(--ink);outline:none;width:260px;
   transition:.2s;box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
-.search-top input:focus{border-color:var(--teal);background:#fff;width:320px;box-shadow:0 0 0 3px rgba(13,148,136,.14)}
+.search-top input:focus{border-color:var(--accent);background:#fff;width:320px;box-shadow:0 0 0 3px rgba(239,108,47,.14)}
 .search-top .s-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none}
 .search-dropdown{position:absolute;top:calc(100% + 6px);left:0;width:360px;background:#fff;
   border:1px solid var(--line);border-radius:14px;box-shadow:var(--elev);
@@ -105,19 +106,90 @@ body{background:
 .sd-item .sd-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
 .sd-empty{padding:24px;text-align:center;color:var(--mut);font-size:13px}
 .sd-divider{height:1px;background:var(--line);margin:0 14px}
-.content{padding:24px;flex:1}
+.content{padding:26px;flex:1}
 
 /* ── Cards & Grid ─────────────────────────── */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:24px}
-.stat{background:linear-gradient(180deg,#fff 0%, #fbfdff 100%);border:1px solid rgba(208,218,230,.9);border-radius:18px;padding:16px;position:relative;overflow:hidden;box-shadow:var(--elev-soft)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat{background:linear-gradient(180deg,#ffffff 0%, #fdfefe 100%);border:1px solid rgba(208,218,230,.95);border-radius:20px;padding:16px;position:relative;overflow:hidden;box-shadow:var(--elev-soft)}
+.stat::after{content:'';position:absolute;left:0;top:0;width:100%;height:3px;background:linear-gradient(90deg,#ef6c2f,#f59e0b)}
 .stat .label{font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
-.stat .val{font-size:29px;font-weight:800;margin:6px 0 2px;font-family:'Space Grotesk',sans-serif}
+.stat .val{font-size:30px;font-weight:800;margin:6px 0 2px;font-family:'Sora',sans-serif}
 .stat .delta{font-size:12px}
 .delta.up{color:var(--ok)}.delta.dn{color:var(--danger)}
-.stat .ic-bg{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:36px;opacity:.15;filter:saturate(1.1)}
-.card{background:linear-gradient(180deg,#fff 0%, #fcfdff 100%);border:1px solid rgba(208,218,230,.9);border-radius:18px;padding:20px;margin-bottom:20px;box-shadow:var(--elev-soft)}
+.stat .ic-bg{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:36px;opacity:.17;filter:saturate(1.2)}
+.card{background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);border:1px solid rgba(208,218,230,.95);border-radius:20px;padding:20px;margin-bottom:20px;box-shadow:var(--elev-soft)}
 .card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.card-h h3{font-size:15px;font-weight:800;letter-spacing:.15px}
+.card-h h3{font-size:15px;font-weight:800;letter-spacing:.15px;font-family:'Sora',sans-serif}
+
+/* Dashboard layout */
+.dashboard-shell{display:flex;flex-direction:column;gap:22px}
+.dashboard-overview{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,.95fr);gap:20px}
+.dashboard-hero-panel{position:relative;overflow:hidden;padding:0;background:linear-gradient(135deg,#10213f 0%,#16315b 52%,#214d86 100%);color:#fff;border:none;box-shadow:0 24px 56px rgba(16,33,63,.28)}
+.dashboard-hero-panel::before{content:'';position:absolute;right:-80px;top:-70px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,.2) 0%, rgba(255,255,255,0) 70%)}
+.dashboard-hero-panel::after{content:'';position:absolute;left:30px;bottom:-70px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle, rgba(239,108,47,.35) 0%, rgba(239,108,47,0) 72%)}
+.dashboard-hero-top{position:relative;z-index:1;padding:26px 26px 10px}
+.dashboard-kicker{font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.72);margin-bottom:10px}
+.dashboard-hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.dashboard-hero-head h2{font-family:'Sora',sans-serif;font-size:28px;line-height:1.1;margin:0 0 10px}
+.dashboard-hero-head p{max-width:520px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.8)}
+.dashboard-pulse{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);font-size:12px;font-weight:700;white-space:nowrap}
+.dashboard-pulse::before{content:'';width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 0 6px rgba(52,211,153,.15)}
+.dashboard-hero-metrics{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:10px 26px 26px}
+.dashboard-side-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.dashboard-activity-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.dashboard-panel-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);gap:20px}
+.dashboard-table-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.dashboard-stat{min-height:132px}
+.dashboard-stat .delta{margin-top:8px}
+.dashboard-stat-feature{background:rgba(255,255,255,.95);border-color:rgba(255,255,255,.25);backdrop-filter:blur(10px)}
+.dashboard-stat-feature::after{background:linear-gradient(90deg,#ffffff,#fdba74)}
+.dashboard-stat-feature .label{color:#475569}
+.dashboard-stat-feature .val{font-size:38px;color:#0f172a}
+.dashboard-hero-panel .dashboard-stat-feature .delta{font-size:13px}
+.dashboard-side-grid .dashboard-stat,.dashboard-activity-grid .dashboard-stat{min-height:120px}
+.dashboard-chart-card,.dashboard-table-card,.dashboard-alert-card{padding:22px}
+.dashboard-chart-card .card-h,.dashboard-table-card .card-h,.dashboard-alert-card .card-h{margin-bottom:18px}
+.dashboard-mini-summary{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px}
+.dashboard-mini-summary .summary-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.dashboard-mini-summary .summary-total{font-family:'Sora',sans-serif;font-size:34px;line-height:1;color:var(--ink)}
+.dashboard-mini-summary .summary-sub{margin-top:8px;font-size:12px;color:var(--mut)}
+.dashboard-mini-summary .summary-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:rgba(15,118,110,.1);color:var(--teal);font-size:12px;font-weight:700;white-space:nowrap}
+.dashboard-chart-stage{border:1px solid rgba(215,222,234,.95);border-radius:18px;padding:18px 16px 14px;background:
+  linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(248,250,253,.98) 100%),
+  repeating-linear-gradient(to top, rgba(148,163,184,.09) 0, rgba(148,163,184,.09) 1px, transparent 1px, transparent 44px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+.dashboard-chart-card .bar-chart{height:94px;padding-top:4px}
+.dashboard-chart-card .line-chart{height:94px;position:relative}
+.dashboard-chart-card .line-chart svg{width:100%;height:100%;display:block;overflow:visible}
+.dashboard-chart-card .line-chart .chart-grid{stroke:rgba(148,163,184,.22);stroke-width:1}
+.dashboard-chart-card .line-chart .chart-area{fill:rgba(37,99,235,.12)}
+.dashboard-chart-card .line-chart .chart-line{fill:none;stroke:#2563eb;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.dashboard-chart-card .line-chart .chart-point{fill:#ffffff;stroke:#2563eb;stroke-width:2}
+.dashboard-chart-card .line-chart .chart-point.is-latest{fill:var(--accent);stroke:#fff;stroke-width:2.5}
+.dashboard-chart-card .donut-wrap{min-height:126px;justify-content:center}
+.dashboard-chart-stage-center{display:flex;align-items:center;justify-content:center}
+.dashboard-chart-card .bar-col{justify-content:flex-end}
+.dashboard-chart-card .bar-lbl{font-size:11px}
+.dashboard-chart-card .bar-val{font-size:12px}
+.dashboard-chart-card .leg-item{font-size:13px}
+.dashboard-mini-chart .dashboard-chart-stage{padding-top:12px}
+.dashboard-mini-chart .bar{border-radius:999px;min-height:6px}
+.dashboard-mini-chart .line-chart-labels{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:11px;color:var(--mut)}
+
+@media (max-width:920px){
+  .dashboard-mini-summary{align-items:flex-start;flex-direction:column}
+}
+.dashboard-alert-card{border-left:none;position:relative;overflow:hidden}
+.dashboard-alert-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#dc2626,#f97316)}
+
+@media (max-width:1280px){
+  .dashboard-overview,.dashboard-panel-grid,.dashboard-table-grid{grid-template-columns:1fr}
+}
+
+@media (max-width:920px){
+  .dashboard-hero-head{flex-direction:column}
+  .dashboard-hero-metrics,.dashboard-side-grid,.dashboard-activity-grid{grid-template-columns:1fr}
+}
 
 /* ── Table ────────────────────────────────── */
 .tbl-wrap{overflow-x:auto}
@@ -138,7 +210,7 @@ tr:hover td{background:#f5f9fc}
 
 /* ── Buttons ──────────────────────────────── */
 .btn{border:0;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.18s}
-.btn-teal{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;box-shadow:0 8px 20px rgba(13,148,136,.25)}.btn-teal:hover{transform:translateY(-1px)}
+.btn-teal{background:linear-gradient(135deg,#ef6c2f,#d84f14);color:#fff;box-shadow:0 10px 22px rgba(239,108,47,.3)}.btn-teal:hover{transform:translateY(-1px)}
 .btn-outline{background:#fff;color:var(--teal);border:1.5px solid var(--teal)}
 .btn-danger{background:var(--danger-l);color:var(--danger)}
 .btn-ok{background:var(--ok-l);color:var(--ok)}
@@ -160,6 +232,171 @@ tr:hover td{background:#f5f9fc}
 .form-group input,.form-group select,.form-group textarea{
   border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;outline:none;font-family:inherit;background:#fff}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,148,136,.14)}
+
+/* Notifications workspace */
+.notifications-shell{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.88fr);gap:22px;align-items:start}
+.notification-compose-card{padding:0;overflow:hidden}
+.notification-compose-head{padding:22px 24px 18px;background:linear-gradient(135deg,#10213f 0%,#173867 58%,#25578f 100%);color:#fff;position:relative;overflow:hidden}
+.notification-compose-head::before{content:'';position:absolute;right:-70px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 72%)}
+.notification-compose-head::after{content:'';position:absolute;left:20px;bottom:-85px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(239,108,47,.28) 0%,rgba(239,108,47,0) 74%)}
+.notification-compose-head > *{position:relative;z-index:1}
+.notification-compose-kicker{font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:8px}
+.notification-compose-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.notification-compose-title h3{font-family:'Sora',sans-serif;font-size:24px;line-height:1.12;margin:0}
+.notification-compose-title p{max-width:420px;margin-top:8px;font-size:13px;line-height:1.65;color:rgba(255,255,255,.78)}
+.notification-compose-badge{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);font-size:12px;font-weight:700;white-space:nowrap}
+.notification-compose-badge::before{content:'';width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 0 6px rgba(52,211,153,.16)}
+.notification-compose-body{padding:22px 24px 24px;background:linear-gradient(180deg,#ffffff 0%,#fafcff 100%)}
+.notification-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.notification-field{display:flex;flex-direction:column;gap:7px}
+.notification-field.full{grid-column:1 / -1}
+.notification-field label{font-size:12px;font-weight:700;color:var(--ink)}
+.notification-field .field-hint{font-size:11px;color:var(--mut)}
+.notification-field input,.notification-field select,.notification-field textarea{border:1px solid rgba(208,218,230,.95);border-radius:14px;padding:12px 14px;font-size:14px;outline:none;font-family:inherit;background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.75);transition:.18s}
+.notification-field textarea{min-height:108px;resize:vertical}
+.notification-field input:focus,.notification-field select:focus,.notification-field textarea:focus{border-color:#2563eb;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+.notification-actions{display:flex;gap:12px;align-items:center;margin-top:8px}
+.notification-actions .btn{flex:1;height:42px;border-radius:14px;font-size:14px}
+.notification-side{display:flex;flex-direction:column;gap:20px}
+.notification-side-card{padding:22px}
+.notification-side-card .card-h{margin-bottom:16px}
+.notification-phone-stage{padding:16px;border-radius:24px;background:linear-gradient(180deg,#f3f7fb 0%,#eef3f8 100%);border:1px solid rgba(208,218,230,.85)}
+.notification-phone{max-width:342px;border-radius:26px;background:linear-gradient(180deg,#151517 0%,#242428 100%);padding:18px 18px 20px;box-shadow:0 20px 44px rgba(15,23,42,.2);position:relative}
+.notification-phone::before{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);width:86px;height:6px;border-radius:999px;background:rgba(255,255,255,.14)}
+.notification-phone-screen{margin-top:14px;background:linear-gradient(180deg,#2d2d31 0%,#323237 100%);border-radius:18px;padding:14px 14px 12px;display:flex;gap:12px;align-items:flex-start}
+.notification-app-icon{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#0f766e,#0ea5a2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 10px 20px rgba(15,118,110,.28)}
+.notification-preview-copy{min-width:0}
+.notification-preview-app{font-weight:800;color:#fff;font-size:15px;line-height:1.1}
+.notification-preview-title{font-size:14px;font-weight:700;color:#fff;margin-top:4px;line-height:1.3}
+.notification-preview-body{color:#d4d4d8;font-size:13px;line-height:1.4;margin-top:3px}
+.notification-preview-time{color:#9ca3af;font-size:11px;margin-top:6px}
+.notification-meta-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.notification-meta-chip{border:1px solid rgba(208,218,230,.92);border-radius:14px;padding:12px;background:#fff}
+.notification-meta-chip .k{font-size:10px;font-weight:700;color:var(--mut);letter-spacing:.8px;text-transform:uppercase}
+.notification-meta-chip .v{margin-top:6px;font-family:'Sora',sans-serif;font-size:16px;color:var(--ink)}
+.notification-campaign-list{display:flex;flex-direction:column;gap:12px}
+.notification-campaign-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid rgba(215,222,234,.95)}
+.notification-campaign-item:last-child{border-bottom:none;padding-bottom:0}
+.notification-campaign-item:first-child{padding-top:0}
+.notification-campaign-name{font-size:15px;font-weight:800;color:var(--ink)}
+.notification-campaign-sub{font-size:12px;color:var(--mut);margin-top:4px}
+.notification-campaign-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.notification-campaign-tag{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:rgba(37,99,235,.08);color:#2563eb;font-size:11px;font-weight:700}
+.notification-campaign-stats{text-align:right}
+.notification-campaign-open{font-size:24px;font-family:'Sora',sans-serif;font-weight:800;color:var(--ok);line-height:1}
+.notification-campaign-open span{font-size:12px;font-family:'Plus Jakarta Sans',system-ui,Arial,sans-serif;font-weight:700}
+.notification-campaign-sent{margin-top:6px;font-size:12px;color:var(--mut)}
+
+/* Reports workspace */
+.reports-shell{display:flex;flex-direction:column;gap:22px}
+.reports-hero{position:relative;overflow:hidden;padding:0;border:none;background:linear-gradient(135deg,#101f3f 0%,#18345f 54%,#214a7f 100%);color:#fff;box-shadow:0 24px 56px rgba(16,31,63,.26)}
+.reports-hero::before{content:'';position:absolute;right:-90px;top:-80px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 72%)}
+.reports-hero::after{content:'';position:absolute;left:40px;bottom:-100px;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle,rgba(239,108,47,.3) 0%,rgba(239,108,47,0) 74%)}
+.reports-hero-top,.reports-hero-stats{position:relative;z-index:1}
+.reports-hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:24px 26px 18px}
+.reports-kicker{font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:8px}
+.reports-hero-top h2{font-family:'Sora',sans-serif;font-size:28px;line-height:1.1;margin:0 0 10px}
+.reports-hero-top p{max-width:560px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.8)}
+.reports-hero-chip{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);font-size:12px;font-weight:700;white-space:nowrap}
+.reports-hero-chip::before{content:'';width:8px;height:8px;border-radius:50%;background:#fb923c;box-shadow:0 0 0 6px rgba(251,146,60,.16)}
+.reports-hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:0 26px 26px}
+.reports-stat{min-height:130px;background:rgba(255,255,255,.96);border-color:rgba(255,255,255,.22)}
+.reports-stat::after{background:linear-gradient(90deg,#f97316,#fdba74)}
+.reports-stat .label{color:#64748b}
+.reports-stat .val{font-size:38px;color:#0f172a}
+.reports-stat.is-danger .val{color:var(--danger)}
+.reports-stat.is-success .val{color:var(--ok)}
+.reports-stat .delta{margin-top:8px;color:#475569}
+.reports-panel{padding:0;overflow:hidden}
+.reports-panel-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 22px;border-bottom:1px solid rgba(215,222,234,.95);background:linear-gradient(180deg,#ffffff 0%,#fbfcff 100%)}
+.reports-panel-title{display:flex;flex-direction:column;gap:4px}
+.reports-panel-title h3{margin:0;font-family:'Sora',sans-serif;font-size:18px}
+.reports-panel-title p{margin:0;font-size:13px;color:var(--mut)}
+.reports-tab-rail{padding:0 22px;background:#fff;border-bottom:1px solid rgba(215,222,234,.95)}
+.reports-tab-rail .tabs{margin-bottom:0;border-bottom:none;gap:8px}
+.reports-tab-rail .tab{padding:13px 16px 12px;border-radius:12px 12px 0 0;border-bottom:2px solid transparent;font-weight:700}
+.reports-table-wrap{padding:0 0 6px;background:linear-gradient(180deg,#ffffff 0%,#fbfcff 100%)}
+.reports-table-wrap table{font-size:13px}
+.reports-table-wrap th{background:transparent;padding:13px 14px;border-bottom:1px solid rgba(215,222,234,.95)}
+.reports-table-wrap td{padding:14px;border-bottom:1px solid rgba(236,241,247,.95)}
+.reports-table-wrap tr:hover td{background:#f8fbff}
+.report-id{font-weight:800;color:#0f172a}
+.report-target a{text-decoration:none;font-weight:700}
+.reports-empty{padding:44px 24px;text-align:center;color:var(--mut)}
+.reports-empty strong{display:block;font-size:16px;color:#0f172a;margin-bottom:8px}
+
+/* Listing review workspace */
+.listing-shell{display:flex;flex-direction:column;gap:22px}
+.listing-hero{position:relative;overflow:hidden;padding:0;border:none;background:linear-gradient(135deg,#101f3f 0%,#17345d 56%,#245182 100%);color:#fff;box-shadow:0 24px 56px rgba(16,31,63,.26)}
+.listing-hero::before{content:'';position:absolute;right:-84px;top:-76px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 72%)}
+.listing-hero::after{content:'';position:absolute;left:36px;bottom:-100px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(239,108,47,.3) 0%,rgba(239,108,47,0) 74%)}
+.listing-hero-top,.listing-hero-stats{position:relative;z-index:1}
+.listing-hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:24px 26px 18px}
+.listing-kicker{font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:8px}
+.listing-hero-top h2{font-family:'Sora',sans-serif;font-size:28px;line-height:1.1;margin:0 0 10px}
+.listing-hero-top p{max-width:560px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.8)}
+.listing-hero-chip{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);font-size:12px;font-weight:700;white-space:nowrap}
+.listing-hero-chip::before{content:'';width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 0 6px rgba(52,211,153,.16)}
+.listing-hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:0 26px 26px}
+.listing-stat{min-height:130px;background:rgba(255,255,255,.96);border-color:rgba(255,255,255,.22)}
+.listing-stat::after{background:linear-gradient(90deg,#f97316,#fdba74)}
+.listing-stat .label{color:#64748b}.listing-stat .val{font-size:38px;color:#0f172a}
+.listing-stat.is-warn .val{color:var(--warn)}
+.listing-stat.is-ok .val{color:var(--ok)}
+.listing-stat.is-danger .val{color:var(--danger)}
+.listing-stat .delta{margin-top:8px;color:#475569}
+.listing-panel{padding:0;overflow:hidden}
+.listing-panel-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 22px;border-bottom:1px solid rgba(215,222,234,.95);background:linear-gradient(180deg,#ffffff 0%,#fbfcff 100%)}
+.listing-panel-title{display:flex;flex-direction:column;gap:4px}
+.listing-panel-title h3{margin:0;font-family:'Sora',sans-serif;font-size:18px}
+.listing-panel-title p{margin:0;font-size:13px;color:var(--mut)}
+.listing-tab-rail{padding:0 22px;background:#fff;border-bottom:1px solid rgba(215,222,234,.95)}
+.listing-tab-rail .tabs{margin-bottom:0;border-bottom:none;gap:8px}
+.listing-tab-rail .tab{padding:13px 16px 12px;border-radius:12px 12px 0 0;border-bottom:2px solid transparent;font-weight:700}
+.listing-bulk-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid rgba(215,222,234,.95);background:#f9fbff}
+.listing-bulk-bar .bulk-copy{font-size:13px;color:var(--mut)}
+.listing-bulk-actions{display:flex;gap:8px;flex-wrap:wrap}
+.listing-table-wrap{padding:0 0 6px;background:linear-gradient(180deg,#ffffff 0%,#fbfcff 100%)}
+.listing-table-wrap th{background:transparent;padding:13px 14px;border-bottom:1px solid rgba(215,222,234,.95)}
+.listing-table-wrap td{padding:14px;border-bottom:1px solid rgba(236,241,247,.95)}
+.listing-table-wrap tr:hover td{background:#f8fbff}
+.listing-item-main{display:flex;align-items:flex-start;gap:12px}
+.listing-item-emoji{font-size:24px;line-height:1;padding-top:2px}
+.listing-item-title{font-weight:800;color:#0f172a;line-height:1.35}
+.listing-item-meta{font-size:11px;color:var(--mut);margin-top:4px}
+.listing-empty{padding:44px 24px;text-align:center;color:var(--mut)}
+.listing-empty strong{display:block;font-size:16px;color:#0f172a;margin-bottom:8px}
+
+@media (max-width:1280px){
+  .listing-hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (max-width:860px){
+  .listing-hero-top{flex-direction:column}
+  .listing-hero-stats{grid-template-columns:1fr}
+  .listing-panel-head,.listing-bulk-bar{flex-direction:column;align-items:flex-start}
+}
+
+@media (max-width:1280px){
+  .reports-hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (max-width:860px){
+  .reports-hero-top{flex-direction:column}
+  .reports-hero-stats{grid-template-columns:1fr}
+  .reports-panel-head{flex-direction:column;align-items:flex-start}
+}
+
+@media (max-width:1180px){
+  .notifications-shell{grid-template-columns:1fr}
+}
+
+@media (max-width:760px){
+  .notification-form-grid,.notification-meta-strip{grid-template-columns:1fr}
+  .notification-compose-title{flex-direction:column}
+  .notification-actions{flex-direction:column}
+  .notification-actions .btn{width:100%}
+}
 
 /* ── Charts (pure CSS) ────────────────────── */
 .bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding-bottom:4px}
@@ -263,48 +500,82 @@ input:checked+.slider:before{transform:translateX(18px)}
 
     <!-- ══════════════════ DASHBOARD ══════════════════ -->
     <div class="page active" id="page-dashboard">
-      <div class="stat-grid">
-        <div class="stat"><div class="label">Transactions Today</div><div class="val">892</div><div class="delta up">▲ 14.2%</div><div class="ic-bg">💸</div></div>
-        <div class="stat"><div class="label">Pending Approval</div><div class="val" style="color:var(--warn)">218</div><div class="delta" style="color:var(--warn)">⚠ Needs review</div><div class="ic-bg">⏳</div></div>
-        <div class="stat"><div class="label">New Listings Today</div><div class="val">3,891</div><div class="delta dn">▼ 1.8% vs avg</div><div class="ic-bg">📢</div></div>
-        <div class="stat"><div class="label">New Registrations</div><div class="val">1,247</div><div class="delta up">▲ 3.2% today</div><div class="ic-bg">🆕</div></div>
-        <div class="stat"><div class="label">Active Buyers</div><div class="val">41,982</div><div class="delta up">▲ 9.1%</div><div class="ic-bg">🛒</div></div>
-        <div class="stat"><div class="label">Active Sellers</div><div class="val">28,764</div><div class="delta up">▲ 6.7%</div><div class="ic-bg">🏪</div></div>
-        <div class="stat"><div class="label">DAU</div><div class="val">14,832</div><div class="delta up">▲ 8.3% vs yesterday</div><div class="ic-bg">👤</div></div>
-        <div class="stat"><div class="label">WAU</div><div class="val">67,410</div><div class="delta up">▲ 5.1% vs last week</div><div class="ic-bg">📅</div></div>
-        <div class="stat"><div class="label">MAU</div><div class="val">218,540</div><div class="delta up">▲ 12.4% vs last month</div><div class="ic-bg">📆</div></div>
-      </div>
+      <div class="dashboard-shell">
+        <div class="dashboard-overview">
+          <div class="dashboard-hero-panel card">
+            <div class="dashboard-hero-top">
+              <div class="dashboard-kicker">Control Center</div>
+              <div class="dashboard-hero-head">
+                <div>
+                  <h2>Live marketplace overview for today.</h2>
+                  <p>Track operational volume, moderation pressure, and user activity from one surface without leaving the dashboard.</p>
+                </div>
+                <div class="dashboard-pulse">Live sync enabled</div>
+              </div>
+            </div>
+            <div class="dashboard-hero-metrics">
+              <div class="stat dashboard-stat dashboard-stat-feature"><div class="label">Transactions Today</div><div class="val">892</div><div class="delta up">▲ 14.2%</div><div class="ic-bg">💸</div></div>
+              <div class="stat dashboard-stat dashboard-stat-feature"><div class="label">Pending Approval</div><div class="val" style="color:var(--warn)">218</div><div class="delta" style="color:var(--warn)">⚠ Needs review</div><div class="ic-bg">⏳</div></div>
+            </div>
+          </div>
 
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+          <div class="dashboard-side-grid">
+            <div class="stat dashboard-stat"><div class="label">New Listings Today</div><div class="val">3,891</div><div class="delta dn">▼ 1.8% vs avg</div><div class="ic-bg">📢</div></div>
+            <div class="stat dashboard-stat"><div class="label">New Registrations</div><div class="val">1,247</div><div class="delta up">▲ 3.2% today</div><div class="ic-bg">🆕</div></div>
+            <div class="stat dashboard-stat"><div class="label">Active Buyers</div><div class="val">41,982</div><div class="delta up">▲ 9.1%</div><div class="ic-bg">🛒</div></div>
+            <div class="stat dashboard-stat"><div class="label">Active Sellers</div><div class="val">28,764</div><div class="delta up">▲ 6.7%</div><div class="ic-bg">🏪</div></div>
+          </div>
+        </div>
+
+        <div class="dashboard-activity-grid">
+          <div class="stat dashboard-stat"><div class="label">DAU</div><div class="val">14,832</div><div class="delta up">▲ 8.3% vs yesterday</div><div class="ic-bg">👤</div></div>
+          <div class="stat dashboard-stat"><div class="label">WAU</div><div class="val">67,410</div><div class="delta up">▲ 5.1% vs last week</div><div class="ic-bg">📅</div></div>
+          <div class="stat dashboard-stat"><div class="label">MAU</div><div class="val">218,540</div><div class="delta up">▲ 12.4% vs last month</div><div class="ic-bg">📆</div></div>
+        </div>
+
+        <div class="dashboard-panel-grid">
         <!-- DAU chart -->
-        <div class="card">
+        <div class="card dashboard-chart-card dashboard-mini-chart">
           <div class="card-h"><h3>Daily Active Users — Last 14 Days</h3><button class="btn btn-outline btn-sm">Export</button></div>
-          <div class="bar-chart" id="dauChart"></div>
+          <div class="dashboard-mini-summary">
+            <div>
+              <div class="summary-label">Headline Total</div>
+              <div class="summary-total" id="dauHeadlineTotal">14,832</div>
+              <div class="summary-sub" id="dauHeadlineSub">Peak live activity this period</div>
+            </div>
+            <div class="summary-chip" id="dauHeadlineDelta">Today</div>
+          </div>
+          <div class="dashboard-chart-stage">
+            <div class="line-chart" id="dauChart"></div>
+            <div class="line-chart-labels"><span>14 days ago</span><span>Today</span></div>
+          </div>
         </div>
         <!-- Category split -->
-        <div class="card">
+        <div class="card dashboard-chart-card">
           <div class="card-h"><h3>Listings by Category</h3></div>
-          <div class="donut-wrap" id="categoryDonutWrap">
-            <svg viewBox="0 0 80 80" width="100" height="100" id="categoryDonut">
-              <circle r="30" cx="40" cy="40" fill="none" stroke="#e5e7eb" stroke-width="14"/>
-              <circle r="30" cx="40" cy="40" fill="none" stroke="#0a6e6e" stroke-width="14" stroke-dasharray="75.4 112.4" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
-              <circle r="30" cx="40" cy="40" fill="none" stroke="#ff6b35" stroke-width="14" stroke-dasharray="33.9 153.9" stroke-dashoffset="-75.4" transform="rotate(-90 40 40)"/>
-              <circle r="30" cx="40" cy="40" fill="none" stroke="#ffd166" stroke-width="14" stroke-dasharray="26 161.8" stroke-dashoffset="-109.3" transform="rotate(-90 40 40)"/>
-              <circle r="30" cx="40" cy="40" fill="none" stroke="#2563eb" stroke-width="14" stroke-dasharray="52.7 135.1" stroke-dashoffset="-135.3" transform="rotate(-90 40 40)"/>
-            </svg>
-            <div class="legend" id="categoryLegend">
-              <div class="leg-item"><div class="leg-dot" style="background:#0a6e6e"></div>Mobiles 40%</div>
-              <div class="leg-item"><div class="leg-dot" style="background:#ff6b35"></div>Vehicles 18%</div>
-              <div class="leg-item"><div class="leg-dot" style="background:#ffd166"></div>Electronics 14%</div>
-              <div class="leg-item"><div class="leg-dot" style="background:#2563eb"></div>Others 28%</div>
+          <div class="dashboard-chart-stage dashboard-chart-stage-center">
+            <div class="donut-wrap" id="categoryDonutWrap">
+              <svg viewBox="0 0 80 80" width="100" height="100" id="categoryDonut">
+                <circle r="30" cx="40" cy="40" fill="none" stroke="#e5e7eb" stroke-width="14"/>
+                <circle r="30" cx="40" cy="40" fill="none" stroke="#0a6e6e" stroke-width="14" stroke-dasharray="75.4 112.4" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
+                <circle r="30" cx="40" cy="40" fill="none" stroke="#ff6b35" stroke-width="14" stroke-dasharray="33.9 153.9" stroke-dashoffset="-75.4" transform="rotate(-90 40 40)"/>
+                <circle r="30" cx="40" cy="40" fill="none" stroke="#ffd166" stroke-width="14" stroke-dasharray="26 161.8" stroke-dashoffset="-109.3" transform="rotate(-90 40 40)"/>
+                <circle r="30" cx="40" cy="40" fill="none" stroke="#2563eb" stroke-width="14" stroke-dasharray="52.7 135.1" stroke-dashoffset="-135.3" transform="rotate(-90 40 40)"/>
+              </svg>
+              <div class="legend" id="categoryLegend">
+                <div class="leg-item"><div class="leg-dot" style="background:#0a6e6e"></div>Mobiles 40%</div>
+                <div class="leg-item"><div class="leg-dot" style="background:#ff6b35"></div>Vehicles 18%</div>
+                <div class="leg-item"><div class="leg-dot" style="background:#ffd166"></div>Electronics 14%</div>
+                <div class="leg-item"><div class="leg-dot" style="background:#2563eb"></div>Others 28%</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="dashboard-table-grid">
         <!-- Recent signups -->
-        <div class="card">
+        <div class="card dashboard-table-card">
           <div class="card-h"><h3>Recent Registrations</h3><button class="btn btn-teal btn-sm" onclick="showPage('users',document.querySelector('[onclick*=users]'))">View All</button></div>
           <div class="tbl-wrap">
             <table>
@@ -320,7 +591,7 @@ input:checked+.slider:before{transform:translateX(18px)}
           </div>
         </div>
         <!-- Top sellers -->
-        <div class="card">
+        <div class="card dashboard-table-card">
           <div class="card-h"><h3>Top Sellers This Week</h3></div>
           <div class="tbl-wrap">
             <table>
@@ -335,18 +606,19 @@ input:checked+.slider:before{transform:translateX(18px)}
             </table>
           </div>
         </div>
-      </div>
+        </div>
 
-      <!-- Open complaints alert -->
-      <div class="card" style="border-left:4px solid var(--danger)">
-        <div class="card-h"><h3>🚨 Open Complaints</h3><button class="btn btn-danger btn-sm" onclick="showPage('reports',document.querySelector('[onclick*=reports]'))">Review Now</button></div>
-        <div class="tbl-wrap">
-          <table>
-            <tr><th>Type</th><th>Target</th><th>Reported By</th><th>Age</th><th>Priority</th></tr>
-            <tbody id="dashboard-complaints-body">
-              <tr><td colspan="5" style="text-align:center;color:var(--mut);padding:18px">Loading complaints...</td></tr>
-            </tbody>
-          </table>
+        <!-- Open complaints alert -->
+        <div class="card dashboard-alert-card">
+          <div class="card-h"><h3>🚨 Open Complaints</h3><button class="btn btn-danger btn-sm" onclick="showPage('reports',document.querySelector('[onclick*=reports]'))">Review Now</button></div>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>Type</th><th>Target</th><th>Reported By</th><th>Age</th><th>Priority</th></tr>
+              <tbody id="dashboard-complaints-body">
+                <tr><td colspan="5" style="text-align:center;color:var(--mut);padding:18px">Loading complaints...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -460,117 +732,182 @@ input:checked+.slider:before{transform:translateX(18px)}
 
     <!-- ══════════════════ LISTING APPROVAL ══════════════════ -->
     <div class="page" id="page-listings">
-      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
-        <div class="stat"><div class="label">Pending Review</div><div class="val" id="stat-pending" style="color:var(--warn)">218</div></div>
-        <div class="stat"><div class="label">Approved Today</div><div class="val" id="stat-approved" style="color:var(--ok)">3,673</div></div>
-        <div class="stat"><div class="label">Rejected Today</div><div class="val" id="stat-rejected" style="color:var(--danger)">47</div></div>
-        <div class="stat"><div class="label">Auto-Approved</div><div class="val" id="stat-auto-approved">89.3%</div></div>
-      </div>
-      <div class="tabs" id="listing-tabs">
-        <div class="tab active" onclick="switchListingTab('pending',this)">Pending (<span id="tab-pending-count">5</span>)</div>
-        <div class="tab" onclick="switchListingTab('approved',this)">Approved (<span id="tab-approved-count">0</span>)</div>
-        <div class="tab" onclick="switchListingTab('rejected',this)">Rejected (<span id="tab-rejected-count">0</span>)</div>
-      </div>
-      <div class="card" style="padding:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)">
-          <span id="sel-count" style="font-size:13px;color:var(--mut)">0 selected</span>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ok btn-sm" onclick="approveAllClean()">✓ Approve All Clean</button>
-            <button class="btn btn-danger btn-sm" onclick="rejectSelected()">✕ Reject Selected</button>
+      <div class="listing-shell">
+        <div class="card listing-hero">
+          <div class="listing-hero-top">
+            <div>
+              <div class="listing-kicker">Moderation Review Desk</div>
+              <h2>Approve clean listings faster and catch risky items before they go live.</h2>
+              <p>Track the queue, bulk-handle safe submissions, and resolve suspicious products from a single moderation surface.</p>
+            </div>
+            <div class="listing-hero-chip">Review queue live</div>
+          </div>
+          <div class="listing-hero-stats">
+            <div class="stat listing-stat is-warn"><div class="label">Pending Review</div><div class="val" id="stat-pending">218</div><div class="delta">Waiting for moderation</div><div class="ic-bg">⏳</div></div>
+            <div class="stat listing-stat is-ok"><div class="label">Approved Today</div><div class="val" id="stat-approved">3,673</div><div class="delta">Moved live this cycle</div><div class="ic-bg">✅</div></div>
+            <div class="stat listing-stat is-danger"><div class="label">Rejected Today</div><div class="val" id="stat-rejected">47</div><div class="delta">Blocked before publish</div><div class="ic-bg">🚫</div></div>
+            <div class="stat listing-stat"><div class="label">Auto-Approved</div><div class="val" id="stat-auto-approved">89.3%</div><div class="delta">Approved share of reviewed items</div><div class="ic-bg">⚙️</div></div>
           </div>
         </div>
-        <div class="tbl-wrap" id="listing-table-wrap"></div>
+
+        <div class="card listing-panel">
+          <div class="listing-panel-head">
+            <div class="listing-panel-title">
+              <h3>Listing Queue</h3>
+              <p>Review pending submissions, restore previous decisions, or take bulk action on selected rows.</p>
+            </div>
+          </div>
+          <div class="listing-tab-rail">
+            <div class="tabs" id="listing-tabs">
+              <div class="tab active" onclick="switchListingTab('pending',this)">Pending (<span id="tab-pending-count">5</span>)</div>
+              <div class="tab" onclick="switchListingTab('approved',this)">Approved (<span id="tab-approved-count">0</span>)</div>
+              <div class="tab" onclick="switchListingTab('rejected',this)">Rejected (<span id="tab-rejected-count">0</span>)</div>
+            </div>
+          </div>
+          <div class="listing-bulk-bar">
+            <span id="sel-count" class="bulk-copy">0 selected</span>
+            <div class="listing-bulk-actions">
+              <button class="btn btn-ok btn-sm" onclick="approveAllClean()">✓ Approve All Clean</button>
+              <button class="btn btn-danger btn-sm" onclick="rejectSelected()">✕ Reject Selected</button>
+            </div>
+          </div>
+          <div class="tbl-wrap listing-table-wrap" id="listing-table-wrap"></div>
+        </div>
+
+        <div id="listing-toast" style="display:none;margin-top:0;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600"></div>
       </div>
-      <!-- Toast for listing actions -->
-      <div id="listing-toast" style="display:none;margin-top:12px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600"></div>
     </div>
 
     <!-- ══════════════════ REPORTS & COMPLAINTS ══════════════════ -->
     <div class="page" id="page-reports">
-      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
-        <div class="stat"><div class="label">Open Reports</div><div class="val" id="reports-open-count" style="color:var(--danger)">0</div></div>
-        <div class="stat"><div class="label">Resolved Today</div><div class="val" id="reports-resolved-today" style="color:var(--ok)">0</div></div>
-        <div class="stat"><div class="label">Avg Resolution</div><div class="val" id="reports-avg-resolution">0.0h</div></div>
-        <div class="stat"><div class="label">Banned Users</div><div class="val" id="reports-banned-users" style="color:var(--danger)">0</div><div class="delta">This month</div></div>
-      </div>
-      <div class="tabs" id="reports-tabs">
-        <div class="tab active" onclick="setReportTab('open',this)">Open (<span id="reports-tab-open">0</span>)</div>
-        <div class="tab" onclick="setReportTab('resolved',this)">Resolved (<span id="reports-tab-resolved">0</span>)</div>
-        <div class="tab" onclick="setReportTab('all',this)">All (<span id="reports-tab-all">0</span>)</div>
-      </div>
-      <div class="card" style="padding:0">
-        <div class="tbl-wrap">
-          <table>
-            <tr><th>ID</th><th>Type</th><th>Target</th><th>Reported By</th><th>Submitted</th><th>Priority</th><th>Status</th><th>Actions</th></tr>
-            <tbody id="reports-table-body"></tbody>
-          </table>
+      <div class="reports-shell">
+        <div class="card reports-hero">
+          <div class="reports-hero-top">
+            <div>
+              <div class="reports-kicker">Trust & Safety Desk</div>
+              <h2>Review complaints, resolve incidents, and track moderation pressure.</h2>
+              <p>Keep the queue moving with a clearer incident overview and a single review surface for listings and seller reports.</p>
+            </div>
+            <div class="reports-hero-chip">Moderation queue live</div>
+          </div>
+          <div class="reports-hero-stats">
+            <div class="stat reports-stat is-danger"><div class="label">Open Reports</div><div class="val" id="reports-open-count">0</div><div class="delta">Needs active review</div><div class="ic-bg">🚨</div></div>
+            <div class="stat reports-stat is-success"><div class="label">Resolved Today</div><div class="val" id="reports-resolved-today">0</div><div class="delta">Closed in current cycle</div><div class="ic-bg">✅</div></div>
+            <div class="stat reports-stat"><div class="label">Avg Resolution</div><div class="val" id="reports-avg-resolution">0.0h</div><div class="delta">Median handling speed</div><div class="ic-bg">⏱️</div></div>
+            <div class="stat reports-stat is-danger"><div class="label">Banned Users</div><div class="val" id="reports-banned-users">0</div><div class="delta">This month</div><div class="ic-bg">⛔</div></div>
+          </div>
+        </div>
+
+        <div class="card reports-panel">
+          <div class="reports-panel-head">
+            <div class="reports-panel-title">
+              <h3>Incident Queue</h3>
+              <p>Filter open and resolved complaints, then resolve each case from the action column.</p>
+            </div>
+          </div>
+          <div class="reports-tab-rail">
+            <div class="tabs" id="reports-tabs">
+              <div class="tab active" onclick="setReportTab('open',this)">Open (<span id="reports-tab-open">0</span>)</div>
+              <div class="tab" onclick="setReportTab('resolved',this)">Resolved (<span id="reports-tab-resolved">0</span>)</div>
+              <div class="tab" onclick="setReportTab('all',this)">All (<span id="reports-tab-all">0</span>)</div>
+            </div>
+          </div>
+          <div class="tbl-wrap reports-table-wrap">
+            <table>
+              <tr><th>ID</th><th>Type</th><th>Target</th><th>Reported By</th><th>Submitted</th><th>Priority</th><th>Status</th><th>Actions</th></tr>
+              <tbody id="reports-table-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ══════════════════ PUSH NOTIFICATIONS ══════════════════ -->
     <div class="page" id="page-notifications">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <!-- Compose -->
-        <div class="card">
-          <div class="card-h"><h3>✉️ Compose Notification</h3></div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label>Audience</label>
-            <select id="notification-audience">
-              <option value="all">All Users (0)</option>
-              <option value="buyers">Active Buyers Only</option>
-              <option value="sellers">Active Sellers Only</option>
-              <option value="inactive">Inactive 30+ days</option>
-            </select>
+      <div class="notifications-shell">
+        <div class="card notification-compose-card">
+          <div class="notification-compose-head">
+            <div class="notification-compose-kicker">Broadcast Studio</div>
+            <div class="notification-compose-title">
+              <div>
+                <h3>Build sharper campaigns with live mobile preview.</h3>
+                <p>Compose the message, select the audience, and review delivery context from one screen before sending.</p>
+              </div>
+              <div class="notification-compose-badge">Delivery ready</div>
+            </div>
           </div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label>Title (max 65 chars)</label>
-            <input id="ntitle" placeholder="e.g. 🔥 New deals in your city!" maxlength="65" oninput="updatePreview()">
-          </div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label>Message Body (max 120 chars)</label>
-            <textarea id="nbody" rows="3" placeholder="Fresh listings just dropped. Tap to explore..." maxlength="120" oninput="updatePreview()"></textarea>
-          </div>
-          <div class="form-group" style="margin-bottom:12px">
-            <label>Deep Link</label>
-            <select id="notification-deeplink">
-              <option value="home">Home Feed</option>
-              <option value="/listings?category=Mobiles">Category: Mobiles</option>
-              <option value="/listings?category=Vehicles">Category: Vehicles</option>
-              <option value="/listings">Deals Page</option>
-              <option value="/post">Sell Now</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom:16px">
-            <label>Schedule</label>
-            <select>
-              <option>Send Immediately</option>
-              <option>Schedule for Later</option>
-            </select>
-          </div>
-          <div style="display:flex;gap:10px">
-            <button class="btn btn-outline" style="flex:1">Save Draft</button>
-            <button class="btn btn-teal" style="flex:2" onclick="sendPushNotification()">🚀 Send Push</button>
+          <div class="notification-compose-body">
+            <div class="notification-form-grid">
+              <div class="notification-field full">
+                <label>Audience</label>
+                <select id="notification-audience" onchange="updatePreview()">
+                  <option value="all">All Users (0)</option>
+                  <option value="buyers">Active Buyers Only</option>
+                  <option value="sellers">Active Sellers Only</option>
+                  <option value="inactive">Inactive 30+ days</option>
+                </select>
+              </div>
+              <div class="notification-field full">
+                <label>Title</label>
+                <input id="ntitle" placeholder="e.g. 🔥 New deals in your city!" maxlength="65" oninput="updatePreview()">
+                <div class="field-hint">Keep it within 65 characters for a cleaner lock-screen preview.</div>
+              </div>
+              <div class="notification-field full">
+                <label>Message Body</label>
+                <textarea id="nbody" rows="4" placeholder="Fresh listings just dropped. Tap to explore..." maxlength="120" oninput="updatePreview()"></textarea>
+                <div class="field-hint">Use concise copy. Most users will only read the first two lines.</div>
+              </div>
+              <div class="notification-field">
+                <label>Deep Link</label>
+                <select id="notification-deeplink">
+                  <option value="home">Home Feed</option>
+                  <option value="/listings?category=Mobiles">Category: Mobiles</option>
+                  <option value="/listings?category=Vehicles">Category: Vehicles</option>
+                  <option value="/listings">Deals Page</option>
+                  <option value="/post">Sell Now</option>
+                </select>
+              </div>
+              <div class="notification-field">
+                <label>Schedule</label>
+                <select>
+                  <option>Send Immediately</option>
+                  <option>Schedule for Later</option>
+                </select>
+              </div>
+            </div>
+            <div class="notification-actions">
+              <button class="btn btn-outline">Save Draft</button>
+              <button class="btn btn-teal" onclick="sendPushNotification()">🚀 Send Push</button>
+            </div>
           </div>
         </div>
-        <!-- Preview & History -->
-        <div>
-          <div class="card" style="margin-bottom:20px">
-            <div class="card-h"><h3>📱 Preview</h3></div>
-            <div style="background:#1c1c1e;border-radius:14px;padding:16px;max-width:320px">
-              <div style="background:#2c2c2e;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start">
-                <div style="width:36px;height:36px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🛍️</div>
-                <div>
-                  <div style="font-weight:700;color:#fff;font-size:14px" id="prevTitle">TradiGO</div>
-                  <div style="color:#ebebeb;font-size:13px;margin-top:2px" id="prevBody">Your notification preview will appear here.</div>
-                  <div style="color:#8e8e93;font-size:11px;margin-top:4px">now</div>
+
+        <div class="notification-side">
+          <div class="card notification-side-card">
+            <div class="card-h"><h3>📱 Live Preview</h3></div>
+            <div class="notification-phone-stage">
+              <div class="notification-phone">
+                <div class="notification-phone-screen">
+                  <div class="notification-app-icon">🛍️</div>
+                  <div class="notification-preview-copy">
+                    <div class="notification-preview-app">TradiGO</div>
+                    <div class="notification-preview-title" id="prevTitle">TradiGO</div>
+                    <div class="notification-preview-body" id="prevBody">Your notification preview will appear here.</div>
+                    <div class="notification-preview-time">now</div>
+                  </div>
                 </div>
+              </div>
+              <div class="notification-meta-strip">
+                <div class="notification-meta-chip"><div class="k">Audience</div><div class="v" id="notificationAudienceMeta">All users</div></div>
+                <div class="notification-meta-chip"><div class="k">Status</div><div class="v">Drafting</div></div>
+                <div class="notification-meta-chip"><div class="k">Channel</div><div class="v">Push</div></div>
               </div>
             </div>
           </div>
-          <div class="card">
+
+          <div class="card notification-side-card">
             <div class="card-h"><h3>📋 Recent Campaigns</h3></div>
-            <div id="notification-campaigns-list"></div>
+            <div class="notification-campaign-list" id="notification-campaigns-list"></div>
           </div>
         </div>
       </div>
@@ -745,10 +1082,13 @@ document.addEventListener('click', function(event) {
 
 // Notification preview
 function updatePreview() {
-  const t = document.getElementById('ntitle').value || 'TradiGO';
+  const t = document.getElementById('ntitle').value || 'New message from TradiGO';
   const b = document.getElementById('nbody').value || 'Your notification preview will appear here.';
+  const audienceNode = document.getElementById('notification-audience');
+  const audienceLabel = audienceNode?.selectedOptions?.[0]?.textContent || 'All Users';
   document.getElementById('prevTitle').textContent = t;
   document.getElementById('prevBody').textContent = b;
+  setNodeText('notificationAudienceMeta', audienceLabel.replace(/\s*\([^)]*\)\s*$/, ''));
 }
 
 function populateNotificationAudience(users) {
@@ -775,6 +1115,7 @@ function populateNotificationAudience(users) {
     .map(([city, count]) => `<option value="city:${city}">City: ${city} (${count.toLocaleString()})</option>`);
 
   select.innerHTML = [...baseOptions, ...cityOptions].join('');
+  updatePreview();
 }
 
 function formatAudienceLabel(campaign) {
@@ -801,9 +1142,20 @@ function renderNotificationCampaigns() {
 
   target.innerHTML = campaigns.slice(0, 6).map((campaign) => {
     const openRate = Number(campaign.openRate || 0);
-    return `<div class="notification-item">
-      <div style="flex:1"><b>${campaign.title}</b><div style="font-size:12px;color:var(--mut)">${formatAudienceLabel(campaign)} · ${toJoinedDate(campaign.createdAt)}</div></div>
-      <div style="text-align:right;font-size:12px"><div style="color:var(--ok);font-weight:700">${openRate.toFixed(1)}% open</div><div style="color:var(--mut)">${Number(campaign.sentCount || 0).toLocaleString()} sent</div></div>
+    const sentCount = Number(campaign.sentCount || 0).toLocaleString();
+    return `<div class="notification-campaign-item">
+      <div>
+        <div class="notification-campaign-name">${campaign.title}</div>
+        <div class="notification-campaign-sub">${formatAudienceLabel(campaign)} · ${toJoinedDate(campaign.createdAt)}</div>
+        <div class="notification-campaign-tags">
+          <span class="notification-campaign-tag">${campaign.deepLink || 'home'}</span>
+          <span class="notification-campaign-tag">${sentCount} recipients</span>
+        </div>
+      </div>
+      <div class="notification-campaign-stats">
+        <div class="notification-campaign-open">${openRate.toFixed(1)}<span>% open</span></div>
+        <div class="notification-campaign-sent">${sentCount} sent</div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1277,7 +1629,7 @@ function renderListingTable() {
   });
 
   if (!visible.length) {
-    wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--mut)">No ${listingTab} listings.</div>`;
+    wrap.innerHTML = `<div class="listing-empty"><strong>No ${listingTab} listings.</strong>The ${listingTab} queue is currently clear.</div>`;
     updateSelCount();
     return;
   }
@@ -1302,7 +1654,7 @@ function renderListingTable() {
         }
         return `<tr id="row-${l.id}">
           <td><input type="checkbox" class="row-chk" data-id="${l.id}" onchange="updateSelCount()"></td>
-          <td><div class="flex"><span style="font-size:22px">${l.emoji}</span><div><b style="${titleStyle}">${l.title}</b><div style="font-size:11px;color:var(--mut)">#${l.id} · Posted ${l.time}</div></div></div></td>
+          <td><div class="listing-item-main"><span class="listing-item-emoji">${l.emoji}</span><div><div class="listing-item-title" style="${titleStyle}">${l.title}</div><div class="listing-item-meta">#${l.id} · Posted ${l.time}</div></div></div></td>
           <td>${l.seller}</td><td>${l.cat}</td><td>${l.price}</td><td>${l.city}</td>
           <td><span class="tag ${flagClass}">${l.flagLabel}</span></td>
           <td>${actions}</td>
@@ -1430,14 +1782,7 @@ renderListingTable();
 // DAU bar chart
 (function buildDAU(){
   const vals = [10200,11400,12800,11200,13400,14100,13200,14800,12400,15200,14100,13800,14200,14832];
-  const days = ['May 28','29','30','31','Jun 1','2','3','4','5','6','7','8','9','Today'];
-  const max = Math.max(...vals);
-  document.getElementById('dauChart').innerHTML = vals.map((v,i) => `
-    <div class="bar-col">
-      <div class="bar-val">${(v/1000).toFixed(1)}k</div>
-      <div class="bar" style="height:${(v/max*100)}%;background:${i===vals.length-1?'var(--accent)':'var(--teal)'}"></div>
-      <div class="bar-lbl">${days[i]}</div>
-    </div>`).join('');
+  renderLineChart('dauChart', vals);
 })();
 
 // MAU chart
@@ -1572,7 +1917,7 @@ function renderReportsPage() {
   if (!tbody) return;
 
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--mut);padding:28px">No reports in this view.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="reports-empty"><strong>No reports in this view.</strong>Switch tabs or wait for new incidents to appear in the moderation queue.</td></tr>';
     return;
   }
 
@@ -1588,9 +1933,9 @@ function renderReportsPage() {
       : `Seller: ${report.seller?.name || report.seller?.email || 'Unknown seller'}`;
 
     return `<tr>
-      <td>#R-${report.id}</td>
+      <td class="report-id">#R-${report.id}</td>
       <td>${prettifyReportType(report.reportType)}</td>
-      <td>${targetLabel}</td>
+      <td class="report-target">${targetLabel}</td>
       <td>${report.reporter.name}</td>
       <td>${toRelativeTime(report.createdAt)}</td>
       <td><span class="tag ${reportPriorityTag(report.priority)}">${prettifyReportType(report.priority)}</span></td>
@@ -1848,6 +2193,41 @@ function renderBarChart(targetId, values, labels, valueFormatter, accentIndex) {
   }).join('');
 }
 
+function renderLineChart(targetId, values) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+
+  const width = 520;
+  const height = 94;
+  const paddingX = 8;
+  const paddingY = 8;
+  const innerWidth = width - paddingX * 2;
+  const innerHeight = height - paddingY * 2;
+  const max = Math.max(1, ...values);
+  const min = Math.min(...values);
+  const range = Math.max(1, max - min);
+  const step = values.length > 1 ? innerWidth / (values.length - 1) : 0;
+
+  const points = values.map((value, index) => {
+    const x = paddingX + step * index;
+    const normalized = (value - min) / range;
+    const y = paddingY + innerHeight - normalized * innerHeight;
+    return { x, y, value };
+  });
+
+  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+  const areaPath = `${path} L ${points[points.length - 1]?.x.toFixed(2) || width} ${(height - paddingY).toFixed(2)} L ${(points[0]?.x || paddingX).toFixed(2)} ${(height - paddingY).toFixed(2)} Z`;
+  const gridY = [0.2, 0.5, 0.8].map((ratio) => paddingY + innerHeight * ratio);
+
+  target.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
+      ${gridY.map((y) => `<line class="chart-grid" x1="${paddingX}" y1="${y.toFixed(2)}" x2="${width - paddingX}" y2="${y.toFixed(2)}"></line>`).join('')}
+      <path class="chart-area" d="${areaPath}"></path>
+      <path class="chart-line" d="${path}"></path>
+      ${points.map((point, index) => `<circle class="chart-point${index === points.length - 1 ? ' is-latest' : ''}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="${index === points.length - 1 ? '4.5' : '3.2'}"></circle>`).join('')}
+    </svg>`;
+}
+
 function renderLiveDauChart(products, transactions) {
   const now = new Date();
   const points = [];
@@ -1879,13 +2259,13 @@ function renderLiveDauChart(products, transactions) {
     });
   }
 
-  renderBarChart(
-    'dauChart',
-    points.map((point) => point.value),
-    points.map((point) => point.label),
-    (value) => formatCompact(value),
-    points.length - 1
-  );
+  const latestPoint = points[points.length - 1] || { label: 'Today', value: 0 };
+  const peakPoint = points.reduce((best, point) => (point.value > best.value ? point : best), points[0] || { label: 'Today', value: 0 });
+  setNodeText('dauHeadlineTotal', latestPoint.value.toLocaleString());
+  setNodeText('dauHeadlineSub', `Peak ${peakPoint.value.toLocaleString()} on ${peakPoint.label}`);
+  setNodeText('dauHeadlineDelta', latestPoint.label);
+
+  renderLineChart('dauChart', points.map((point) => point.value));
 }
 
 function renderLiveMauChart(products, transactions) {
