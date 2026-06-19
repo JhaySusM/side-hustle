@@ -137,7 +137,9 @@ body{background:
 .dashboard-hero-metrics{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:10px 26px 26px}
 .dashboard-side-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .dashboard-activity-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.dashboard-panel-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,1fr);gap:20px}
+.dashboard-panel-grid{display:grid;grid-template-columns:minmax(320px,1fr) minmax(0,1.65fr);gap:20px}
+.dashboard-category-card{grid-column:1;grid-row:1}
+.dashboard-dau-card{grid-column:2;grid-row:1}
 .dashboard-table-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
 .dashboard-stat{min-height:132px}
 .dashboard-stat .delta{margin-top:8px}
@@ -172,12 +174,24 @@ body{background:
 .dashboard-chart-card .bar-lbl{font-size:11px}
 .dashboard-chart-card .bar-val{font-size:12px}
 .dashboard-chart-card .leg-item{font-size:13px}
+.dashboard-category-wrap{display:grid;grid-template-columns:120px minmax(0,1fr);gap:18px;align-items:center;width:100%}
+.dashboard-donut-column{display:flex;flex-direction:column;align-items:center}
+.dashboard-donut-stack{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center}
+.dashboard-donut-stack svg{width:120px;height:120px;display:block}
+.dashboard-donut-lead{margin-top:10px;text-align:center;font-size:12px;font-weight:700;color:#475569}
+.dashboard-category-legend{display:flex;flex-direction:column;gap:10px}
+.dashboard-category-legend .leg-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(215,222,234,.95);border-radius:14px;background:rgba(255,255,255,.75)}
+.dashboard-category-legend .leg-dot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 5px rgba(255,255,255,.85)}
+.dashboard-category-legend .leg-name{font-size:13px;font-weight:700;color:#0f172a}
+.dashboard-category-legend .leg-share{font-size:12px;font-weight:800;color:#475569}
 .dashboard-mini-chart .dashboard-chart-stage{padding-top:12px}
 .dashboard-mini-chart .bar{border-radius:999px;min-height:6px}
 .dashboard-mini-chart .line-chart-labels{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:11px;color:var(--mut)}
 
 @media (max-width:920px){
   .dashboard-mini-summary{align-items:flex-start;flex-direction:column}
+  .dashboard-category-wrap{grid-template-columns:1fr;justify-items:center}
+  .dashboard-category-legend{width:100%}
 }
 .dashboard-alert-card{border-left:none;position:relative;overflow:hidden}
 .dashboard-alert-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(180deg,#dc2626,#f97316)}
@@ -367,6 +381,36 @@ tr:hover td{background:#f5f9fc}
 .listing-empty{padding:44px 24px;text-align:center;color:var(--mut)}
 .listing-empty strong{display:block;font-size:16px;color:#0f172a;margin-bottom:8px}
 
+/* Analytics workspace */
+.analytics-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.analytics-chart-card{padding:22px;overflow:hidden}
+.analytics-chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.analytics-chart-title{display:flex;flex-direction:column;gap:6px}
+.analytics-chart-title h3{margin:0;font-family:'Sora',sans-serif;font-size:16px}
+.analytics-chart-title p{margin:0;font-size:12px;color:var(--mut)}
+.analytics-chart-metric{text-align:right}
+.analytics-chart-metric .k{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--mut)}
+.analytics-chart-metric .v{margin-top:6px;font-family:'Sora',sans-serif;font-size:24px;line-height:1;color:#0f172a}
+.analytics-chart-stage{border:1px solid rgba(215,222,234,.95);border-radius:18px;padding:18px 16px 14px;background:
+  linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(248,250,253,.98) 100%),
+  repeating-linear-gradient(to top, rgba(148,163,184,.09) 0, rgba(148,163,184,.09) 1px, transparent 1px, transparent 56px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85);position:relative}
+.analytics-chart-stage .bar-chart{height:190px;align-items:flex-end;gap:10px;padding-bottom:0;position:relative;z-index:2}
+.analytics-chart-stage .bar-col{gap:8px}
+.analytics-chart-stage .bar{border-radius:14px 14px 6px 6px;min-height:10px;box-shadow:0 10px 18px rgba(15,23,42,.08)}
+.analytics-chart-stage .bar-lbl{font-size:11px;font-weight:600}
+.analytics-chart-stage .bar-val{font-size:12px;font-weight:800}
+.analytics-trend-line{position:absolute;left:16px;right:16px;top:18px;bottom:42px;pointer-events:none;z-index:3}
+.analytics-trend-line svg{width:100%;height:100%;display:block;overflow:visible}
+.analytics-trend-line .trend-area{fill:rgba(37,99,235,.08)}
+.analytics-trend-line .trend-path{fill:none;stroke:#2563eb;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 6px 10px rgba(37,99,235,.18))}
+.analytics-trend-line.gmv .trend-area{fill:rgba(249,115,22,.08)}
+.analytics-trend-line.gmv .trend-path{stroke:#f97316;filter:drop-shadow(0 6px 10px rgba(249,115,22,.18))}
+
+@media (max-width:1080px){
+  .analytics-chart-grid{grid-template-columns:1fr}
+}
+
 @media (max-width:1280px){
   .listing-hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -451,7 +495,6 @@ input:checked+.slider:before{transform:translateX(18px)}
 <aside class="sidebar">
   <div class="sb-logo">
     <div class="brand-row">
-      <img class="brand-logo" src="/img/TGo LOGO 2.0.png" alt="TGO Logo">
       <div class="name">TradiGO</div>
     </div>
     <div class="sub">Admin Backoffice</div>
@@ -535,7 +578,7 @@ input:checked+.slider:before{transform:translateX(18px)}
 
         <div class="dashboard-panel-grid">
         <!-- DAU chart -->
-        <div class="card dashboard-chart-card dashboard-mini-chart">
+        <div class="card dashboard-chart-card dashboard-mini-chart dashboard-dau-card">
           <div class="card-h"><h3>Daily Active Users — Last 14 Days</h3><button class="btn btn-outline btn-sm">Export</button></div>
           <div class="dashboard-mini-summary">
             <div>
@@ -551,22 +594,23 @@ input:checked+.slider:before{transform:translateX(18px)}
           </div>
         </div>
         <!-- Category split -->
-        <div class="card dashboard-chart-card">
+        <div class="card dashboard-chart-card dashboard-category-card">
           <div class="card-h"><h3>Listings by Category</h3></div>
           <div class="dashboard-chart-stage dashboard-chart-stage-center">
-            <div class="donut-wrap" id="categoryDonutWrap">
-              <svg viewBox="0 0 80 80" width="100" height="100" id="categoryDonut">
-                <circle r="30" cx="40" cy="40" fill="none" stroke="#e5e7eb" stroke-width="14"/>
-                <circle r="30" cx="40" cy="40" fill="none" stroke="#0a6e6e" stroke-width="14" stroke-dasharray="75.4 112.4" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
-                <circle r="30" cx="40" cy="40" fill="none" stroke="#ff6b35" stroke-width="14" stroke-dasharray="33.9 153.9" stroke-dashoffset="-75.4" transform="rotate(-90 40 40)"/>
-                <circle r="30" cx="40" cy="40" fill="none" stroke="#ffd166" stroke-width="14" stroke-dasharray="26 161.8" stroke-dashoffset="-109.3" transform="rotate(-90 40 40)"/>
-                <circle r="30" cx="40" cy="40" fill="none" stroke="#2563eb" stroke-width="14" stroke-dasharray="52.7 135.1" stroke-dashoffset="-135.3" transform="rotate(-90 40 40)"/>
-              </svg>
-              <div class="legend" id="categoryLegend">
-                <div class="leg-item"><div class="leg-dot" style="background:#0a6e6e"></div>Mobiles 40%</div>
-                <div class="leg-item"><div class="leg-dot" style="background:#ff6b35"></div>Vehicles 18%</div>
-                <div class="leg-item"><div class="leg-dot" style="background:#ffd166"></div>Electronics 14%</div>
-                <div class="leg-item"><div class="leg-dot" style="background:#2563eb"></div>Others 28%</div>
+            <div class="donut-wrap dashboard-category-wrap" id="categoryDonutWrap">
+              <div class="dashboard-donut-column">
+                <div class="dashboard-donut-stack">
+                  <svg viewBox="0 0 96 96" id="categoryDonut">
+                    <circle r="44" cx="48" cy="48" fill="#0a6e6e"/>
+                  </svg>
+                </div>
+                <div class="dashboard-donut-lead" id="categoryDonutLead">7 listings total</div>
+              </div>
+              <div class="legend dashboard-category-legend" id="categoryLegend">
+                <div class="leg-item"><div class="leg-dot" style="background:#0a6e6e"></div><div class="leg-name">Mobiles</div><div class="leg-share">40%</div></div>
+                <div class="leg-item"><div class="leg-dot" style="background:#ff6b35"></div><div class="leg-name">Vehicles</div><div class="leg-share">18%</div></div>
+                <div class="leg-item"><div class="leg-dot" style="background:#ffd166"></div><div class="leg-name">Electronics</div><div class="leg-share">14%</div></div>
+                <div class="leg-item"><div class="leg-dot" style="background:#2563eb"></div><div class="leg-name">Others</div><div class="leg-share">28%</div></div>
               </div>
             </div>
           </div>
@@ -632,14 +676,38 @@ input:checked+.slider:before{transform:translateX(18px)}
         <div class="stat"><div class="label">Avg Listing Price</div><div class="val" id="an-avg-price">Rs 68K</div><div class="delta up" id="an-avg-price-delta">▲ 4.8%</div><div class="ic-bg">💲</div></div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-        <div class="card">
-          <div class="card-h"><h3>Monthly Active Users</h3></div>
-          <div class="bar-chart" id="mauChart"></div>
+      <div class="analytics-chart-grid">
+        <div class="card analytics-chart-card">
+          <div class="analytics-chart-head">
+            <div class="analytics-chart-title">
+              <h3>Monthly Active Users</h3>
+              <p>Six-month view of live active-user volume.</p>
+            </div>
+            <div class="analytics-chart-metric">
+              <div class="k">Current Month</div>
+              <div class="v" id="analyticsMauMetric">218.5k</div>
+            </div>
+          </div>
+          <div class="analytics-chart-stage">
+            <div class="bar-chart" id="mauChart"></div>
+            <div class="analytics-trend-line" id="analyticsMauTrend"></div>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-h"><h3>GMV by Category</h3></div>
-          <div class="bar-chart" id="gmvChart"></div>
+        <div class="card analytics-chart-card">
+          <div class="analytics-chart-head">
+            <div class="analytics-chart-title">
+              <h3>GMV by Category</h3>
+              <p>Top categories ranked by gross merchandise value.</p>
+            </div>
+            <div class="analytics-chart-metric">
+              <div class="k">Top Category</div>
+              <div class="v" id="analyticsGmvMetric">Mobiles</div>
+            </div>
+          </div>
+          <div class="analytics-chart-stage">
+            <div class="bar-chart" id="gmvChart"></div>
+            <div class="analytics-trend-line gmv" id="analyticsGmvTrend"></div>
+          </div>
         </div>
       </div>
 
@@ -1796,6 +1864,7 @@ renderListingTable();
       <div class="bar" style="height:${(v/max*100)}%;background:${i===vals.length-1?'var(--accent)':'var(--teal)'}"></div>
       <div class="bar-lbl">${months[i]}</div>
     </div>`).join('');
+  renderTrendLine('analyticsMauTrend', vals);
 })();
 
 // GMV chart
@@ -1809,6 +1878,7 @@ renderListingTable();
       <div class="bar" style="height:${(v/max*100)}%;background:hsl(${160+i*30},60%,40%)"></div>
       <div class="bar-lbl">${cats[i]}</div>
     </div>`).join('');
+  renderTrendLine('analyticsGmvTrend', vals);
 })();
 
 // Live data integration
@@ -2228,6 +2298,38 @@ function renderLineChart(targetId, values) {
     </svg>`;
 }
 
+function renderTrendLine(targetId, values) {
+  const target = document.getElementById(targetId);
+  if (!target || !values.length) return;
+
+  const width = 520;
+  const height = 132;
+  const paddingX = 10;
+  const paddingY = 10;
+  const innerWidth = width - paddingX * 2;
+  const innerHeight = height - paddingY * 2;
+  const max = Math.max(1, ...values);
+  const min = Math.min(...values);
+  const range = Math.max(1, max - min);
+  const step = values.length > 1 ? innerWidth / (values.length - 1) : 0;
+
+  const points = values.map((value, index) => {
+    const x = paddingX + step * index;
+    const normalized = (value - min) / range;
+    const y = paddingY + innerHeight - normalized * innerHeight;
+    return { x, y };
+  });
+
+  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
+  const areaPath = `${path} L ${(points[points.length - 1]?.x || (width - paddingX)).toFixed(2)} ${(height - paddingY).toFixed(2)} L ${(points[0]?.x || paddingX).toFixed(2)} ${(height - paddingY).toFixed(2)} Z`;
+
+  target.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">
+      <path class="trend-area" d="${areaPath}"></path>
+      <path class="trend-path" d="${path}"></path>
+    </svg>`;
+}
+
 function renderLiveDauChart(products, transactions) {
   const now = new Date();
   const points = [];
@@ -2297,6 +2399,9 @@ function renderLiveMauChart(products, transactions) {
     });
   }
 
+  const latestBucket = buckets[buckets.length - 1] || { value: 0 };
+  setNodeText('analyticsMauMetric', formatCompact(latestBucket.value));
+
   renderBarChart(
     'mauChart',
     buckets.map((bucket) => bucket.value),
@@ -2304,6 +2409,7 @@ function renderLiveMauChart(products, transactions) {
     (value) => formatCompact(value),
     buckets.length - 1
   );
+  renderTrendLine('analyticsMauTrend', buckets.map((bucket) => bucket.value));
 }
 
 function renderLiveGmvChart(products) {
@@ -2316,6 +2422,9 @@ function renderLiveGmvChart(products) {
   const top = [...grouped.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 7);
+
+  const topCategory = top[0]?.[0] || 'No Data';
+  setNodeText('analyticsGmvMetric', topCategory);
 
   if (!top.length) {
     renderBarChart('gmvChart', [0], ['No Data'], (value) => `Rs ${value}`, 0);
@@ -2332,6 +2441,7 @@ function renderLiveGmvChart(products) {
       <div class="bar" style="height:${(item[1] / max) * 100}%;background:${palette[index % palette.length]}"></div>
       <div class="bar-lbl">${item[0]}</div>
     </div>`).join('');
+  renderTrendLine('analyticsGmvTrend', values);
 }
 
 function renderLiveCategorySplit(products) {
@@ -2348,24 +2458,47 @@ function renderLiveCategorySplit(products) {
 
   const donut = document.getElementById('categoryDonut');
   const legend = document.getElementById('categoryLegend');
+  const leadNode = document.getElementById('categoryDonutLead');
   if (!donut || !legend) return;
 
-  let cursor = 0;
-  const radius = 30;
-  const circumference = 2 * Math.PI * radius;
+  let currentAngle = -90;
+  const radius = 44;
+  const cx = 48;
+  const cy = 48;
+  const describeSlice = (startAngle, endAngle, color) => {
+    const start = polarToCartesian(cx, cy, radius, endAngle);
+    const end = polarToCartesian(cx, cy, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+    return `<path d="M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z" fill="${color}"></path>`;
+  };
+
   const slices = top.map((entry, index) => {
-    const percent = entry[1] / total;
-    const length = percent * circumference;
-    const circle = `<circle r="30" cx="40" cy="40" fill="none" stroke="${colors[index % colors.length]}" stroke-width="14" stroke-dasharray="${length.toFixed(1)} ${(circumference - length).toFixed(1)}" stroke-dashoffset="${(-cursor).toFixed(1)}" transform="rotate(-90 40 40)"/>`;
-    cursor += length;
-    return circle;
+    const sweep = (entry[1] / total) * 360;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + sweep;
+    currentAngle = endAngle;
+    return describeSlice(startAngle, endAngle, colors[index % colors.length]);
   }).join('');
 
-  donut.innerHTML = `<circle r="30" cx="40" cy="40" fill="none" stroke="#e5e7eb" stroke-width="14"/>${slices}`;
+  donut.innerHTML = slices || `<circle r="44" cx="48" cy="48" fill="#e5e7eb"/>`;
+  if (leadNode) {
+    const leadEntry = top[0];
+    leadNode.textContent = leadEntry
+      ? `${entries.reduce((sum, entry) => sum + entry[1], 0).toLocaleString()} listings total`
+      : 'No category data';
+  }
   legend.innerHTML = top.map((entry, index) => {
     const pct = Math.round((entry[1] / total) * 100);
-    return `<div class="leg-item"><div class="leg-dot" style="background:${colors[index % colors.length]}"></div>${entry[0]} ${pct}%</div>`;
+    return `<div class="leg-item"><div class="leg-dot" style="background:${colors[index % colors.length]}"></div><div class="leg-name">${entry[0]}</div><div class="leg-share">${pct}%</div></div>`;
   }).join('');
+}
+
+function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+  const angleInRadians = (angleInDegrees * Math.PI) / 180;
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  };
 }
 
 function renderRecentRegistrations(users) {
