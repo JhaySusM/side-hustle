@@ -75,6 +75,7 @@ export default function DashboardPage() {
   if (!user) return null;
 
   const activeCount = listings.filter((l) => l.product_status === "Active").length;
+  const pendingCount = listings.filter((l) => l.product_status === "Pending").length;
   const soldCount = listings.filter((l) => l.product_status === "Sold").length;
 
   return (
@@ -108,20 +109,24 @@ export default function DashboardPage() {
           <Col xs={6} md={3}>
             <Card className="border-0 shadow-sm text-center h-100">
               <CardBody>
-                <div style={{ fontSize: 32, fontWeight: 700, color: "#6610f2" }}>{soldCount}</div>
-                <div className="text-muted small">Sold</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#f59f00" }}>{pendingCount}</div>
+                <div className="text-muted small">Pending Approval</div>
               </CardBody>
             </Card>
           </Col>
           <Col xs={6} md={3}>
             <Card className="border-0 shadow-sm text-center h-100">
               <CardBody>
-                <div style={{ fontSize: 32, fontWeight: 700, color: "#dc3545" }}>{favorites.length}</div>
-                <div className="text-muted small">Favorites</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#6610f2" }}>{soldCount}</div>
+                <div className="text-muted small">Sold</div>
               </CardBody>
             </Card>
           </Col>
         </Row>
+
+        <div className="mb-3 text-muted small">
+          New listings stay pending until an admin approves them.
+        </div>
 
         {/* My Listings */}
         <div className="d-flex align-items-center justify-content-between mb-3">
@@ -155,6 +160,24 @@ export default function DashboardPage() {
                       <td>
                         {listing.product_status === "Sold" ? (
                           <Badge color="secondary" pill>Sold</Badge>
+                        ) : listing.product_status === "Pending" ? (
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <Badge color="warning" pill>Pending Approval</Badge>
+                            <Button
+                              size="sm"
+                              color="secondary"
+                              onClick={async () => {
+                                await fetch("/api/products/status", {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ id: listing.id, product_status: "Inactive" })
+                                });
+                                await loadDashboard();
+                              }}
+                            >
+                              Withdraw
+                            </Button>
+                          </div>
                         ) : (
                           <div className="d-flex align-items-center gap-2">
                             <Button

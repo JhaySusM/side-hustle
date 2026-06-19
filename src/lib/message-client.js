@@ -77,6 +77,47 @@ export async function sendMessage(payload) {
   return readJsonResponse(response, "Failed to send message");
 }
 
+export async function createOrUpdateTransaction(payload) {
+  const response = await fetch("/api/transactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  return readJsonResponse(response, "Failed to save transaction");
+}
+
+export async function updateTransaction(payload) {
+  const response = await fetch("/api/transactions", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(payload),
+  });
+
+  return readJsonResponse(response, "Failed to update transaction");
+}
+
+export async function fetchAdminTransactions(headers) {
+  const response = await fetch("/api/admin/transactions", {
+    headers,
+    cache: "no-store",
+  });
+
+  return readJsonResponse(response, "Failed to fetch transactions");
+}
+
+export async function verifyAdminTransactionFee(transactionId, headers) {
+  const response = await fetch("/api/admin/transactions", {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify({ transactionId, action: "verify_fee_payment" }),
+  });
+
+  return readJsonResponse(response, "Failed to verify fee payment");
+}
+
 export async function uploadMessageImage(file) {
   if (!file) {
     throw new Error("Image file is required");

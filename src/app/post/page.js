@@ -8,6 +8,15 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+function formatPeso(value) {
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
@@ -35,6 +44,7 @@ export default function PostPage() {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [postingEligibility, setPostingEligibility] = useState(null);
 
   useEffect(() => {
     async function checkAuthAndFetchCategories() {
@@ -46,6 +56,11 @@ export default function PostPage() {
           return;
         } else {
           setUser(data.user);
+        }
+        const eligibilityRes = await fetch("/api/products/eligibility", { cache: "no-store" });
+        const eligibilityData = await eligibilityRes.json();
+        if (eligibilityRes.ok) {
+          setPostingEligibility(eligibilityData);
         }
         // Fetch categories
         const catRes = await fetch("/api/categories");
@@ -63,6 +78,12 @@ export default function PostPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    if (postingEligibility && !postingEligibility.canPostProduct) {
+      setError(
+        `You have ${postingEligibility.outstandingFeeCount} unpaid platform fee${postingEligibility.outstandingFeeCount > 1 ? "s" : ""} totaling ${formatPeso(postingEligibility.outstandingFeeAmount)}. Settle them before posting a new ad.`
+      );
+      return;
+    }
     if (!form.title || !form.description || !form.price || !form.category) {
       setError("Please fill in all required fields.");
       return;
@@ -100,17 +121,24 @@ export default function PostPage() {
           image: imageUrl,
           images: extraUrls.length ? extraUrls : null,
           category_table_id: selectedCategory.id,
-          user_id: user.id,
           upload_date_time: new Date().toISOString(),
         })
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 403 && typeof data.outstandingFeeAmount !== "undefined") {
+          setPostingEligibility({
+            canPostProduct: false,
+            hasOutstandingFees: true,
+            outstandingFeeCount: data.outstandingFeeCount || 0,
+            outstandingFeeAmount: data.outstandingFeeAmount || 0,
+          });
+        }
         setError(data.error || "Failed to post ad.");
         return;
       }
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard"), 1500);
+      setTimeout(() => router.push("/dashboard"), 1800);
     } catch (err) {
       setUploading(false);
       setError("Failed to post ad. Please try again.");
@@ -127,7 +155,12 @@ export default function PostPage() {
         <Card className="border-0 shadow-sm">
           <CardBody className="p-4">
             {error && <Alert color="danger">{error}</Alert>}
-            {success && <Alert color="success">Ad posted! Redirecting to dashboard...</Alert>}
+            {postingEligibility && !postingEligibility.canPostProduct && (
+              <Alert color="warning">
+                You cannot post a new ad while you have unpaid platform fees. Outstanding balance: {formatPeso(postingEligibility.outstandingFeeAmount)} across {postingEligibility.outstandingFeeCount} completed transaction{postingEligibility.outstandingFeeCount > 1 ? "s" : ""}.
+              </Alert>
+            )}
+            {success && <Alert color="success">Ad submitted for approval. It will appear in listings once an admin approves it.</Alert>}
             <Form onSubmit={handleSubmit}>
               <FormGroup>
                 <Label>Title <span className="text-danger">*</span></Label>
@@ -240,7 +273,7 @@ export default function PostPage() {
                 )}
               </FormGroup>
               <div className="d-flex gap-2 mt-2">
-                <Button color="primary" type="submit" disabled={uploading}>
+                <Button color="primary" type="submit" disabled={uploading || (postingEligibility && !postingEligibility.canPostProduct)}>
                   {uploading ? `Uploading images...` : "Post Ad"}
                 </Button>
                 <Button color="light" className="border" type="button" onClick={() => router.push("/dashboard")}>

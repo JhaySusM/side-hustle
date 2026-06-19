@@ -53,6 +53,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
         setError(data.error || "Login failed.");
         return;
       }
+      window.dispatchEvent(new CustomEvent("batjee:login", { detail: { user: data.user } }));
       onAuthSuccess(data.user);
       onLoginSuccess?.(data.user);
       toggle();
@@ -91,6 +92,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
         setError(data.error || "Registration failed.");
         return;
       }
+      window.dispatchEvent(new CustomEvent("batjee:login", { detail: { user: data.user } }));
       onAuthSuccess(data.user);
       onRegisterSuccess?.(data.user);
       toggle();

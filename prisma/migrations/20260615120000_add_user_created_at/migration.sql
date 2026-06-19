@@ -1,0 +1,4 @@
+ALTER TABLE "User"
+ADD COLUMN "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+CREATE INDEX "User_createdAt_idx" ON "User"("createdAt");

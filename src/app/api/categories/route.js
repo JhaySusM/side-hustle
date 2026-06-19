@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { buildVisualCategories, filterVisibleCategories, HIDDEN_CATEGORY_NAMES } from '@/lib/category-catalog';
+import { buildVisualCategories, filterVisibleCategories, HIDDEN_CATEGORY_NAMES, normalizeCategoryName } from '@/lib/category-catalog';
 
 const prisma = new PrismaClient();
 
@@ -26,14 +26,15 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const { category_name } = await request.json();
-    if (!category_name?.trim()) {
+    const normalizedCategoryName = normalizeCategoryName(category_name?.trim());
+    if (!normalizedCategoryName) {
       return Response.json({ error: 'Category name is required' }, { status: 400 });
     }
-    if (HIDDEN_CATEGORY_NAMES.has(category_name.trim())) {
+    if (HIDDEN_CATEGORY_NAMES.has(normalizedCategoryName)) {
       return Response.json({ error: 'Category is not allowed' }, { status: 400 });
     }
     const category = await prisma.category.create({
-      data: { category_name: category_name.trim() },
+      data: { category_name: normalizedCategoryName },
     });
     return Response.json({ category }, { status: 201 });
   } catch (error) {

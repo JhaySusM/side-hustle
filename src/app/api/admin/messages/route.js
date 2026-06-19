@@ -40,6 +40,7 @@ const conversationInclude = {
       },
     },
   },
+  transaction: true,
 };
 
 function isAuthorized(request) {

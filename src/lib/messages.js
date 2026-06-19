@@ -1,3 +1,5 @@
+import { serializeTransaction } from "@/lib/transaction-utils";
+
 export function formatMessageDate(value) {
   return new Date(value).toLocaleString();
 }
@@ -44,6 +46,7 @@ export function serializeConversation(conversation, currentUserId) {
     listingTitle: conversation.listing.product_name,
     listingStatus: conversation.listing.product_status,
     listingPrice: conversation.listing.price,
+    transaction: serializeTransaction(conversation.transaction, currentUserId),
     sellerId: conversation.sellerId,
     buyerId: conversation.buyerId,
     otherParty: {

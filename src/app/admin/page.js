@@ -5,10 +5,14 @@ import {
   Input, Table, Nav, NavItem, NavLink, TabContent, TabPane, Alert, Modal, ModalBody, ModalFooter,
 } from "reactstrap";
 import ChatImageModal from "@/components/ChatImageModal";
-import { getConversationPreview, uploadMessageImage } from "@/lib/message-client";
-
-const ADMIN_EMAIL = "admin@gmail.com";
-const ADMIN_PASSWORD = "admin1234";
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from "@/lib/admin-auth";
+import {
+  fetchAdminTransactions,
+  getConversationPreview,
+  uploadMessageImage,
+  verifyAdminTransactionFee,
+} from "@/lib/message-client";
+import { formatCurrency } from "@/lib/transaction-utils";
 
 function Avatar({ name, color = "#0a9e8f", size = 34 }) {
   const label = name || "U";
@@ -35,6 +39,15 @@ function Avatar({ name, color = "#0a9e8f", size = 34 }) {
 }
 
 const FALLBACK_IMG = "https://placehold.co/60x60?text=No+Img";
+const EMPTY_TRANSACTION_SUMMARY = {
+  totalCount: 0,
+  completedCount: 0,
+  gmv: 0,
+  expectedRevenue: 0,
+  verifiedRevenue: 0,
+  outstandingRevenue: 0,
+  submittedFees: 0,
+};
 
 function StatCard({ label, value, color }) {
   return (
@@ -45,6 +58,62 @@ function StatCard({ label, value, color }) {
       </CardBody>
     </Card>
   );
+}
+
+function getListingStatusColor(status) {
+  if (status === "Pending") {
+    return "warning";
+  }
+
+  if (status === "Inactive" || status === "Sold") {
+    return "secondary";
+  }
+
+  return "success";
+}
+
+function getActivityFilterMeta(filterKey) {
+  if (filterKey === "dau") {
+    return {
+      label: "DAU",
+      subtitle: "Last 24 hours",
+      description: "Daily active users",
+      accent: "#2563eb",
+      glow: "rgba(37, 99, 235, 0.18)",
+      background: "linear-gradient(135deg, rgba(37,99,235,0.14), rgba(255,255,255,0.96))",
+    };
+  }
+
+  if (filterKey === "wau") {
+    return {
+      label: "WAU",
+      subtitle: "Last 7 days",
+      description: "Weekly active users",
+      accent: "#0f9f6e",
+      glow: "rgba(15, 159, 110, 0.18)",
+      background: "linear-gradient(135deg, rgba(15,159,110,0.14), rgba(255,255,255,0.96))",
+    };
+  }
+
+  if (filterKey === "newRegistration") {
+    return {
+      label: "NEW",
+      subtitle: "Last 7 days",
+      description: "New registrations",
+      accent: "#f97316",
+      glow: "rgba(249, 115, 22, 0.18)",
+      background: "linear-gradient(135deg, rgba(249,115,22,0.14), rgba(255,255,255,0.96))",
+    };
+  }
+
+  return {
+    label: "MAU",
+    subtitle: "Last 30 days",
+    description: "Monthly active users",
+    accent: "#0891b2",
+    glow: "rgba(8, 145, 178, 0.18)",
+    background: "linear-gradient(135deg, rgba(8,145,178,0.14), rgba(255,255,255,0.96))",
+  };
 }
 
 export default function AdminPage() {
@@ -58,8 +127,12 @@ export default function AdminPage() {
   const [listings, setListings] = useState([]);
   const [categories, setCategories] = useState([]);
   const [conversations, setConversations] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [transactionSummary, setTransactionSummary] = useState(EMPTY_TRANSACTION_SUMMARY);
   const [userSearch, setUserSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
+  const [selectedUserActivityFilter, setSelectedUserActivityFilter] = useState("");
+  const [activitySnapshotTime, setActivitySnapshotTime] = useState(null);
   const [newCategory, setNewCategory] = useState("");
   const [categoryError, setCategoryError] = useState("");
   const [messageError, setMessageError] = useState("");
@@ -68,6 +141,8 @@ export default function AdminPage() {
   const [messageImagePreview, setMessageImagePreview] = useState("");
   const [viewerImage, setViewerImage] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
+  const [verifyingTransactionId, setVerifyingTransactionId] = useState(null);
+  const [transactionActionError, setTransactionActionError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const imageInputRef = useRef(null);
@@ -127,11 +202,12 @@ export default function AdminPage() {
 
     async function loadData() {
       try {
-        const [uRes, pRes, cRes, mRes] = await Promise.all([
+        const [uRes, pRes, cRes, mRes, tData] = await Promise.all([
           fetch("/api/users"),
-          fetch("/api/products"),
+          fetch("/api/products", { headers: adminHeaders }),
           fetch("/api/categories"),
           fetch("/api/admin/messages", { headers: adminHeaders }),
+          fetchAdminTransactions(adminHeaders),
         ]);
         const uData = await uRes.json();
         const pData = await pRes.json();
@@ -142,10 +218,13 @@ export default function AdminPage() {
           return;
         }
 
+        setActivitySnapshotTime(Date.now());
         setUsers(uData.users || []);
         setListings(pData.products || []);
         setCategories(cData.categories || []);
         setConversations(mData.conversations || []);
+        setTransactions(tData.transactions || []);
+        setTransactionSummary(tData.summary || EMPTY_TRANSACTION_SUMMARY);
       } catch {
         // silently fail — table will show empty
       }
@@ -180,6 +259,10 @@ export default function AdminPage() {
     setTimeout(() => setSuccessMsg(""), 3000);
   }
 
+  function toggleUserActivityFilter(filterKey) {
+    setSelectedUserActivityFilter((prev) => (prev === filterKey ? "" : filterKey));
+  }
+
   async function toggleUser(userId) {
     const target = users.find((u) => u.id === userId);
     const newStatus = target.status === "active" ? "inactive" : "active";
@@ -198,15 +281,26 @@ export default function AdminPage() {
 
   async function toggleListing(id) {
     const target = listings.find((l) => l.id === id);
-    const newStatus = target.product_status === "Active" ? "Inactive" : "Active";
+    const newStatus = target.product_status === "Pending"
+      ? "Active"
+      : target.product_status === "Active"
+        ? "Inactive"
+        : "Active";
+
+    const actionLabel = target.product_status === "Pending"
+      ? "approved"
+      : newStatus === "Inactive"
+        ? "deactivated"
+        : "activated";
+
     try {
       await fetch("/api/products/status", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: adminHeaders,
         body: JSON.stringify({ id, product_status: newStatus }),
       });
       setListings((prev) => prev.map((l) => l.id === id ? { ...l, product_status: newStatus } : l));
-      flash(`Product "${target.product_name}" has been ${newStatus === "Inactive" ? "deactivated" : "activated"}.`);
+      flash(`Product "${target.product_name}" has been ${actionLabel}.`);
     } catch {
       flash("Failed to update product status.");
     }
@@ -313,11 +407,22 @@ export default function AdminPage() {
     }
   }
 
-  const filteredUsers = users.filter(
-    (u) =>
-      (u.name || "").toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.email.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  async function handleVerifyPlatformFee(transactionId) {
+    setTransactionActionError("");
+    setVerifyingTransactionId(transactionId);
+
+    try {
+      await verifyAdminTransactionFee(transactionId, adminHeaders);
+      const data = await fetchAdminTransactions(adminHeaders);
+      setTransactions(data.transactions || []);
+      setTransactionSummary(data.summary || EMPTY_TRANSACTION_SUMMARY);
+      flash("Platform fee verified.");
+    } catch (verifyError) {
+      setTransactionActionError(verifyError.message || "Failed to verify platform fee payment.");
+    } finally {
+      setVerifyingTransactionId(null);
+    }
+  }
 
   const filteredListings = listings.filter(
     (l) =>
@@ -326,8 +431,121 @@ export default function AdminPage() {
       (l.category?.category_name || "").toLowerCase().includes(productSearch.toLowerCase())
   );
 
+  const userActivityMetrics = useMemo(() => {
+    if (!activitySnapshotTime) {
+      return {
+        dau: 0,
+        wau: 0,
+        mau: 0,
+        newRegistration: 0,
+        dauUsers: new Set(),
+        wauUsers: new Set(),
+        mauUsers: new Set(),
+        newRegistrationUsers: new Set(),
+      };
+    }
+
+    const now = activitySnapshotTime;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    const activeInDay = new Set();
+    const activeInWeek = new Set();
+    const activeInMonth = new Set();
+    const newRegistrationUsers = new Set();
+    const excludedUserIds = new Set(
+      users
+        .filter((user) => user.user_type === "admin" || user.email === ADMIN_EMAIL)
+        .map((user) => user.id)
+    );
+
+    function registerActivity(userId, timestamp) {
+      if (!userId || !timestamp || excludedUserIds.has(userId)) {
+        return;
+      }
+
+      const activityTime = new Date(timestamp).getTime();
+      if (Number.isNaN(activityTime) || activityTime > now) {
+        return;
+      }
+
+      const age = now - activityTime;
+
+      if (age <= 30 * oneDayMs) {
+        activeInMonth.add(userId);
+      }
+
+      if (age <= 7 * oneDayMs) {
+        activeInWeek.add(userId);
+      }
+
+      if (age <= oneDayMs) {
+        activeInDay.add(userId);
+      }
+    }
+
+    users.forEach((user) => {
+      if (!user.id || !user.createdAt || excludedUserIds.has(user.id)) {
+        return;
+      }
+
+      const createdAt = new Date(user.createdAt).getTime();
+      if (Number.isNaN(createdAt) || createdAt > now) {
+        return;
+      }
+
+      if (now - createdAt <= 7 * oneDayMs) {
+        newRegistrationUsers.add(user.id);
+      }
+    });
+
+    listings.forEach((listing) => {
+      registerActivity(listing.user_id, listing.upload_date_time);
+    });
+
+    conversations.forEach((conversation) => {
+      registerActivity(conversation.buyerId, conversation.updatedAt);
+      registerActivity(conversation.sellerId, conversation.updatedAt);
+    });
+
+    return {
+      dau: activeInDay.size,
+      wau: activeInWeek.size,
+      mau: activeInMonth.size,
+      newRegistration: newRegistrationUsers.size,
+      dauUsers: activeInDay,
+      wauUsers: activeInWeek,
+      mauUsers: activeInMonth,
+      newRegistrationUsers,
+    };
+  }, [activitySnapshotTime, conversations, listings, users]);
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      (user.name || "").toLowerCase().includes(userSearch.toLowerCase()) ||
+      user.email.toLowerCase().includes(userSearch.toLowerCase());
+
+    if (!matchesSearch) {
+      return false;
+    }
+
+    if (!selectedUserActivityFilter) {
+      return true;
+    }
+
+    const activeUsersByFilter = {
+      dau: userActivityMetrics.dauUsers,
+      wau: userActivityMetrics.wauUsers,
+      mau: userActivityMetrics.mauUsers,
+      newRegistration: userActivityMetrics.newRegistrationUsers,
+    };
+
+    return activeUsersByFilter[selectedUserActivityFilter]?.has(user.id) ?? false;
+  });
+
   const activeUsers = users.filter((u) => u.status === "active").length;
   const activeProducts = listings.filter((l) => l.product_status === "Active").length;
+  const selectedUserFilterMeta = selectedUserActivityFilter
+    ? getActivityFilterMeta(selectedUserActivityFilter)
+    : null;
   const [activeConversationId, setActiveConversationId] = useState(null);
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId) || conversations[0] || null;
 
@@ -479,6 +697,16 @@ export default function AdminPage() {
               </NavItem>
               <NavItem>
                 <NavLink
+                  href="#" active={activeTab === "transactions"}
+                  onClick={() => setActiveTab("transactions")}
+                  style={{ cursor: "pointer", fontWeight: activeTab === "transactions" ? 700 : 400 }}
+                >
+                  💸 Transactions
+                  <Badge color="secondary" pill className="ms-2">{transactions.length}</Badge>
+                </NavLink>
+              </NavItem>
+              <NavItem>
+                <NavLink
                   href="#" active={activeTab === "messages"}
                   onClick={() => setActiveTab("messages")}
                   style={{ cursor: "pointer", fontWeight: activeTab === "messages" ? 700 : 400 }}
@@ -492,13 +720,136 @@ export default function AdminPage() {
             <TabContent activeTab={activeTab}>
               {/* ── Users tab ── */}
               <TabPane tabId="users">
-                <Input
-                  placeholder="Search users by name or email..."
-                  value={userSearch}
-                  onChange={(e) => setUserSearch(e.target.value)}
-                  className="mb-3"
-                  style={{ maxWidth: 360 }}
-                />
+                <div
+                  className="mb-4"
+                  style={{
+                    background: "linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)",
+                    border: "1px solid rgba(148, 163, 184, 0.18)",
+                    borderRadius: 20,
+                    padding: 20,
+                    boxShadow: "0 18px 45px rgba(15, 23, 42, 0.06)",
+                  }}
+                >
+                  <div className="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3 mb-3">
+                    <div>
+                      <div className="small text-uppercase fw-semibold" style={{ letterSpacing: "0.08em", color: "#64748b" }}>
+                        User Activity Filters
+                      </div>
+                      <div className="fw-bold" style={{ fontSize: 22, color: "#0f172a" }}>
+                        Track engagement by active window
+                      </div>
+                    </div>
+                    <div
+                      className="d-flex align-items-center gap-2"
+                      style={{
+                        maxWidth: 380,
+                        width: "100%",
+                        background: "#fff",
+                        border: "1px solid rgba(148, 163, 184, 0.24)",
+                        borderRadius: 16,
+                        padding: "10px 14px",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      <span style={{ fontSize: 16, color: "#94a3b8" }}>⌕</span>
+                      <Input
+                        placeholder="Search users by name or email"
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        className="border-0 shadow-none p-0 mb-0"
+                        style={{ background: "transparent" }}
+                      />
+                    </div>
+                  </div>
+
+                  <Row className="g-3 mb-3">
+                    {[
+                      { key: "dau", value: userActivityMetrics.dau },
+                      { key: "wau", value: userActivityMetrics.wau },
+                      { key: "mau", value: userActivityMetrics.mau },
+                      { key: "newRegistration", value: userActivityMetrics.newRegistration },
+                    ].map((item) => {
+                      const meta = getActivityFilterMeta(item.key);
+                      const isActive = selectedUserActivityFilter === item.key;
+
+                      return (
+                        <Col xs={12} md={6} xl={3} key={item.key}>
+                          <Button
+                            color="link"
+                            onClick={() => toggleUserActivityFilter(item.key)}
+                            className="w-100 text-start text-decoration-none p-0"
+                            style={{
+                              background: meta.background,
+                              border: isActive ? `1px solid ${meta.accent}` : "1px solid rgba(148, 163, 184, 0.2)",
+                              borderRadius: 18,
+                              padding: 0,
+                              boxShadow: isActive
+                                ? `0 18px 32px ${meta.glow}`
+                                : "0 10px 24px rgba(15, 23, 42, 0.05)",
+                              transform: isActive ? "translateY(-1px)" : "none",
+                              transition: "all 180ms ease",
+                            }}
+                          >
+                            <div className="d-flex align-items-start justify-content-between" style={{ padding: 18 }}>
+                              <div>
+                                <div className="small fw-semibold" style={{ color: meta.accent, letterSpacing: "0.06em" }}>
+                                  {meta.label}
+                                </div>
+                                <div className="fw-bold" style={{ fontSize: 28, lineHeight: 1.1, color: "#0f172a" }}>
+                                  {item.value}
+                                </div>
+                                <div className="small" style={{ color: "#475569" }}>{meta.description}</div>
+                              </div>
+                              <div
+                                className="d-flex align-items-center justify-content-center"
+                                style={{
+                                  minWidth: 92,
+                                  padding: "8px 10px",
+                                  borderRadius: 999,
+                                  background: isActive ? meta.accent : "rgba(255,255,255,0.72)",
+                                  color: isActive ? "#fff" : meta.accent,
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                  border: `1px solid ${isActive ? meta.accent : "rgba(148, 163, 184, 0.18)"}`,
+                                }}
+                              >
+                                {meta.subtitle}
+                              </div>
+                            </div>
+                          </Button>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+
+                  <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2">
+                    <div
+                      className="small"
+                      style={{
+                        color: selectedUserFilterMeta ? "#0f172a" : "#64748b",
+                        fontWeight: selectedUserFilterMeta ? 500 : 400,
+                      }}
+                    >
+                      {selectedUserFilterMeta
+                        ? `Showing ${selectedUserFilterMeta.description.toLowerCase()} based on recent listing and conversation activity.`
+                        : "Choose a metric card to filter the users table by recent activity windows."}
+                    </div>
+                    {selectedUserActivityFilter && (
+                      <Button
+                        color="light"
+                        onClick={() => setSelectedUserActivityFilter("")}
+                        style={{
+                          borderRadius: 999,
+                          border: "1px solid rgba(148, 163, 184, 0.24)",
+                          padding: "10px 16px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Reset Filter
+                      </Button>
+                    )}
+                  </div>
+                </div>
                 {filteredUsers.length === 0 ? (
                   <div className="text-center text-muted py-4">No users found.</div>
                 ) : (
@@ -599,14 +950,24 @@ export default function AdminPage() {
                             <td className="text-muted">{l.user?.name || "—"}</td>
                             <td className="text-muted" style={{ whiteSpace: "nowrap" }}>{l.upload_date_time ? new Date(l.upload_date_time).toLocaleDateString() : "—"}</td>
                             <td>
-                              <Badge pill color={l.product_status === "Inactive" ? "secondary" : "success"} style={{ fontSize: 11 }}>
+                              <Badge pill color={getListingStatusColor(l.product_status)} style={{ fontSize: 11 }}>
                                 {l.product_status}
                               </Badge>
                             </td>
                             <td>
-                              <Button size="sm" color={l.product_status === "Inactive" ? "success" : "danger"} outline
+                              <Button
+                                size="sm"
+                                color={l.product_status === "Pending" || l.product_status === "Inactive" ? "success" : "danger"}
+                                outline
+                                disabled={l.product_status === "Sold"}
                                 onClick={() => toggleListing(l.id)}>
-                                {l.product_status === "Inactive" ? "Activate" : "Deactivate"}
+                                {l.product_status === "Pending"
+                                  ? "Approve"
+                                  : l.product_status === "Inactive"
+                                    ? "Activate"
+                                    : l.product_status === "Sold"
+                                      ? "Sold"
+                                      : "Deactivate"}
                               </Button>
                             </td>
                           </tr>
@@ -659,6 +1020,127 @@ export default function AdminPage() {
                               >
                                 Delete
                               </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+                )}
+              </TabPane>
+
+              <TabPane tabId="transactions">
+                <Row className="g-3 mb-4">
+                  <Col xs={12} md={6} xl={3}>
+                    <StatCard label="Completed GMV" value={formatCurrency(transactionSummary.gmv)} color="#0a9e8f" />
+                  </Col>
+                  <Col xs={12} md={6} xl={3}>
+                    <StatCard label="Expected Revenue" value={formatCurrency(transactionSummary.expectedRevenue)} color="#f59e0b" />
+                  </Col>
+                  <Col xs={12} md={6} xl={3}>
+                    <StatCard label="Verified Revenue" value={formatCurrency(transactionSummary.verifiedRevenue)} color="#16a34a" />
+                  </Col>
+                  <Col xs={12} md={6} xl={3}>
+                    <StatCard label="Outstanding Fees" value={formatCurrency(transactionSummary.outstandingRevenue)} color="#dc2626" />
+                  </Col>
+                </Row>
+
+                <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
+                  <div>
+                    <div className="fw-semibold">Meetup transactions</div>
+                    <div className="text-muted small">
+                      Completed deals feed GMV; verified platform fees feed recognized revenue.
+                    </div>
+                  </div>
+                  <Badge color="light" className="border text-dark px-3 py-2">
+                    {transactionSummary.completedCount} completed of {transactionSummary.totalCount}
+                  </Badge>
+                </div>
+
+                {transactionActionError ? <Alert color="danger">{transactionActionError}</Alert> : null}
+
+                {transactions.length === 0 ? (
+                  <div className="text-center text-muted py-4">No transactions recorded yet.</div>
+                ) : (
+                  <div className="table-responsive">
+                    <Table hover className="align-middle mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Listing</th>
+                          <th>Buyer</th>
+                          <th>Seller</th>
+                          <th>Final Amount</th>
+                          <th>Platform Fee</th>
+                          <th>Deal Status</th>
+                          <th>Fee Status</th>
+                          <th>Payment Method</th>
+                          <th>Proof</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.map((transaction) => (
+                          <tr key={transaction.id}>
+                            <td>
+                              <div className="fw-semibold">{transaction.listing.title}</div>
+                              <div className="text-muted small">List: {formatCurrency(transaction.listing.price)}</div>
+                            </td>
+                            <td>
+                              <div>{transaction.buyer.name}</div>
+                              <div className="text-muted small">{transaction.buyer.email}</div>
+                            </td>
+                            <td>
+                              <div>{transaction.seller.name}</div>
+                              <div className="text-muted small">{transaction.seller.email}</div>
+                            </td>
+                            <td className="fw-semibold">{formatCurrency(transaction.agreedAmount)}</td>
+                            <td className="text-warning fw-semibold">{formatCurrency(transaction.platformFeeAmount)}</td>
+                            <td>
+                              <Badge color={transaction.status === "completed" ? "success" : transaction.status === "void" ? "secondary" : "warning"}>
+                                {transaction.statusLabel}
+                              </Badge>
+                            </td>
+                            <td>
+                              <Badge color={transaction.feePaymentStatus === "verified" ? "success" : transaction.feePaymentStatus === "submitted" ? "info" : "warning"}>
+                                {transaction.feePaymentStatusLabel}
+                              </Badge>
+                            </td>
+                            <td>
+                              <div>{transaction.feePaymentMethod || "—"}</div>
+                              <div className="text-muted small">{transaction.feePaymentReference || ""}</div>
+                            </td>
+                            <td>
+                              {transaction.feeProofImageUrl ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setViewerImage(transaction.feeProofImageUrl)}
+                                  style={{ border: "none", background: "transparent", padding: 0, cursor: "zoom-in" }}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={transaction.feeProofImageUrl}
+                                    alt="Platform fee proof"
+                                    style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 10, border: "1px solid #dbe3ea" }}
+                                  />
+                                </button>
+                              ) : (
+                                <span className="text-muted small">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {transaction.feePaymentStatus === "submitted" ? (
+                                <Button
+                                  size="sm"
+                                  color="success"
+                                  outline
+                                  disabled={verifyingTransactionId === transaction.id}
+                                  onClick={() => handleVerifyPlatformFee(transaction.id)}
+                                >
+                                  {verifyingTransactionId === transaction.id ? "Verifying..." : "Verify Fee"}
+                                </Button>
+                              ) : (
+                                <span className="text-muted small">—</span>
+                              )}
                             </td>
                           </tr>
                         ))}

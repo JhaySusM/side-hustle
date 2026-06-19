@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getRequestUser } from '@/lib/auth';
+import { getCategoryFilterNames, normalizeProductCategory } from '@/lib/category-catalog';
 
 export async function GET(request) {
   try {
@@ -25,7 +26,9 @@ export async function GET(request) {
       ...(category
         ? {
             category: {
-              category_name: { equals: category, mode: 'insensitive' },
+              category_name: {
+                in: getCategoryFilterNames(category),
+              },
             },
           }
         : {}),
@@ -61,7 +64,7 @@ export async function GET(request) {
     ]);
 
     const productsWithFavoriteState = products.map((product) => ({
-      ...product,
+      ...normalizeProductCategory(product),
       isFavorited: viewer ? product.favorites.length > 0 : false,
     }));
 

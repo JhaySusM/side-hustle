@@ -1,7 +1,7 @@
 export const CATEGORY_CATALOG = [
   {
     key: "mobiles",
-    category_name: "Electronics",
+    category_name: "Mobiles",
     display_name: "Mobiles",
     image_url: "/img/category/Mobiles1.png",
   },
@@ -75,8 +75,48 @@ export const CATEGORY_CATALOG = [
 
 export const HIDDEN_CATEGORY_NAMES = new Set(["Gaming", "Music"]);
 
+export const CATEGORY_NAME_ALIASES = {
+  Electronics: "Mobiles",
+};
+
+export function normalizeCategoryName(categoryName) {
+  return CATEGORY_NAME_ALIASES[categoryName] || categoryName;
+}
+
+export function normalizeCategory(category) {
+  if (!category) {
+    return category;
+  }
+
+  return {
+    ...category,
+    category_name: normalizeCategoryName(category.category_name),
+  };
+}
+
+export function normalizeProductCategory(product) {
+  if (!product) {
+    return product;
+  }
+
+  return {
+    ...product,
+    category: normalizeCategory(product.category),
+  };
+}
+
+export function getCategoryFilterNames(categoryName) {
+  const normalized = normalizeCategoryName(categoryName);
+
+  if (normalized === "Mobiles") {
+    return ["Mobiles", "Electronics"];
+  }
+
+  return [normalized];
+}
+
 export const FALLBACK_CATEGORY_IMAGES = {
-  Electronics: "https://img.icons8.com/ios-filled/50/000000/laptop.png",
+  Mobiles: "https://img.icons8.com/ios-filled/50/000000/laptop.png",
   Vehicles: "https://img.icons8.com/ios-filled/50/000000/car.png",
   Furniture: "https://img.icons8.com/ios-filled/50/000000/sofa.png",
   Clothes: "https://img.icons8.com/ios-filled/50/000000/t-shirt.png",
@@ -89,7 +129,9 @@ export const FALLBACK_CATEGORY_IMAGES = {
 export const DEFAULT_CATEGORY_IMAGE = "https://img.icons8.com/ios-filled/50/000000/category.png";
 
 export function filterVisibleCategories(categories) {
-  return categories.filter((category) => !HIDDEN_CATEGORY_NAMES.has(category.category_name));
+  return categories
+    .map((category) => normalizeCategory(category))
+    .filter((category) => !HIDDEN_CATEGORY_NAMES.has(category.category_name));
 }
 
 export function buildVisualCategories(categories) {

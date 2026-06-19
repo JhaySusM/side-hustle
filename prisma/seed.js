@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const categories = [
-    'Electronics',
+    'Mobiles',
     'Vehicles',
     'Property For Rent',
     'Clothes',

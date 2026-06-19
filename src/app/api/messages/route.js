@@ -41,6 +41,7 @@ const conversationInclude = {
       },
     },
   },
+  transaction: true,
 };
 
 async function loadInbox(userId) {
@@ -134,11 +135,15 @@ export async function POST(request) {
 
       const listing = await prisma.productList.findUnique({
         where: { id: listingId },
-        select: { id: true, user_id: true },
+        select: { id: true, user_id: true, product_status: true },
       });
 
       if (!listing) {
         return Response.json({ error: "Listing not found" }, { status: 404 });
+      }
+
+      if (listing.product_status !== "Active") {
+        return Response.json({ error: "Only approved listings can receive new inquiries" }, { status: 400 });
       }
 
       let buyerId;

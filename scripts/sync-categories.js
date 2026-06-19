@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 const wanted = [
-  'Electronics',
+  'Mobiles',
   'Vehicles',
   'Property For Rent',
   'Clothes',
@@ -17,6 +17,22 @@ const wanted = [
 ];
 
 async function main() {
+  const electronics = await prisma.category.findUnique({ where: { category_name: 'Electronics' } });
+  const mobiles = await prisma.category.findUnique({ where: { category_name: 'Mobiles' } });
+
+  if (electronics && !mobiles) {
+    await prisma.category.update({
+      where: { id: electronics.id },
+      data: { category_name: 'Mobiles' },
+    });
+  } else if (electronics && mobiles) {
+    await prisma.productList.updateMany({
+      where: { category_table_id: electronics.id },
+      data: { category_table_id: mobiles.id },
+    });
+    await prisma.category.delete({ where: { id: electronics.id } });
+  }
+
   const fashion = await prisma.category.findUnique({ where: { category_name: 'Fashion' } });
   const clothes = await prisma.category.findUnique({ where: { category_name: 'Clothes' } });
 

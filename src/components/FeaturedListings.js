@@ -7,7 +7,7 @@ import {
   Card, CardBody, CardTitle, CardText, Badge,
   Button, Input, Alert, InputGroup,
 } from "reactstrap";
-import { HIDDEN_CATEGORY_NAMES } from "@/lib/category-catalog";
+import { HIDDEN_CATEGORY_NAMES, normalizeCategoryName } from "@/lib/category-catalog";
 import FavoriteButton from "@/components/FavoriteButton";
 
 const FALLBACK_IMG = "https://placehold.co/400x180?text=No+Image";
@@ -168,11 +168,12 @@ function FeaturedListings({ filter, search: searchProp }) {
     })
     .slice(0, 2);
   const mobileHomeListings = groupedSource.slice(0, 4);
+  const normalizedFilter = normalizeCategoryName(filter || "");
 
   const heading = search
     ? `Results for "${search}"`
-    : filter
-    ? `${filter} Listings`
+    : normalizedFilter
+    ? `${normalizedFilter} Listings`
     : "Featured Listings";
 
   function openListingsPage() {
@@ -258,7 +259,7 @@ function FeaturedListings({ filter, search: searchProp }) {
             style={mobileHome ? { width: "100%", height: 156, objectFit: "cover" } : compact ? { width: "100%", height: 150, objectFit: "cover" } : undefined}
           />
           <CardBody className={`d-flex flex-column${mobileHome ? " featured-listings-mobile-card-body" : ""}`}>
-            {!mobileHome ? <Badge color="secondary" pill className="mb-2 align-self-start">{item.category?.category_name}</Badge> : null}
+            {!mobileHome ? <Badge color="secondary" pill className="mb-2 align-self-start">{normalizeCategoryName(item.category?.category_name || "")}</Badge> : null}
             <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
               <CardTitle tag="h6" className={`fw-semibold mb-0${mobileHome ? " featured-listings-mobile-title" : ""}`}>{item.product_name}</CardTitle>
               <FavoriteButton
@@ -274,7 +275,7 @@ function FeaturedListings({ filter, search: searchProp }) {
             <CardText className={`text-primary fw-bold${mobileHome ? " featured-listings-mobile-price" : ""}`}>{String.fromCharCode(8369)} {Number(item.price).toLocaleString()}</CardText>
             {mobileHome ? (
               <div className="featured-listings-mobile-meta mb-2">
-                <span>{item.category?.category_name || "For Sale"}</span>
+                <span>{normalizeCategoryName(item.category?.category_name || "For Sale")}</span>
               </div>
             ) : (
               <div className="text-muted small mb-3">
@@ -331,7 +332,7 @@ function FeaturedListings({ filter, search: searchProp }) {
         </>
       ) : null}
       {filter && !search && (
-        <p className="text-muted small mb-3">Showing ads in <strong>{filter}</strong></p>
+        <p className="text-muted small mb-3">Showing ads in <strong>{normalizedFilter}</strong></p>
       )}
       {favoriteError ? <Alert color="danger" className="mb-3">{favoriteError}</Alert> : null}
       {displayed.length === 0 ? (

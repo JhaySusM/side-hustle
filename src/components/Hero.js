@@ -5,7 +5,7 @@ import Image from "next/image";
 import HeroSearchBar from "@/components/HeroSearchBar";
 
 const QUICK_CATEGORIES = [
-  { label: "Mobile", category: "Electronics" },
+  { label: "Mobile", category: "Mobiles" },
   { label: "Cars", category: "Vehicles" },
   { label: "Property", category: "Property" },
   { label: "Clothes", category: "Clothes" },

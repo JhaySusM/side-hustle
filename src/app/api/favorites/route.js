@@ -53,11 +53,15 @@ export async function POST(request) {
 
     const product = await prisma.productList.findUnique({
       where: { id: productId },
-      select: { id: true, user_id: true },
+      select: { id: true, user_id: true, product_status: true },
     });
 
     if (!product) {
       return Response.json({ error: "Listing not found" }, { status: 404 });
+    }
+
+    if (product.product_status !== "Active") {
+      return Response.json({ error: "Only approved listings can be saved" }, { status: 400 });
     }
 
     if (product.user_id === user.id) {

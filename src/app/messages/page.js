@@ -3,15 +3,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, CardBody, Container, Input } from "reactstrap";
 import ChatImageModal from "@/components/ChatImageModal";
+import ConversationTransactionCard from "@/components/ConversationTransactionCard";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import {
+  createOrUpdateTransaction,
   fetchInbox,
   getConversationPreview,
   markConversationRead,
   openSupportConversation,
   sendMessage,
   subscribeToInbox,
+  updateTransaction,
   uploadMessageImage,
 } from "@/lib/message-client";
 
@@ -110,6 +113,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [transactionError, setTransactionError] = useState("");
   const threadEndRef = useRef(null);
   const imageInputRef = useRef(null);
 
@@ -273,11 +277,92 @@ export default function MessagesPage() {
 
     try {
       const result = await openSupportConversation();
+      setTransactionError("");
       setActiveConversationId(result.conversation.id);
       await loadMessages();
     } catch (supportError) {
       setError(supportError.message || "Failed to open admin support chat.");
     }
+  }
+
+  async function handleTransactionAction(work) {
+    setTransactionError("");
+
+    try {
+      await work();
+      await loadMessages();
+    } catch (transactionActionError) {
+      setTransactionError(transactionActionError.message || "Failed to update transaction.");
+      throw transactionActionError;
+    }
+  }
+
+  async function handleSaveTransactionAmount(amountInput) {
+    if (!activeConversation) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      createOrUpdateTransaction({
+        conversationId: activeConversation.id,
+        agreedAmount: amountInput,
+      })
+    );
+  }
+
+  async function handleConfirmTransactionAmount() {
+    if (!activeConversation) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      updateTransaction({
+        conversationId: activeConversation.id,
+        action: "confirm_amount",
+      })
+    );
+  }
+
+  async function handleMarkTransactionCompleted() {
+    if (!activeConversation) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      updateTransaction({
+        conversationId: activeConversation.id,
+        action: "mark_completed",
+      })
+    );
+  }
+
+  async function handleVoidTransaction() {
+    if (!activeConversation) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      updateTransaction({
+        conversationId: activeConversation.id,
+        action: "void",
+      })
+    );
+  }
+
+  async function handleSubmitFeePayment({ paymentMethod, paymentReference, feeProofImageUrl }) {
+    if (!activeConversation) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      updateTransaction({
+        conversationId: activeConversation.id,
+        action: "submit_fee_payment",
+        paymentMethod,
+        paymentReference,
+        feeProofImageUrl,
+      })
+    );
   }
 
   if (!user) {
@@ -381,7 +466,10 @@ export default function MessagesPage() {
                       <button
                         key={conversation.id}
                         type="button"
-                        onClick={() => setActiveConversationId(conversation.id)}
+                        onClick={() => {
+                          setTransactionError("");
+                          setActiveConversationId(conversation.id);
+                        }}
                         className="w-100 text-start border-0"
                         style={{
                           background: active ? "#f0fdf9" : "#fff",
@@ -425,7 +513,10 @@ export default function MessagesPage() {
                     >
                       {isMobile ? (
                         <Button
-                          onClick={() => setActiveConversationId(null)}
+                          onClick={() => {
+                            setTransactionError("");
+                            setActiveConversationId(null);
+                          }}
                           color="light"
                           size="sm"
                           className="border"
@@ -446,6 +537,20 @@ export default function MessagesPage() {
                       >
                         Contact Admin
                       </Button>
+                    </div>
+
+                    <div className="px-3 px-md-4 pt-3" style={{ background: "#f8fafc" }}>
+                      <ConversationTransactionCard
+                        key={`${activeConversation.id}-${activeConversation.transaction?.updatedAt || "none"}`}
+                        conversation={activeConversation}
+                        currentUserId={user.id}
+                        actionError={transactionError}
+                        onSaveAmount={handleSaveTransactionAmount}
+                        onConfirmAmount={handleConfirmTransactionAmount}
+                        onMarkCompleted={handleMarkTransactionCompleted}
+                        onVoid={handleVoidTransaction}
+                        onSubmitFeePayment={handleSubmitFeePayment}
+                      />
                     </div>
 
                     <CardBody

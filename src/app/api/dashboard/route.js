@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { requireRequestUser } from '@/lib/auth';
+import { normalizeCategoryName, normalizeProductCategory } from '@/lib/category-catalog';
 
 export async function GET(request) {
   const { errorResponse, user } = await requireRequestUser(request);
@@ -30,18 +31,26 @@ export async function GET(request) {
       }),
     ]);
 
-    const productsWithCategory = products.map((p) => ({
-      ...p,
-      category_name: p.category?.category_name || '',
-    }));
+    const productsWithCategory = products.map((p) => {
+      const normalizedProduct = normalizeProductCategory(p);
 
-    const favoriteProducts = favorites.map((favorite) => ({
-      ...favorite.product,
-      favoriteId: favorite.id,
-      favoriteCreatedAt: favorite.createdAt,
-      category_name: favorite.product.category?.category_name || '',
-      isFavorited: true,
-    }));
+      return {
+        ...normalizedProduct,
+        category_name: normalizedProduct.category?.category_name || '',
+      };
+    });
+
+    const favoriteProducts = favorites.map((favorite) => {
+      const normalizedProduct = normalizeProductCategory(favorite.product);
+
+      return {
+        ...normalizedProduct,
+        favoriteId: favorite.id,
+        favoriteCreatedAt: favorite.createdAt,
+        category_name: normalizeCategoryName(favorite.product.category?.category_name || ''),
+        isFavorited: true,
+      };
+    });
 
     return Response.json({ products: productsWithCategory, favorites: favoriteProducts });
   } catch (error) {

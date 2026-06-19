@@ -3,13 +3,16 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Input } from "reactstrap";
 import ChatImageModal from "@/components/ChatImageModal";
+import ConversationTransactionCard from "@/components/ConversationTransactionCard";
 import {
+  createOrUpdateTransaction,
   fetchInbox,
   getConversationPreview,
   markConversationRead,
   openSupportConversation,
   sendMessage,
   subscribeToInbox,
+  updateTransaction,
   uploadMessageImage,
 } from "@/lib/message-client";
 
@@ -42,6 +45,7 @@ export default function ChatWidget() {
   const [selectedImagePreview, setSelectedImagePreview] = useState("");
   const [viewerImage, setViewerImage] = useState("");
   const [sending, setSending] = useState(false);
+  const [transactionError, setTransactionError] = useState("");
   const bubbleRef = useRef(null);
   const messagesEndRef = useRef(null);
   const activeThreadIdRef = useRef(null);
@@ -67,19 +71,6 @@ export default function ChatWidget() {
   }, [activeThread]);
 
   const hidden = pathname === "/messages" || pathname.startsWith("/admin");
-
-  useEffect(() => {
-    function handleOpenChat() {
-      setOpen(true);
-      setActiveThread(null);
-    }
-
-    window.addEventListener("tradigo:open-chat", handleOpenChat);
-
-    return () => {
-      window.removeEventListener("tradigo:open-chat", handleOpenChat);
-    };
-  }, []);
 
   const clearSelectedImage = useCallback(() => {
     if (selectedImagePreview) {
@@ -121,18 +112,84 @@ export default function ChatWidget() {
   }, []);
 
   useEffect(() => {
+    function handleOpenChat() {
+      setOpen(true);
+      setActiveThread(null);
+      setTransactionError("");
+    }
+
+    function handleLogout() {
+      setUser(null);
+      setMessages([]);
+      setUnreadCount(0);
+      setOpen(false);
+      setActiveThread(null);
+      setReplyText("");
+      setViewerImage("");
+      setSending(false);
+      setTransactionError("");
+      clearSelectedImage();
+    }
+
+    function handleLogin(event) {
+      const nextUser = event?.detail?.user || null;
+      setUser(nextUser);
+      setTransactionError("");
+      loadData().catch(() => {
+        setMessages([]);
+        setUnreadCount(0);
+      });
+    }
+
+    window.addEventListener("tradigo:open-chat", handleOpenChat);
+    window.addEventListener("batjee:logout", handleLogout);
+    window.addEventListener("batjee:login", handleLogin);
+
+    return () => {
+      window.removeEventListener("tradigo:open-chat", handleOpenChat);
+      window.removeEventListener("batjee:logout", handleLogout);
+      window.removeEventListener("batjee:login", handleLogin);
+    };
+  }, [clearSelectedImage, loadData]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadUser() {
       try {
         const res = await fetch("/api/auth/me", { cache: "no-store" });
         const data = await res.json();
-        if (!res.ok || !data.user) return;
+        if (!res.ok || !data.user) {
+          if (!cancelled) {
+            setUser(null);
+            setMessages([]);
+            setUnreadCount(0);
+            setOpen(false);
+            setActiveThread(null);
+            setReplyText("");
+            setViewerImage("");
+            setSending(false);
+            setTransactionError("");
+            clearSelectedImage();
+          }
+          return;
+        }
         if (cancelled) return;
         setUser(data.user);
         await loadData();
       } catch {
-        // ignore
+        if (!cancelled) {
+          setUser(null);
+          setMessages([]);
+          setUnreadCount(0);
+          setOpen(false);
+          setActiveThread(null);
+          setReplyText("");
+          setViewerImage("");
+          setSending(false);
+          setTransactionError("");
+          clearSelectedImage();
+        }
       }
     }
 
@@ -141,7 +198,7 @@ export default function ChatWidget() {
     return () => {
       cancelled = true;
     };
-  }, [loadData]);
+  }, [clearSelectedImage, loadData]);
 
   useEffect(() => {
     if (!user) {
@@ -160,6 +217,7 @@ export default function ChatWidget() {
   }, [activeThread]);
 
   async function openThread(msg) {
+    setTransactionError("");
     setActiveThread(msg);
     if (!user) return;
 
@@ -206,6 +264,86 @@ export default function ChatWidget() {
     } catch {
       // ignore
     }
+  }
+
+  async function handleTransactionAction(work) {
+    setTransactionError("");
+
+    try {
+      await work();
+      await loadData();
+    } catch (transactionActionError) {
+      setTransactionError(transactionActionError.message || "Failed to update transaction.");
+      throw transactionActionError;
+    }
+  }
+
+  async function handleSaveTransactionAmount(amountInput) {
+    if (!activeThread) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      createOrUpdateTransaction({
+        conversationId: activeThread.id,
+        agreedAmount: amountInput,
+      })
+    );
+  }
+
+  async function handleConfirmTransactionAmount() {
+    if (!activeThread) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      updateTransaction({
+        conversationId: activeThread.id,
+        action: "confirm_amount",
+      })
+    );
+  }
+
+  async function handleMarkTransactionCompleted() {
+    if (!activeThread) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      updateTransaction({
+        conversationId: activeThread.id,
+        action: "mark_completed",
+      })
+    );
+  }
+
+  async function handleVoidTransaction() {
+    if (!activeThread) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      updateTransaction({
+        conversationId: activeThread.id,
+        action: "void",
+      })
+    );
+  }
+
+  async function handleSubmitFeePayment({ paymentMethod, paymentReference, feeProofImageUrl }) {
+    if (!activeThread) {
+      return;
+    }
+
+    await handleTransactionAction(() =>
+      updateTransaction({
+        conversationId: activeThread.id,
+        action: "submit_fee_payment",
+        paymentMethod,
+        paymentReference,
+        feeProofImageUrl,
+      })
+    );
   }
 
   if (!user || hidden) return null;
@@ -408,6 +546,18 @@ export default function ChatWidget() {
           {activeThread && (
             <>
               <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 4px", background: "#f8fafc" }}>
+                <ConversationTransactionCard
+                  key={`${activeThread.id}-${activeThread.transaction?.updatedAt || "none"}`}
+                  conversation={activeThread}
+                  currentUserId={user.id}
+                  compact
+                  actionError={transactionError}
+                  onSaveAmount={handleSaveTransactionAmount}
+                  onConfirmAmount={handleConfirmTransactionAmount}
+                  onMarkCompleted={handleMarkTransactionCompleted}
+                  onVoid={handleVoidTransaction}
+                  onSubmitFeePayment={handleSubmitFeePayment}
+                />
                 {allBubbles.map((b) => {
                   const isMe = b.senderId === user.id;
                   return (
