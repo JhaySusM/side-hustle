@@ -2,6 +2,7 @@ import { getRequestUser } from '@/lib/auth';
 import { isAdminRequest } from '@/lib/admin-auth';
 import { normalizeProductCategory } from '@/lib/category-catalog';
 import { prisma } from '@/lib/prisma';
+import { attachSellerFeatureState, serializeSellerFeatures } from '@/lib/seller-features';
 
 // GET: Get seller by ID with their products
 export async function GET(request, { params }) {
@@ -21,6 +22,14 @@ export async function GET(request, { params }) {
         user_type: true,
         sellerRatingAvg: true,
         sellerRatingCount: true,
+        sellerFeatures: prisma.sellerFeature
+          ? {
+              where: {
+                endsAt: { gt: new Date() },
+              },
+              orderBy: { endsAt: 'desc' },
+            }
+          : false,
       },
     });
     if (!user) {
@@ -41,9 +50,31 @@ export async function GET(request, { params }) {
             }),
       },
       orderBy: { id: 'desc' },
-      include: { category: true },
+      include: {
+        category: true,
+        user: prisma.sellerFeature
+          ? {
+              select: {
+                id: true,
+                sellerFeatures: {
+                  where: {
+                    endsAt: { gt: new Date() },
+                  },
+                  orderBy: { endsAt: 'desc' },
+                },
+              },
+            }
+          : { select: { id: true } },
+      },
     });
-    return Response.json({ seller: user, products: products.map(normalizeProductCategory) });
+    return Response.json({
+      seller: {
+        ...user,
+        sellerFeatures: serializeSellerFeatures(user.sellerFeatures || []),
+        isFeaturedSeller: (user.sellerFeatures || []).length > 0,
+      },
+      products: products.map((product) => normalizeProductCategory(attachSellerFeatureState(product))),
+    });
   } catch (error) {
     return Response.json({ error: error.message || 'Failed to fetch seller' }, { status: 500 });
   }

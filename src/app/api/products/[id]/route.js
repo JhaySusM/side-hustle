@@ -2,6 +2,7 @@ import { getRequestUser } from '@/lib/auth';
 import { isAdminRequest } from '@/lib/admin-auth';
 import { normalizeProductCategory } from '@/lib/category-catalog';
 import { prisma } from '@/lib/prisma';
+import { attachSellerFeatureState } from '@/lib/seller-features';
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -19,6 +20,14 @@ export async function GET(request, { params }) {
             address: true,
             sellerRatingAvg: true,
             sellerRatingCount: true,
+            sellerFeatures: prisma.sellerFeature
+              ? {
+                  where: {
+                    endsAt: { gt: new Date() },
+                  },
+                  orderBy: { endsAt: 'desc' },
+                }
+              : false,
           },
         },
       },
@@ -39,7 +48,7 @@ export async function GET(request, { params }) {
       return Response.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return Response.json({ product: normalizeProductCategory(product) });
+    return Response.json({ product: normalizeProductCategory(attachSellerFeatureState(product)) });
   } catch (error) {
     return Response.json({ error: error.message || 'Failed to fetch product' }, { status: 500 });
   }

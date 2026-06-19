@@ -64,9 +64,26 @@ model User {
   ratingsGiven       SellerRating[]        @relation("BuyerGivenRatings")
   ratingsReceived    SellerRating[]        @relation("SellerReceivedRatings")
   notifications      UserNotification[]
+  sellerFeatures     SellerFeature[]
 
   @@index([createdAt])
   @@index([referredById])
+}
+
+model SellerFeature {
+  id           Int      @id @default(autoincrement())
+  sellerId      Int
+  placement    String
+  durationDays Int
+  startsAt     DateTime @default(now())
+  endsAt       DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  seller       User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerId, placement])
+  @@index([placement, endsAt])
+  @@index([sellerId, endsAt])
 }
 
 model NotificationCampaign {

@@ -1,6 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { getRequestUser } from '@/lib/auth';
 import { getCategoryFilterNames, normalizeProductCategory } from '@/lib/category-catalog';
+import {
+  attachSellerFeatureState,
+  compareProductsBySellerFeature,
+  FEATURE_PLACEMENTS,
+} from '@/lib/seller-features';
 
 export async function GET(request) {
   try {
@@ -47,7 +52,25 @@ export async function GET(request) {
         orderBy: { id: 'desc' },
         include: {
           category: true,
-          user: { select: { id: true, name: true, email: true, address: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              address: true,
+              createdAt: true,
+              sellerRatingAvg: true,
+              sellerRatingCount: true,
+              sellerFeatures: prisma.sellerFeature
+                ? {
+                    where: {
+                      endsAt: { gt: new Date() },
+                    },
+                    orderBy: { endsAt: 'desc' },
+                  }
+                : false,
+            },
+          },
           ...(viewer
             ? {
                 favorites: {
@@ -57,13 +80,23 @@ export async function GET(request) {
               }
             : {}),
         },
-        skip,
-        take: pageSize,
       }),
       prisma.productList.count({ where }),
     ]);
 
-    const productsWithFavoriteState = products.map((product) => ({
+    const preferredPlacement = query
+      ? FEATURE_PLACEMENTS.SEARCH_BOOST
+      : category
+      ? FEATURE_PLACEMENTS.CATEGORY_TOP
+      : FEATURE_PLACEMENTS.HOMEPAGE_BANNER;
+
+    const sortedProducts = products
+      .map(attachSellerFeatureState)
+      .sort((left, right) => compareProductsBySellerFeature(left, right, { preferredPlacement }));
+
+    const pagedProducts = sortedProducts.slice(skip, skip + pageSize);
+
+    const productsWithFavoriteState = pagedProducts.map((product) => ({
       ...normalizeProductCategory(product),
       isFavorited: viewer ? product.favorites.length > 0 : false,
     }));

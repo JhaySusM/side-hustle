@@ -355,6 +355,11 @@ export default function ProductDetailPage() {
                       <div>
                         <div className="fw-semibold">{product.user?.name || "Unknown seller"}</div>
                         <div className="product-detail-meta">{product.user?.email || "Seller profile"}</div>
+                        {product.user?.isFeaturedSeller ? (
+                          <div className="product-detail-meta" style={{ color: "#b26a00", fontWeight: 700 }}>
+                            Featured seller
+                          </div>
+                        ) : null}
                         <div className="product-detail-meta">
                           ⭐ {(Number(product.user?.sellerRatingAvg || 0)).toFixed(1)} ({Number(product.user?.sellerRatingCount || 0)} review{Number(product.user?.sellerRatingCount || 0) !== 1 ? "s" : ""})
                         </div>

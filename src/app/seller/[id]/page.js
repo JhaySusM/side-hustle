@@ -426,6 +426,11 @@ export default function SellerProfilePage() {
                 <div className="text-muted small mb-2">{seller?.email}</div>
                 {seller?.address ? <div className="text-muted small mb-2">{seller.address}</div> : null}
                 <div className="d-flex gap-2 flex-wrap">
+                  {seller?.isFeaturedSeller ? (
+                    <span className="badge rounded-pill" style={{ background: "#fff7d6", color: "#9a6700", fontSize: 12 }}>
+                      Featured seller{seller?.sellerFeatures?.[0]?.placementLabel ? ` · ${seller.sellerFeatures[0].placementLabel}` : ""}
+                    </span>
+                  ) : null}
                   <span className="badge rounded-pill" style={{ background: "#e8f5e9", color: "#2e7d32", fontSize: 12 }}>
                     {products.length} listing{products.length !== 1 ? "s" : ""}
                   </span>

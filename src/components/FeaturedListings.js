@@ -287,6 +287,9 @@ function FeaturedListings({ filter, search: searchProp }) {
                 >
                   {item.user?.name || "Unknown"}
                 </span>
+                {item.user?.isFeaturedSeller ? (
+                  <Badge color="warning" pill className="ms-2">Featured seller</Badge>
+                ) : null}
               </div>
             )}
             {item.user?.address ? (

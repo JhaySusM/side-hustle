@@ -1227,13 +1227,14 @@ input:checked+.slider:before{transform:translateX(18px)}
 <div class="modal-overlay" id="featureModal">
   <div class="modal">
     <h3>⭐ Feature this Seller</h3>
+    <div id="feature-modal-seller" style="font-size:12px;color:var(--mut);margin-bottom:10px">Select a seller from the table.</div>
     <div class="form-group" style="margin-bottom:12px"><label>Feature Duration</label>
-      <select><option>7 days</option><option>14 days</option><option>30 days</option></select></div>
+      <select id="feature-duration"><option>7 days</option><option>14 days</option><option>30 days</option></select></div>
     <div class="form-group"><label>Placement</label>
-      <select><option>Homepage Banner</option><option>Category Top</option><option>Search Boost</option></select></div>
+      <select id="feature-placement"><option>Homepage Banner</option><option>Category Top</option><option>Search Boost</option></select></div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('featureModal')">Cancel</button>
-      <button class="btn btn-teal" onclick="closeModal('featureModal');alert('Seller featured successfully!')">Confirm</button>
+      <button class="btn btn-teal" id="feature-confirm-btn" onclick="submitSellerFeature()">Confirm</button>
     </div>
   </div>
 </div>
@@ -1717,6 +1718,104 @@ const SELLERS_PER_PAGE = 7;
 let sellerPage = 1;
 let sellerTab = 'all';
 
+function getActiveSellerFeatures(seller) {
+  return (seller?.sellerFeatures || []).filter((feature) => feature?.active);
+}
+
+function getSellerStatus(seller) {
+  if (getActiveSellerFeatures(seller).length > 0) {
+    return 'Featured';
+  }
+
+  return seller?.status || 'Active';
+}
+
+function summarizeSellerPlacements(seller) {
+  return getActiveSellerFeatures(seller)
+    .map((feature) => feature.placementLabel)
+    .filter(Boolean)
+    .join(', ');
+}
+
+function mapFeaturePlacementLabelToValue(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'homepage banner') return 'homepage_banner';
+  if (normalized === 'category top') return 'category_top';
+  if (normalized === 'search boost') return 'search_boost';
+  return '';
+}
+
+function openFeatureModalForSeller(idx) {
+  const seller = ALL_SELLERS[idx];
+  if (!seller?.id) {
+    showListingToast('❌ Seller data is unavailable.', 'danger');
+    return;
+  }
+
+  selectedSellerFeatureId = seller.id;
+  const meta = document.getElementById('feature-modal-seller');
+  if (meta) {
+    meta.textContent = `${seller.name} • ${seller.city || 'Unknown city'} • ${seller.listings || 0} listing(s)`;
+  }
+
+  const duration = document.getElementById('feature-duration');
+  const placement = document.getElementById('feature-placement');
+  if (duration) duration.value = '7 days';
+  if (placement) placement.value = 'Homepage Banner';
+
+  openModal('featureModal');
+}
+
+async function submitSellerFeature() {
+  if (sellerFeatureSubmitting) return;
+  if (!selectedSellerFeatureId) {
+    showListingToast('❌ Pick a seller first.', 'danger');
+    return;
+  }
+
+  const durationValue = document.getElementById('feature-duration')?.value || '7 days';
+  const placementValue = document.getElementById('feature-placement')?.value || 'Homepage Banner';
+  const durationDays = parseInt(durationValue, 10);
+  const placement = mapFeaturePlacementLabelToValue(placementValue);
+
+  if (!durationDays || !placement) {
+    showListingToast('❌ Invalid feature settings.', 'danger');
+    return;
+  }
+
+  sellerFeatureSubmitting = true;
+  const confirmBtn = document.getElementById('feature-confirm-btn');
+  if (confirmBtn) confirmBtn.textContent = 'Saving...';
+
+  try {
+    const response = await fetch('/api/admin/seller-features', {
+      method: 'POST',
+      headers: {
+        ...ADMIN_HEADERS,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sellerId: selectedSellerFeatureId,
+        durationDays,
+        placement,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || 'Failed to feature seller');
+    }
+
+    applyHydratedSellers(payload.sellers || []);
+    closeModal('featureModal');
+    showListingToast('✅ Seller featured successfully.', 'ok');
+  } catch (error) {
+    showListingToast(`❌ ${error.message || 'Failed to feature seller.'}`, 'danger');
+  } finally {
+    sellerFeatureSubmitting = false;
+    if (confirmBtn) confirmBtn.textContent = 'Confirm';
+  }
+}
+
 function setSellerTab(el) {
   document.querySelectorAll('#seller-tabs .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -1738,7 +1837,7 @@ function getFilteredSellers() {
 function renderSellers() {
   // Stats always computed from ALL sellers (not filtered)
   const total = ALL_SELLERS.length;
-  const verified = ALL_SELLERS.filter(s => s.status === 'Verified' || s.status === 'Featured').length;
+  const verified = ALL_SELLERS.filter(s => getSellerStatus(s) === 'Verified' || getSellerStatus(s) === 'Featured').length;
   const business = ALL_SELLERS.filter(s => s.type === 'Business').length;
   const avgListings = (ALL_SELLERS.reduce((a,s) => a + s.listings, 0) / total).toFixed(1);
   const verifiedPct = ((verified/total)*100).toFixed(1);
@@ -1773,23 +1872,25 @@ function renderSellers() {
       <tr><th>Seller</th><th>Type</th><th>City</th><th>Listings</th><th>Revenue</th><th>Rating</th><th>Status</th><th>Actions</th></tr>
       ${slice.map((s, i) => {
         const idx = ALL_SELLERS.indexOf(s);
-        const sc = statusTag[s.status] || 'tag-muted';
+        const status = getSellerStatus(s);
+        const sc = statusTag[status] || 'tag-muted';
         const tc = typeTag[s.type] || 'tag-muted';
+        const placementSummary = summarizeSellerPlacements(s);
         let actions = '';
-        if (s.status === 'Flagged' || s.status === 'Suspended') {
+        if (status === 'Flagged' || status === 'Suspended') {
           actions = `<button class="btn btn-sm btn-danger" onclick="sellerAction(${idx},'suspend')">Suspend</button>`;
-        } else if (s.status === 'Featured') {
+        } else if (status === 'Featured') {
           actions = `<button class="btn btn-sm btn-outline" onclick="sellerAction(${idx},'unfeature')">★ Unfeature</button>`;
         } else {
-          actions = `<button class="btn btn-sm btn-teal" onclick="openModal('featureModal')">⭐ Feature</button>`;
+          actions = `<button class="btn btn-sm btn-teal" onclick="openFeatureModalForSeller(${idx})">⭐ Feature</button>`;
         }
         return `<tr>
           <td><div class="flex"><div class="avatar" style="background:${s.color}">${s.name[0]}</div>
-            <div><b>${s.name}</b><div style="font-size:11px;color:var(--mut)">Member since ${s.since}</div></div></div></td>
+            <div><b>${s.name}</b><div style="font-size:11px;color:var(--mut)">Member since ${s.since}${placementSummary ? ` · ${placementSummary}` : ''}</div></div></div></td>
           <td><span class="tag ${tc}">${s.type}</span></td>
           <td>${s.city}</td><td>${s.listings}</td><td>${s.revenue}</td>
           <td>${Number(s.rating || 0) > 0 ? `⭐ ${Number(s.rating).toFixed(1)}` : '<span style="color:var(--mut)">No ratings</span>'}</td>
-          <td><span class="tag ${sc}">${s.status}</span></td>
+          <td><span class="tag ${sc}">${status}</span></td>
           <td>${actions}</td>
         </tr>`;
       }).join('')}
@@ -1811,12 +1912,43 @@ function sellerChangePage(dir) {
   renderSellers();
 }
 
-function sellerAction(idx, action) {
+async function sellerAction(idx, action) {
   const s = ALL_SELLERS[idx];
   if (!s) return;
-  if (action === 'suspend')   s.status = 'Suspended';
-  if (action === 'unfeature') s.status = 'Active';
-  renderSellers();
+  if (action === 'suspend') {
+    s.status = 'Suspended';
+    renderSellers();
+    return;
+  }
+
+  if (action === 'unfeature') {
+    const activeFeatures = getActiveSellerFeatures(s);
+    if (!activeFeatures.length) {
+      s.status = 'Active';
+      renderSellers();
+      return;
+    }
+
+    try {
+      let latestPayload = null;
+      for (const feature of activeFeatures) {
+        const response = await fetch(`/api/admin/seller-features?sellerId=${encodeURIComponent(s.id)}&placement=${encodeURIComponent(feature.placement)}`, {
+          method: 'DELETE',
+          headers: ADMIN_HEADERS,
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || 'Failed to remove seller feature');
+        }
+        latestPayload = payload;
+      }
+
+      applyHydratedSellers(latestPayload?.sellers || []);
+      showListingToast('✅ Seller feature removed.', 'ok');
+    } catch (error) {
+      showListingToast(`❌ ${error.message || 'Failed to remove seller feature.'}`, 'danger');
+    }
+  }
 }
 
 renderSellers();
@@ -2096,6 +2228,7 @@ const ADMIN_HEADERS = {
 
 const LIVE_CONTEXT = {
   users: [],
+  sellers: [],
   products: [],
   categories: [],
   transactions: [],
@@ -2119,6 +2252,8 @@ const DEFAULT_REFERRAL_SETTINGS = {
 let reportsTab = 'open';
 let resolvingReportId = null;
 let adminSelectedConversationId = null;
+let selectedSellerFeatureId = null;
+let sellerFeatureSubmitting = false;
 
 function toRelativeTime(value) {
   const ts = value ? new Date(value).getTime() : NaN;
@@ -3346,43 +3481,64 @@ function hydrateUsers(users, products) {
   populateNotificationAudience(users);
 }
 
-function hydrateSellers(products) {
-  const grouped = new Map();
+function applyHydratedSellers(sellers) {
+  LIVE_CONTEXT.sellers = sellers || [];
+  hydrateSellers(LIVE_CONTEXT.sellers, LIVE_CONTEXT.products || []);
+}
 
-  products.forEach((product) => {
-    const seller = product.user;
-    if (!seller?.id) return;
+function hydrateSellers(sellers, products = []) {
+  const liveSellers = (sellers || []).length
+    ? (sellers || []).map((seller, index) => ({
+        ...seller,
+        city: seller.addressCity || pickCity(seller),
+        since: toJoinedDate(seller.createdAt),
+        type: Number(seller.listings || 0) >= 20 ? 'Business' : 'Individual',
+        status: getActiveSellerFeatures(seller).length > 0 ? 'Featured' : 'Active',
+        color: ['#0a6e6e', '#ff6b35', '#2563eb', '#8b5cf6', '#16a34a', '#dc2626'][index % 6],
+        rating: Number(seller.sellerRatingAvg || seller.rating || 0),
+        ratingCount: Number(seller.sellerRatingCount || seller.ratingCount || 0),
+        revenueValue: Number(seller.revenueValue || 0),
+        revenue: toPkCurrency(seller.revenueValue || 0),
+      }))
+    : (() => {
+        const grouped = new Map();
 
-    if (!grouped.has(seller.id)) {
-      grouped.set(seller.id, {
-        id: seller.id,
-        name: seller.name || seller.email || `Seller ${seller.id}`,
-        city: 'Unknown',
-        since: toJoinedDate(seller.createdAt || product.upload_date_time),
-        type: 'Individual',
-        listings: 0,
-        revenueValue: 0,
-        rating: Number(seller.sellerRatingAvg || 0),
-        ratingCount: Number(seller.sellerRatingCount || 0),
-        status: 'Active',
-        color: '#0a6e6e',
-      });
-    }
+        products.forEach((product) => {
+          const seller = product.user;
+          if (!seller?.id) return;
 
-    const row = grouped.get(seller.id);
-    row.listings += 1;
-    row.revenueValue += Number(product.price || 0);
-  });
+          if (!grouped.has(seller.id)) {
+            grouped.set(seller.id, {
+              id: seller.id,
+              name: seller.name || seller.email || `Seller ${seller.id}`,
+              city: 'Unknown',
+              since: toJoinedDate(seller.createdAt || product.upload_date_time),
+              type: 'Individual',
+              listings: 0,
+              revenueValue: 0,
+              rating: Number(seller.sellerRatingAvg || 0),
+              ratingCount: Number(seller.sellerRatingCount || 0),
+              status: 'Active',
+              color: '#0a6e6e',
+              sellerFeatures: [],
+            });
+          }
 
-  const sellers = [...grouped.values()]
-    .sort((a, b) => b.listings - a.listings)
-    .map((seller) => ({
-      ...seller,
-      rating: seller.rating > 0 ? seller.rating : 0,
-      revenue: toPkCurrency(seller.revenueValue),
-    }));
+          const row = grouped.get(seller.id);
+          row.listings += 1;
+          row.revenueValue += Number(product.price || 0);
+        });
 
-  replaceArrayContents(ALL_SELLERS, sellers);
+        return [...grouped.values()]
+          .sort((a, b) => b.listings - a.listings)
+          .map((seller) => ({
+            ...seller,
+            rating: seller.rating > 0 ? seller.rating : 0,
+            revenue: toPkCurrency(seller.revenueValue),
+          }));
+      })();
+
+  replaceArrayContents(ALL_SELLERS, liveSellers);
   sellerPage = 1;
   renderSellers();
 }
@@ -3443,7 +3599,7 @@ function hydrateListings(products) {
 
 async function loadLiveData() {
   try {
-    const [usersRes, productsRes, categoriesRes, transactionsRes, messagesRes, reportsRes, notificationsRes] = await Promise.all([
+    const [usersRes, productsRes, categoriesRes, transactionsRes, messagesRes, reportsRes, notificationsRes, sellerFeaturesRes] = await Promise.all([
       fetch('/api/users', { cache: 'no-store' }),
       fetch('/api/products', { headers: ADMIN_HEADERS, cache: 'no-store' }),
       fetch('/api/categories', { cache: 'no-store' }),
@@ -3451,9 +3607,10 @@ async function loadLiveData() {
       fetch('/api/admin/messages', { headers: ADMIN_HEADERS, cache: 'no-store' }),
       fetch('/api/admin/reports', { headers: ADMIN_HEADERS, cache: 'no-store' }),
       fetch('/api/admin/notifications', { headers: ADMIN_HEADERS, cache: 'no-store' }),
+      fetch('/api/admin/seller-features', { headers: ADMIN_HEADERS, cache: 'no-store' }),
     ]);
 
-    const [usersPayload, productsPayload, categoriesPayload, transactionsPayload, messagesPayload, reportsPayload, notificationsPayload] = await Promise.all([
+    const [usersPayload, productsPayload, categoriesPayload, transactionsPayload, messagesPayload, reportsPayload, notificationsPayload, sellerFeaturesPayload] = await Promise.all([
       usersRes.json(),
       productsRes.json(),
       categoriesRes.json(),
@@ -3461,6 +3618,7 @@ async function loadLiveData() {
       messagesRes.json(),
       reportsRes.json(),
       notificationsRes.json(),
+      sellerFeaturesRes.json(),
     ]);
 
     if (!usersRes.ok) throw new Error(usersPayload.error || 'Failed to load users');
@@ -3470,6 +3628,7 @@ async function loadLiveData() {
     if (!messagesRes.ok) throw new Error(messagesPayload.error || 'Failed to load messages');
     if (!reportsRes.ok) throw new Error(reportsPayload.error || 'Failed to load reports');
     if (!notificationsRes.ok) throw new Error(notificationsPayload.error || 'Failed to load notifications');
+    if (!sellerFeaturesRes.ok) throw new Error(sellerFeaturesPayload.error || 'Failed to load sellers');
 
     const users = usersPayload.users || [];
     const products = productsPayload.products || [];
@@ -3480,8 +3639,10 @@ async function loadLiveData() {
     const reports = reportsPayload.reports || [];
     const reportSummary = reportsPayload.summary || {};
     const notificationCampaigns = notificationsPayload.campaigns || [];
+    const sellers = sellerFeaturesPayload.sellers || [];
 
     LIVE_CONTEXT.users = users;
+    LIVE_CONTEXT.sellers = sellers;
     LIVE_CONTEXT.products = products;
     LIVE_CONTEXT.transactions = transactions;
     LIVE_CONTEXT.summary = summary;
@@ -3494,7 +3655,7 @@ async function loadLiveData() {
 
     hydrateDashboard(users, products, transactions, summary);
     hydrateUsers(users, products);
-    hydrateSellers(products);
+    hydrateSellers(sellers, products);
     hydrateListings(products);
 
     renderLiveDauChart(products, transactions);

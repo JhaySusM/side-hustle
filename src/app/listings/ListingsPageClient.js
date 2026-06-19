@@ -324,6 +324,9 @@ export default function ListingsPageClient({ initialQuery, initialCategory, init
                             <p className="listing-browser-card-meta mb-0">
                               Sold by {item.user?.name || "Unknown seller"}
                             </p>
+                            {item.user?.isFeaturedSeller ? (
+                              <Badge pill className="listing-browser-chip mt-2">Featured seller</Badge>
+                            ) : null}
                             {item.user?.address ? (
                               <p className="listing-browser-card-meta mb-0">{item.user.address}</p>
                             ) : null}
