@@ -28,6 +28,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [authOpen, setAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
@@ -35,6 +36,22 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState([]);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [referralParam, setReferralParam] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const nextReferral = String(params.get("ref") || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 24);
+
+    setReferralParam(nextReferral);
+  }, [pathname]);
 
   useEffect(() => {
     async function fetchUser() {
@@ -48,10 +65,20 @@ export default function Navbar() {
         }
       } catch {
         setUser(null);
+      } finally {
+        setAuthChecked(true);
       }
     }
     fetchUser();
   }, []);
+
+  useEffect(() => {
+    if (!authChecked || user || !referralParam) {
+      return;
+    }
+
+    setAuthOpen(true);
+  }, [authChecked, referralParam, user]);
 
   useEffect(() => {
     if (!user) return;

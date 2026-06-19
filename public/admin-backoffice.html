@@ -380,6 +380,14 @@ tr:hover td{background:#f5f9fc}
 .listing-item-meta{font-size:11px;color:var(--mut);margin-top:4px}
 .listing-empty{padding:44px 24px;text-align:center;color:var(--mut)}
 .listing-empty strong{display:block;font-size:16px;color:#0f172a;margin-bottom:8px}
+.listing-preview-media{width:100%;height:220px;object-fit:cover;border-radius:16px;background:#e2e8f0;border:1px solid rgba(215,222,234,.95)}
+.listing-preview-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}
+.listing-preview-stack{display:flex;flex-direction:column;gap:12px}
+.listing-preview-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.listing-preview-box{border:1px solid rgba(215,222,234,.95);border-radius:14px;padding:12px;background:#fff}
+.listing-preview-box .k{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--mut)}
+.listing-preview-box .v{margin-top:6px;font-size:14px;font-weight:700;color:#0f172a;line-height:1.45}
+.listing-preview-desc{border:1px solid rgba(215,222,234,.95);border-radius:14px;padding:14px;background:#fff;font-size:13px;line-height:1.65;color:#334155;white-space:pre-wrap}
 
 /* Analytics workspace */
 .analytics-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
@@ -419,6 +427,7 @@ tr:hover td{background:#f5f9fc}
   .listing-hero-top{flex-direction:column}
   .listing-hero-stats{grid-template-columns:1fr}
   .listing-panel-head,.listing-bulk-bar{flex-direction:column;align-items:flex-start}
+  .listing-preview-grid,.listing-preview-meta{grid-template-columns:1fr}
 }
 
 @media (max-width:1280px){
@@ -511,6 +520,58 @@ tr:hover td{background:#f5f9fc}
 .referral-month-row .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:8px}
 .referral-month-row .top span:last-child{font-weight:800;color:#475569}
 
+/* Admin messaging workspace */
+.messages-shell{display:flex;flex-direction:column;gap:20px}
+.messages-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.messages-layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;min-height:640px}
+.messages-sidebar-card,.messages-thread-card{padding:0;overflow:hidden}
+.messages-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid rgba(215,222,234,.95);background:linear-gradient(180deg,#ffffff 0%,#fbfcff 100%)}
+.messages-panel-head h3{margin:0;font-family:'Sora',sans-serif;font-size:17px}
+.messages-panel-head p{margin:4px 0 0;font-size:12px;color:var(--mut)}
+.messages-inbox{display:flex;flex-direction:column;max-height:560px;overflow:auto;background:#fff}
+.message-thread-list-item{padding:16px 20px;border-bottom:1px solid rgba(236,241,247,.95);cursor:pointer;transition:.16s;background:#fff}
+.message-thread-list-item:hover{background:#f8fbff}
+.message-thread-list-item.active{background:linear-gradient(180deg,#f8fbff 0%,#eef5ff 100%)}
+.message-thread-list-item.unread{border-left:4px solid #2563eb;padding-left:16px}
+.message-thread-list-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.message-thread-name{font-size:14px;font-weight:800;color:#0f172a}
+.message-thread-date{font-size:11px;color:var(--mut);white-space:nowrap}
+.message-thread-meta{font-size:12px;color:#475569;margin-top:4px}
+.message-thread-preview{font-size:12px;color:var(--mut);margin-top:10px;line-height:1.45;display:-webkit-box;line-clamp:2;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.message-thread-badges{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.message-unread-pill{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 8px;border-radius:999px;background:#2563eb;color:#fff;font-size:11px;font-weight:800}
+.messages-empty{padding:36px 24px;text-align:center;color:var(--mut)}
+.messages-empty strong{display:block;font-size:16px;color:#0f172a;margin-bottom:8px}
+.messages-thread-wrap{display:flex;flex-direction:column;height:100%;min-height:640px;background:linear-gradient(180deg,#ffffff 0%,#fbfcff 100%)}
+.messages-thread-header{padding:20px;border-bottom:1px solid rgba(215,222,234,.95);display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.messages-thread-title{font-family:'Sora',sans-serif;font-size:20px;line-height:1.2;color:#0f172a;margin:0}
+.messages-thread-sub{margin-top:6px;font-size:12px;color:var(--mut)}
+.messages-thread-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.messages-thread-body{flex:1;display:flex;flex-direction:column;min-height:0}
+.messages-thread-scroll{flex:1;overflow:auto;padding:20px;background:linear-gradient(180deg,#f8fafc 0%,#fdfefe 100%)}
+.messages-bubble-col{display:flex;flex-direction:column;gap:12px}
+.messages-bubble-row{display:flex}
+.messages-bubble-row.self{justify-content:flex-end}
+.messages-bubble{max-width:min(520px,80%);padding:12px 14px;border-radius:18px;background:#fff;border:1px solid rgba(215,222,234,.95);box-shadow:0 8px 18px rgba(15,23,42,.05)}
+.messages-bubble-row.self .messages-bubble{background:linear-gradient(180deg,#eff6ff 0%,#e0ecff 100%);border-color:#bfdbfe}
+.messages-bubble-meta{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:#64748b;margin-bottom:8px}
+.messages-bubble-body{font-size:13px;line-height:1.6;color:#0f172a;white-space:pre-wrap;word-break:break-word}
+.messages-bubble-image{display:block;margin-top:10px;max-width:100%;border-radius:12px;border:1px solid rgba(215,222,234,.95)}
+.messages-composer{padding:18px 20px;border-top:1px solid rgba(215,222,234,.95);background:#fff}
+.messages-composer textarea{min-height:112px;resize:vertical}
+.messages-composer-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}
+.messages-composer-hint{font-size:12px;color:var(--mut)}
+
+@media (max-width:1280px){
+  .messages-layout{grid-template-columns:1fr}
+}
+
+@media (max-width:860px){
+  .messages-summary-grid{grid-template-columns:1fr}
+  .messages-thread-header,.messages-composer-actions{flex-direction:column;align-items:flex-start}
+  .messages-bubble{max-width:100%}
+}
+
 @media (max-width:1280px){
   .kpi-row{grid-template-columns:repeat(3,minmax(0,1fr))}
   .referral-grid{grid-template-columns:1fr}
@@ -549,6 +610,7 @@ input:checked+.slider:before{transform:translateX(18px)}
     <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="ic">📊</span> Dashboard</div>
     <div class="nav-section">Operations</div>
     <div class="nav-item" onclick="showPage('listings',this)"><span class="ic">📋</span> Listing Approval</div>
+    <div class="nav-item" onclick="showPage('messages',this)"><span class="ic">💬</span> Messages</div>
     <div class="nav-item" onclick="showPage('reports',this)"><span class="ic">🚨</span> Reports & Complaints</div>
     <div class="nav-item" onclick="showPage('notifications',this)"><span class="ic">🔔</span> Push Notifications</div>
     <div class="nav-section">People</div>
@@ -1026,6 +1088,55 @@ input:checked+.slider:before{transform:translateX(18px)}
       </div>
     </div>
 
+    <!-- ══════════════════ MESSAGES ══════════════════ -->
+    <div class="page" id="page-messages">
+      <div class="messages-shell">
+        <div class="messages-summary-grid">
+          <div class="stat"><div class="label">Conversations</div><div class="val" id="adminMessagesCount">0</div><div class="delta">Active inbox threads</div><div class="ic-bg">💬</div></div>
+          <div class="stat"><div class="label">Unread</div><div class="val" id="adminMessagesUnread">0</div><div class="delta">Waiting for admin reply</div><div class="ic-bg">🔵</div></div>
+          <div class="stat"><div class="label">With Transactions</div><div class="val" id="adminMessagesTransactions">0</div><div class="delta">Conversations tied to deals</div><div class="ic-bg">💸</div></div>
+        </div>
+
+        <div class="messages-layout">
+          <div class="card messages-sidebar-card">
+            <div class="messages-panel-head">
+              <div>
+                <h3>Inbox</h3>
+                <p>Buyer conversations routed to the admin support desk.</p>
+              </div>
+            </div>
+            <div class="messages-inbox" id="adminMessagesList"></div>
+          </div>
+
+          <div class="card messages-thread-card">
+            <div class="messages-thread-wrap">
+              <div class="messages-thread-header">
+                <div>
+                  <h3 class="messages-thread-title" id="adminMessagesSelectedTitle">Select a conversation</h3>
+                  <div class="messages-thread-sub" id="adminMessagesSelectedMeta">Choose a thread from the inbox to review messages.</div>
+                  <div class="messages-thread-tags" id="adminMessagesSelectedTags"></div>
+                </div>
+                <button class="btn btn-outline btn-sm" id="adminMarkReadButton" onclick="markSelectedAdminConversationRead()">Mark as read</button>
+              </div>
+              <div class="messages-thread-body">
+                <div class="messages-thread-scroll" id="adminMessagesThread"></div>
+                <div class="messages-composer">
+                  <div class="form-group" style="margin-bottom:0">
+                    <label>Reply as Admin</label>
+                    <textarea id="adminMessageReply" rows="4" placeholder="Type your reply to the buyer..."></textarea>
+                  </div>
+                  <div class="messages-composer-actions">
+                    <div class="messages-composer-hint">Replies are sent from the admin support account and appear in the live conversation.</div>
+                    <button class="btn btn-teal" onclick="sendAdminMessageReply()">Send Reply</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══════════════════ REFERRAL TRACKING ══════════════════ -->
     <div class="page" id="page-referrals">
       <div class="referral-shell">
@@ -1035,17 +1146,17 @@ input:checked+.slider:before{transform:translateX(18px)}
             <div class="referral-head">
               <div>
                 <h3>Track referral adoption, rewards, and fraud checks from one place.</h3>
-                <p>This workspace is ready for live referral metrics, but there is no referral dataset connected yet. Use it as the designed control surface for the future program rollout.</p>
+                <p id="referral-hero-copy">This workspace is now connected to live referral signups, qualification rules, and reward tracking from your current user base.</p>
               </div>
-              <div class="referral-chip">No live referral feed</div>
+              <div class="referral-chip" id="referral-live-chip">Live referral feed active</div>
             </div>
           </div>
           <div class="kpi-row">
-            <div class="kpi"><div class="kv">—</div><div class="kl">Total Referrers</div></div>
-            <div class="kpi"><div class="kv">—</div><div class="kl">Referred Users</div></div>
-            <div class="kpi"><div class="kv">—</div><div class="kl">Avg Reward Paid</div></div>
-            <div class="kpi"><div class="kv">—</div><div class="kl">Rewards Released</div></div>
-            <div class="kpi"><div class="kv">—</div><div class="kl">Conversion Rate</div></div>
+            <div class="kpi"><div class="kv" id="referral-kpi-referrers">—</div><div class="kl">Total Referrers</div></div>
+            <div class="kpi"><div class="kv" id="referral-kpi-referred">—</div><div class="kl">Referred Users</div></div>
+            <div class="kpi"><div class="kv" id="referral-kpi-avg-reward">—</div><div class="kl">Avg Reward Paid</div></div>
+            <div class="kpi"><div class="kv" id="referral-kpi-rewards">—</div><div class="kl">Rewards Released</div></div>
+            <div class="kpi"><div class="kv" id="referral-kpi-conversion">—</div><div class="kl">Conversion Rate</div></div>
           </div>
         </div>
 
@@ -1054,15 +1165,15 @@ input:checked+.slider:before{transform:translateX(18px)}
             <div class="referral-panel-head">
               <div>
                 <h3>Top Referrers</h3>
-                <p>Highest-performing advocates will appear here once referrals start syncing.</p>
+                <p id="referral-panel-copy">Highest-performing advocates ranked by qualified referrals and reward impact.</p>
               </div>
-              <button class="btn btn-outline btn-sm">Export</button>
+              <button class="btn btn-outline btn-sm" onclick="exportReferralCsv()">Export</button>
             </div>
-            <div class="referral-empty-card">
-              <strong>No referral leaderboard yet.</strong>
-              <p>Once the referral program begins collecting invitations, conversions, and rewards, this panel can highlight top referrers and flag suspicious accounts for review.</p>
+            <div class="referral-empty-card" id="referral-leaderboard-shell">
+              <strong id="referral-leaderboard-title">No referral leaderboard yet.</strong>
+              <p id="referral-leaderboard-copy">Once the referral program begins collecting invitations, conversions, and rewards, this panel can highlight top referrers and flag suspicious accounts for review.</p>
               <div class="referral-empty-table">
-                <div class="tbl-wrap">
+                <div class="tbl-wrap" id="referral-table-wrap">
                   <table>
                     <tr><th>User</th><th>Referrals</th><th>Converted</th><th>Rate</th><th>Rewards</th><th>Status</th></tr>
                     <tr><td colspan="6">No referral data available.</td></tr>
@@ -1077,27 +1188,27 @@ input:checked+.slider:before{transform:translateX(18px)}
               <div class="card-h"><h3>⚙️ Program Settings</h3></div>
               <div class="form-group" style="margin-bottom:12px">
                 <label>Reward Per Successful Referral</label>
-                <input type="number" value="" placeholder="Set reward amount">
+                <input type="number" id="referral-reward-amount" value="" min="0" step="1" placeholder="Set reward amount">
               </div>
               <div class="form-group" style="margin-bottom:12px">
                 <label>Min. Listings to Qualify (Referred User)</label>
-                <input type="number" value="" placeholder="Set minimum listing count">
+                <input type="number" id="referral-min-listings" value="" min="0" step="1" placeholder="Set minimum listing count">
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
                 <span style="font-size:13px;font-weight:600">Fraud Detection</span>
-                <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                <label class="toggle"><input type="checkbox" id="referral-fraud-toggle" checked><span class="slider"></span></label>
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
                 <span style="font-size:13px;font-weight:600">Program Active</span>
-                <label class="toggle"><input type="checkbox"><span class="slider"></span></label>
+                <label class="toggle"><input type="checkbox" id="referral-active-toggle"><span class="slider"></span></label>
               </div>
-              <button class="btn btn-teal" style="width:100%">Save Settings</button>
-              <div class="referral-settings-note">Settings can be prepared now even if referral activity has not started yet.</div>
+              <button class="btn btn-teal" style="width:100%" onclick="saveReferralSettings()">Save Settings</button>
+              <div class="referral-settings-note" id="referral-settings-note">Settings can be prepared now even if referral activity has not started yet.</div>
             </div>
 
             <div class="card referral-month-card">
               <div class="card-h"><h3>📊 This Month</h3></div>
-              <div class="referral-month-empty">
+              <div class="referral-month-empty" id="referral-month-stats">
                 <div class="referral-month-row"><div class="top"><span>New Referrals</span><span>—</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--teal)"></div></div></div>
                 <div class="referral-month-row"><div class="top"><span>Conversions</span><span>—</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--ok)"></div></div></div>
                 <div class="referral-month-row"><div class="top"><span>Rewards Paid</span><span>—</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--warn)"></div></div></div>
@@ -1140,12 +1251,37 @@ input:checked+.slider:before{transform:translateX(18px)}
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="listingPreviewModal">
+  <div class="modal" style="max-width:860px">
+    <h3 id="listing-preview-title">Listing Preview</h3>
+    <div class="listing-preview-grid">
+      <div class="listing-preview-stack">
+        <img id="listing-preview-image" class="listing-preview-media" src="https://placehold.co/720x420?text=No+Image" alt="Listing preview">
+        <div class="listing-preview-desc" id="listing-preview-description">No description available.</div>
+      </div>
+      <div class="listing-preview-stack">
+        <div class="listing-preview-meta">
+          <div class="listing-preview-box"><div class="k">Seller</div><div class="v" id="listing-preview-seller">-</div></div>
+          <div class="listing-preview-box"><div class="k">Price</div><div class="v" id="listing-preview-price">-</div></div>
+          <div class="listing-preview-box"><div class="k">Category</div><div class="v" id="listing-preview-category">-</div></div>
+          <div class="listing-preview-box"><div class="k">City</div><div class="v" id="listing-preview-city">-</div></div>
+          <div class="listing-preview-box"><div class="k">Status</div><div class="v" id="listing-preview-status">-</div></div>
+          <div class="listing-preview-box"><div class="k">Flag</div><div class="v" id="listing-preview-flag">-</div></div>
+        </div>
+        <div class="listing-preview-box"><div class="k">Listed</div><div class="v" id="listing-preview-time">-</div></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('listingPreviewModal')">Close</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // Navigation
 const pageTitles = {
   dashboard:'Dashboard', analytics:'Analytics', users:'User Management',
-  sellers:'Seller Management', listings:'Listing Approval',
+  sellers:'Seller Management', listings:'Listing Approval', messages:'Messages',
   reports:'Reports & Complaints', notifications:'Push Notifications', referrals:'Referral Tracking'
 };
 function showPage(id, el) {
@@ -1733,6 +1869,29 @@ function switchListingTab(tab, el) {
   renderListingTable();
 }
 
+function viewListing(id) {
+  const listing = LISTINGS.find((row) => row.id === id);
+  if (!listing) return;
+
+  setNodeText('listing-preview-title', listing.title || 'Listing Preview');
+  setNodeText('listing-preview-seller', listing.seller || 'Unknown Seller');
+  setNodeText('listing-preview-price', listing.price || '-');
+  setNodeText('listing-preview-category', listing.cat || 'Uncategorized');
+  setNodeText('listing-preview-city', listing.city || 'Unknown');
+  setNodeText('listing-preview-status', listing.status || '-');
+  setNodeText('listing-preview-flag', listing.flagLabel || '-');
+  setNodeText('listing-preview-time', listing.time || '-');
+  setNodeText('listing-preview-description', listing.description || 'No description available.');
+
+  const image = document.getElementById('listing-preview-image');
+  if (image) {
+    image.src = listing.imageUrl || 'https://placehold.co/720x420?text=No+Image';
+    image.alt = listing.title || 'Listing preview';
+  }
+
+  openModal('listingPreviewModal');
+}
+
 function renderListingTable() {
   refreshListingApprovalStats();
   const visible = LISTINGS.filter(l => l.status === listingTab);
@@ -1760,13 +1919,13 @@ function renderListingTable() {
         const flagClass = l.flag==='clean' ? 'tag-ok' : 'tag-danger';
         const isFlagged = l.flag !== 'clean';
         const titleStyle = isFlagged ? 'color:var(--danger)' : '';
-        let actions = '';
+        let actions = `<button class="btn btn-sm btn-outline" onclick="viewListing('${l.id}')">View</button> `;
         if (listingTab === 'pending') {
           if (!isFlagged) actions += `<button class="btn btn-sm btn-ok" onclick="actListing('${l.id}','approve')">Approve</button> `;
           if (l.flag === 'illegal') actions += `<button class="btn btn-sm btn-danger" onclick="actListing('${l.id}','reject-ban')">Reject + Ban</button>`;
           else actions += `<button class="btn btn-sm btn-danger" onclick="actListing('${l.id}','reject')">Reject</button>`;
         } else {
-          actions = `<button class="btn btn-sm btn-outline" onclick="actListing('${l.id}','restore')">↩ Restore</button>`;
+          actions += `<button class="btn btn-sm btn-outline" onclick="actListing('${l.id}','restore')">↩ Restore</button>`;
         }
         return `<tr id="row-${l.id}">
           <td><input type="checkbox" class="row-chk" data-id="${l.id}" onchange="updateSelCount()"></td>
@@ -1945,10 +2104,21 @@ const LIVE_CONTEXT = {
   reports: [],
   reportSummary: {},
   notificationCampaigns: [],
+  referralMetrics: null,
+  referralSettings: null,
+};
+
+const REFERRAL_SETTINGS_KEY = 'tradigo_admin_referral_settings';
+const DEFAULT_REFERRAL_SETTINGS = {
+  rewardAmount: 500,
+  minListings: 1,
+  fraudDetection: true,
+  programActive: true,
 };
 
 let reportsTab = 'open';
 let resolvingReportId = null;
+let adminSelectedConversationId = null;
 
 function toRelativeTime(value) {
   const ts = value ? new Date(value).getTime() : NaN;
@@ -1959,6 +2129,391 @@ function toRelativeTime(value) {
   if (diff < hour) return `${Math.max(1, Math.round(diff / (60 * 1000)))}m ago`;
   if (diff < day) return `${Math.round(diff / hour)}h ago`;
   return `${Math.round(diff / day)}d ago`;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function messageStatusTag(status) {
+  if (status === 'Sold') return 'tag-ok';
+  if (status === 'Pending') return 'tag-warn';
+  if (status === 'Inactive') return 'tag-danger';
+  return 'tag-info';
+}
+
+function setAdminSelectedConversation(conversationId) {
+  adminSelectedConversationId = conversationId;
+  renderAdminMessagesPage();
+
+  const conversation = (LIVE_CONTEXT.conversations || []).find((item) => item.id === conversationId);
+  if (conversation?.unreadCount > 0) {
+    markAdminConversationRead(conversationId);
+  }
+}
+
+function getReferralSettings() {
+  try {
+    const raw = window.localStorage.getItem(REFERRAL_SETTINGS_KEY);
+    if (!raw) return { ...DEFAULT_REFERRAL_SETTINGS };
+    const parsed = JSON.parse(raw);
+    return {
+      rewardAmount: Math.max(0, Number(parsed.rewardAmount ?? DEFAULT_REFERRAL_SETTINGS.rewardAmount) || 0),
+      minListings: Math.max(0, Number(parsed.minListings ?? DEFAULT_REFERRAL_SETTINGS.minListings) || 0),
+      fraudDetection: parsed.fraudDetection !== false,
+      programActive: parsed.programActive !== false,
+    };
+  } catch {
+    return { ...DEFAULT_REFERRAL_SETTINGS };
+  }
+}
+
+function persistReferralSettings(settings) {
+  window.localStorage.setItem(REFERRAL_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function hydrateReferralSettingsForm(settings) {
+  const rewardInput = document.getElementById('referral-reward-amount');
+  const listingsInput = document.getElementById('referral-min-listings');
+  const fraudToggle = document.getElementById('referral-fraud-toggle');
+  const activeToggle = document.getElementById('referral-active-toggle');
+  if (rewardInput) rewardInput.value = String(settings.rewardAmount ?? '');
+  if (listingsInput) listingsInput.value = String(settings.minListings ?? '');
+  if (fraudToggle) fraudToggle.checked = Boolean(settings.fraudDetection);
+  if (activeToggle) activeToggle.checked = Boolean(settings.programActive);
+}
+
+function collectReferralSettingsFromForm() {
+  return {
+    rewardAmount: Math.max(0, Number(document.getElementById('referral-reward-amount')?.value || 0)),
+    minListings: Math.max(0, Number(document.getElementById('referral-min-listings')?.value || 0)),
+    fraudDetection: Boolean(document.getElementById('referral-fraud-toggle')?.checked),
+    programActive: Boolean(document.getElementById('referral-active-toggle')?.checked),
+  };
+}
+
+function buildReferralMetrics(users, products, settings) {
+  const allUsers = Array.isArray(users) ? users : [];
+  const allProducts = Array.isArray(products) ? products : [];
+  const listingsByUserId = allProducts.reduce((map, product) => {
+    const userId = Number(product?.user_id || product?.user?.id || 0);
+    if (!userId) return map;
+    map.set(userId, (map.get(userId) || 0) + 1);
+    return map;
+  }, new Map());
+
+  const referredUsers = allUsers
+    .filter((user) => Number(user?.referredById || 0) > 0)
+    .map((user) => {
+      const listings = listingsByUserId.get(Number(user.id)) || 0;
+      const converted = listings >= settings.minListings;
+      const createdAt = user?.createdAt ? new Date(user.createdAt) : null;
+      const suspicious = settings.fraudDetection && createdAt && (Date.now() - createdAt.getTime()) < (24 * 60 * 60 * 1000) && listings === 0;
+      return {
+        ...user,
+        listings,
+        converted,
+        suspicious,
+      };
+    });
+
+  const referrerMap = new Map();
+  referredUsers.forEach((user) => {
+    const referrerId = Number(user.referredById || 0);
+    const referrer = allUsers.find((item) => Number(item.id) === referrerId);
+    if (!referrer) return;
+    const current = referrerMap.get(referrerId) || {
+      id: referrerId,
+      name: referrer.name || referrer.email || 'Unknown User',
+      email: referrer.email || '—',
+      city: pickCity(referrer),
+      referralCode: referrer.referralCode || '—',
+      referrals: 0,
+      converted: 0,
+      suspicious: 0,
+    };
+    current.referrals += 1;
+    if (user.converted) current.converted += 1;
+    if (user.suspicious) current.suspicious += 1;
+    referrerMap.set(referrerId, current);
+  });
+
+  const topReferrers = [...referrerMap.values()]
+    .map((item) => {
+      const rewards = item.converted * settings.rewardAmount;
+      const rate = item.referrals > 0 ? (item.converted / item.referrals) * 100 : 0;
+      return {
+        ...item,
+        rewards,
+        rate,
+        status: item.suspicious > 0 ? 'Review' : (item.converted > 0 ? 'Payable' : 'Tracking'),
+      };
+    })
+    .sort((a, b) => b.converted - a.converted || b.referrals - a.referrals || a.name.localeCompare(b.name));
+
+  const totalRewards = topReferrers.reduce((sum, item) => sum + item.rewards, 0);
+  const averageReward = topReferrers.length ? totalRewards / topReferrers.length : 0;
+  const convertedCount = referredUsers.filter((item) => item.converted).length;
+  const conversionRate = referredUsers.length ? (convertedCount / referredUsers.length) * 100 : 0;
+
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const monthlyReferrals = referredUsers.filter((item) => {
+    const createdAt = item?.createdAt ? new Date(item.createdAt).getTime() : NaN;
+    return Number.isFinite(createdAt) && createdAt >= monthStart.getTime();
+  }).length;
+  const monthlyConversions = referredUsers.filter((item) => {
+    const createdAt = item?.createdAt ? new Date(item.createdAt).getTime() : NaN;
+    return Number.isFinite(createdAt) && createdAt >= monthStart.getTime() && item.converted;
+  }).length;
+  const monthlyRewards = monthlyConversions * settings.rewardAmount;
+  const fraudBlocked = referredUsers.filter((item) => item.suspicious).length;
+
+  return {
+    totalReferrers: topReferrers.length,
+    referredUsers: referredUsers.length,
+    avgReward: averageReward,
+    rewardsReleased: totalRewards,
+    conversionRate,
+    topReferrers,
+    month: {
+      referrals: monthlyReferrals,
+      conversions: monthlyConversions,
+      rewards: monthlyRewards,
+      fraudBlocked,
+    },
+  };
+}
+
+function renderReferralMonthStats(metrics) {
+  const wrap = document.getElementById('referral-month-stats');
+  if (!wrap) return;
+  const base = Math.max(metrics.referredUsers || 0, 1);
+  const rows = [
+    { label: 'New Referrals', value: metrics.month.referrals, fill: Math.min(100, Math.round((metrics.month.referrals / base) * 100)), color: 'var(--teal)' },
+    { label: 'Conversions', value: metrics.month.conversions, fill: Math.min(100, Math.round((metrics.month.conversions / base) * 100)), color: 'var(--ok)' },
+    { label: 'Rewards Paid', value: toPkCurrency(metrics.month.rewards), fill: Math.min(100, Math.round((metrics.month.conversions / base) * 100)), color: 'var(--warn)' },
+    { label: 'Fraud Blocked', value: metrics.month.fraudBlocked, fill: Math.min(100, Math.round((metrics.month.fraudBlocked / base) * 100)), color: 'var(--danger)' },
+  ];
+  wrap.innerHTML = rows.map((row) => `<div class="referral-month-row"><div class="top"><span>${row.label}</span><span>${row.value}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${row.fill}%;background:${row.color}"></div></div></div>`).join('');
+}
+
+function renderReferralPage() {
+  const settings = LIVE_CONTEXT.referralSettings || getReferralSettings();
+  LIVE_CONTEXT.referralSettings = settings;
+  hydrateReferralSettingsForm(settings);
+
+  const metrics = buildReferralMetrics(LIVE_CONTEXT.users || [], LIVE_CONTEXT.products || [], settings);
+  LIVE_CONTEXT.referralMetrics = metrics;
+
+  setNodeText('referral-kpi-referrers', metrics.totalReferrers.toLocaleString());
+  setNodeText('referral-kpi-referred', metrics.referredUsers.toLocaleString());
+  setNodeText('referral-kpi-avg-reward', toPkCurrency(metrics.avgReward));
+  setNodeText('referral-kpi-rewards', toPkCurrency(metrics.rewardsReleased));
+  setNodeText('referral-kpi-conversion', `${metrics.conversionRate.toFixed(1)}%`);
+
+  const hasData = metrics.referredUsers > 0;
+  setNodeText('referral-live-chip', hasData ? 'Live referral feed active' : 'No referrals yet');
+  setNodeText('referral-hero-copy', hasData
+    ? `Tracking ${metrics.referredUsers.toLocaleString()} referred users and ${metrics.totalReferrers.toLocaleString()} active referrers with the current qualification rules.`
+    : 'The referral program is connected, but there are no referred accounts yet. Share a few invite links to start filling this dashboard.');
+  setNodeText('referral-panel-copy', hasData
+    ? 'Highest-performing advocates ranked by qualified referrals and reward impact.'
+    : 'Invite activity will populate this leaderboard automatically as new referred accounts sign up.');
+
+  const titleNode = document.getElementById('referral-leaderboard-title');
+  const copyNode = document.getElementById('referral-leaderboard-copy');
+  const tableWrap = document.getElementById('referral-table-wrap');
+  if (titleNode) titleNode.textContent = hasData ? 'Referral leaderboard is live.' : 'No referral leaderboard yet.';
+  if (copyNode) copyNode.textContent = hasData
+    ? `Qualified referrals currently require at least ${settings.minListings} listing${settings.minListings === 1 ? '' : 's'} to release a reward of ${toPkCurrency(settings.rewardAmount)}.`
+    : 'Once the referral program begins collecting invitations, conversions, and rewards, this panel can highlight top referrers and flag suspicious accounts for review.';
+
+  if (tableWrap) {
+    if (!metrics.topReferrers.length) {
+      tableWrap.innerHTML = '<table><tr><th>User</th><th>Referrals</th><th>Converted</th><th>Rate</th><th>Rewards</th><th>Status</th></tr><tr><td colspan="6">No referral data available.</td></tr></table>';
+    } else {
+      tableWrap.innerHTML = `<table><tr><th>User</th><th>Referrals</th><th>Converted</th><th>Rate</th><th>Rewards</th><th>Status</th></tr>${metrics.topReferrers.slice(0, 8).map((item) => `<tr><td><div class="flex"><div class="avatar" style="background:#0a6e6e">${escapeHtml(item.name).charAt(0).toUpperCase()}</div><div><div style="font-weight:700;color:#0f172a">${escapeHtml(item.name)}</div><div style="font-size:11px;color:var(--mut)">${escapeHtml(item.referralCode)} · ${escapeHtml(item.city)}</div></div></div></td><td>${item.referrals}</td><td>${item.converted}</td><td>${item.rate.toFixed(1)}%</td><td>${toPkCurrency(item.rewards)}</td><td><span class="tag ${item.status === 'Review' ? 'tag-danger' : (item.status === 'Payable' ? 'tag-ok' : 'tag-info')}">${item.status}</span></td></tr>`).join('')}</table>`;
+    }
+  }
+
+  renderReferralMonthStats(metrics);
+
+  const noteNode = document.getElementById('referral-settings-note');
+  if (noteNode) {
+    noteNode.textContent = settings.programActive
+      ? `Program is active. Rewards release at ${toPkCurrency(settings.rewardAmount)} once a referred user reaches ${settings.minListings} listing${settings.minListings === 1 ? '' : 's'}.`
+      : 'Program is paused. Settings are saved and will apply once you reactivate referrals.';
+  }
+}
+
+function saveReferralSettings() {
+  const settings = collectReferralSettingsFromForm();
+  LIVE_CONTEXT.referralSettings = settings;
+  persistReferralSettings(settings);
+  renderReferralPage();
+  alert('Referral settings saved. Dashboard metrics updated.');
+}
+
+function exportReferralCsv() {
+  const metrics = LIVE_CONTEXT.referralMetrics || buildReferralMetrics(LIVE_CONTEXT.users || [], LIVE_CONTEXT.products || [], LIVE_CONTEXT.referralSettings || getReferralSettings());
+  const rows = [['User', 'Email', 'Referral Code', 'City', 'Referrals', 'Converted', 'Rate', 'Rewards', 'Status'],
+    ...metrics.topReferrers.map((item) => [item.name, item.email, item.referralCode, item.city, item.referrals, item.converted, `${item.rate.toFixed(1)}%`, toPkCurrency(item.rewards), item.status])];
+  const csv = rows.map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'tradigo_referrals.csv';
+  a.click();
+}
+
+function markAdminConversationReadLocally(conversationId) {
+  const conversation = (LIVE_CONTEXT.conversations || []).find((item) => item.id === conversationId);
+  if (!conversation) return;
+  conversation.unreadCount = 0;
+  conversation.messages = (conversation.messages || []).map((message) => ({ ...message, isRead: true }));
+}
+
+async function markAdminConversationRead(conversationId) {
+  try {
+    await fetch('/api/admin/messages', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...ADMIN_HEADERS,
+      },
+      body: JSON.stringify({ conversationId }),
+    });
+    markAdminConversationReadLocally(conversationId);
+    renderAdminMessagesPage();
+  } catch {
+    // Keep the UI usable even if the read update fails.
+  }
+}
+
+function markSelectedAdminConversationRead() {
+  if (!adminSelectedConversationId) return;
+  markAdminConversationRead(adminSelectedConversationId);
+}
+
+function renderAdminMessagesPage() {
+  const conversations = LIVE_CONTEXT.conversations || [];
+  const list = document.getElementById('adminMessagesList');
+  const thread = document.getElementById('adminMessagesThread');
+  const title = document.getElementById('adminMessagesSelectedTitle');
+  const meta = document.getElementById('adminMessagesSelectedMeta');
+  const tags = document.getElementById('adminMessagesSelectedTags');
+  const markReadButton = document.getElementById('adminMarkReadButton');
+
+  setNodeText('adminMessagesCount', conversations.length.toLocaleString());
+  setNodeText('adminMessagesUnread', conversations.reduce((sum, item) => sum + Number(item.unreadCount || 0), 0).toLocaleString());
+  setNodeText('adminMessagesTransactions', conversations.filter((item) => item.transaction).length.toLocaleString());
+
+  if (!list || !thread || !title || !meta || !tags || !markReadButton) return;
+
+  if (!conversations.length) {
+    list.innerHTML = '<div class="messages-empty"><strong>No conversations yet.</strong>No buyer messages have reached the admin support desk.</div>';
+    thread.innerHTML = '<div class="messages-empty"><strong>No thread selected.</strong>When a conversation is available, the full message history will appear here.</div>';
+    title.textContent = 'No active conversations';
+    meta.textContent = 'The admin inbox is currently empty.';
+    tags.innerHTML = '';
+    markReadButton.disabled = true;
+    markReadButton.style.opacity = '0.5';
+    return;
+  }
+
+  const selected = conversations.find((item) => item.id === adminSelectedConversationId) || conversations[0];
+  adminSelectedConversationId = selected.id;
+
+  list.innerHTML = conversations.map((conversation) => {
+    const preview = escapeHtml(conversation.lastMessage?.body || (conversation.lastMessage?.imageUrl ? 'Sent an image' : 'No messages yet'));
+    const threadClass = ['message-thread-list-item'];
+    if (conversation.id === selected.id) threadClass.push('active');
+    if (conversation.unreadCount > 0) threadClass.push('unread');
+    return `<div class="${threadClass.join(' ')}" onclick="setAdminSelectedConversation(${conversation.id})">
+      <div class="message-thread-list-top">
+        <div>
+          <div class="message-thread-name">${escapeHtml(conversation.otherParty?.name || 'Buyer')}</div>
+          <div class="message-thread-meta">${escapeHtml(conversation.otherParty?.email || 'No email')}</div>
+        </div>
+        <div class="message-thread-date">${toRelativeTime(conversation.updatedAt)}</div>
+      </div>
+      <div class="message-thread-meta">${escapeHtml(conversation.listingTitle || 'Unknown listing')}</div>
+      <div class="message-thread-preview">${preview}</div>
+      <div class="message-thread-badges">
+        <span class="tag ${messageStatusTag(conversation.listingStatus)}">${escapeHtml(conversation.listingStatus || 'Unknown')}</span>
+        ${conversation.unreadCount > 0 ? `<span class="message-unread-pill">${conversation.unreadCount}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  title.textContent = selected.otherParty?.name || 'Buyer';
+  meta.textContent = `${selected.otherParty?.email || 'No email'} • Listing #${selected.listingId} • Updated ${toRelativeTime(selected.updatedAt)}`;
+  tags.innerHTML = `
+    <span class="tag ${messageStatusTag(selected.listingStatus)}">${escapeHtml(selected.listingStatus || 'Unknown')}</span>
+    <span class="tag tag-info">${escapeHtml(selected.listingTitle || 'Unknown listing')}</span>
+    ${selected.transaction ? `<span class="tag tag-ok">Transaction ${escapeHtml(selected.transaction.status || 'active')}</span>` : '<span class="tag tag-muted">No transaction</span>'}
+  `;
+
+  markReadButton.disabled = selected.unreadCount === 0;
+  markReadButton.style.opacity = selected.unreadCount === 0 ? '0.5' : '1';
+
+  thread.innerHTML = selected.messages?.length
+    ? `<div class="messages-bubble-col">${selected.messages.map((message) => {
+        const self = message.senderEmail === 'admin@gmail.com' || message.senderName === 'Batjee Admin';
+        return `<div class="messages-bubble-row${self ? ' self' : ''}">
+          <div class="messages-bubble">
+            <div class="messages-bubble-meta"><span>${escapeHtml(message.senderName || 'User')}</span><span>${escapeHtml(toRelativeTime(message.createdAt || message.date))}</span></div>
+            ${message.body ? `<div class="messages-bubble-body">${escapeHtml(message.body)}</div>` : ''}
+            ${message.imageUrl ? `<img class="messages-bubble-image" src="${escapeHtml(message.imageUrl)}" alt="Shared image">` : ''}
+          </div>
+        </div>`;
+      }).join('')}</div>`
+    : '<div class="messages-empty"><strong>No messages in this thread.</strong>The conversation exists but has no message history yet.</div>';
+}
+
+async function sendAdminMessageReply() {
+  const textarea = document.getElementById('adminMessageReply');
+  if (!adminSelectedConversationId || !textarea) return;
+  const body = textarea.value.trim();
+  if (!body) {
+    alert('Please write a reply before sending.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/admin/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...ADMIN_HEADERS,
+      },
+      body: JSON.stringify({
+        conversationId: adminSelectedConversationId,
+        body,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || 'Failed to send reply');
+    }
+
+    const updated = payload.conversation;
+    LIVE_CONTEXT.conversations = [
+      updated,
+      ...(LIVE_CONTEXT.conversations || []).filter((item) => item.id !== updated.id),
+    ];
+    textarea.value = '';
+    adminSelectedConversationId = updated.id;
+    renderAdminMessagesPage();
+  } catch (error) {
+    alert(error.message || 'Failed to send reply');
+  }
 }
 
 function prettifyReportType(type) {
@@ -2849,6 +3404,8 @@ function hydrateListings(products) {
         id: String(product.id),
         emoji: '📦',
         title: name,
+        description: product.description || '',
+        imageUrl: product.image || '',
         seller: product.user?.name || product.user?.email || 'Unknown Seller',
         cat: product.category?.category_name || 'Uncategorized',
         price: toPkCurrency(product.price),
@@ -2933,6 +3490,7 @@ async function loadLiveData() {
     LIVE_CONTEXT.reports = reports;
     LIVE_CONTEXT.reportSummary = reportSummary;
     LIVE_CONTEXT.notificationCampaigns = notificationCampaigns;
+    LIVE_CONTEXT.referralSettings = getReferralSettings();
 
     hydrateDashboard(users, products, transactions, summary);
     hydrateUsers(users, products);
@@ -2948,6 +3506,8 @@ async function loadLiveData() {
     renderAnalyticsPage(users, products, transactions, conversations);
     renderReportsPage();
     renderNotificationCampaigns();
+    renderAdminMessagesPage();
+    renderReferralPage();
 
     setStatValue('Pending Approval', products.filter((product) => product.product_status === 'Pending').length.toLocaleString(), `Categories: ${categories.length}`);
     setStatValue('Transactions Today', deriveUserActivity(users, products, transactions).transactionsToday.toLocaleString(), `Conversations: ${(messagesPayload.conversations || []).length}`);

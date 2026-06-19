@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Container, Row, Col, Card, CardBody, Button, Badge } from "reactstrap";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { formatDisplayCurrency } from "@/lib/currency";
 
 const FALLBACK_IMG = "https://placehold.co/640x420?text=No+Image";
 
@@ -36,6 +37,14 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [listings, setListings] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const [siteOrigin, setSiteOrigin] = useState("");
+  const [copiedItem, setCopiedItem] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSiteOrigin(window.location.origin);
+    }
+  }, []);
 
   async function loadDashboard() {
     try {
@@ -77,6 +86,27 @@ export default function DashboardPage() {
   const activeCount = listings.filter((l) => l.product_status === "Active").length;
   const pendingCount = listings.filter((l) => l.product_status === "Pending").length;
   const soldCount = listings.filter((l) => l.product_status === "Sold").length;
+  const memberSince = user.createdAt
+    ? new Date(user.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+    : "Not available";
+  const referralCode = user.referralCode || "Not available";
+  const referralLink = user.referralCode ? `${siteOrigin || ""}/?ref=${encodeURIComponent(user.referralCode)}` : "";
+
+  async function copyReferralValue(type, value) {
+    if (!value) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedItem(type);
+      window.setTimeout(() => {
+        setCopiedItem((current) => (current === type ? "" : current));
+      }, 1800);
+    } catch {
+      setCopiedItem("");
+    }
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
@@ -128,6 +158,41 @@ export default function DashboardPage() {
           New listings stay pending until an admin approves them.
         </div>
 
+        <h5 className="fw-bold mb-3">My Referral</h5>
+        <Card className="border-0 shadow-sm mb-4">
+          <CardBody>
+            <Row className="g-3 align-items-end">
+              <Col lg={4} md={6}>
+                <label className="text-muted small d-block mb-1">Referral Code</label>
+                <div className="fw-semibold px-3 py-2 rounded-3" style={{ background: "#f8fafc", border: "1px solid #e2e8f0", letterSpacing: "0.08em" }}>
+                  {referralCode}
+                </div>
+              </Col>
+              <Col lg={2} md={6}>
+                <Button color="primary" className="w-100" disabled={!user.referralCode} onClick={() => copyReferralValue("code", user.referralCode)}>
+                  {copiedItem === "code" ? "Copied" : "Copy Code"}
+                </Button>
+              </Col>
+              <Col lg={6}>
+                <label className="text-muted small d-block mb-1">Referral Link</label>
+                <div className="d-flex gap-2 flex-column flex-md-row">
+                  <div className="flex-grow-1 px-3 py-2 rounded-3 text-break" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    {referralLink || "Your referral link will appear here."}
+                  </div>
+                  <Button color="primary" disabled={!referralLink} onClick={() => copyReferralValue("link", referralLink)}>
+                    {copiedItem === "link" ? "Copied" : "Copy Link"}
+                  </Button>
+                </div>
+              </Col>
+              <Col xs={12}>
+                <div className="text-muted small">
+                  Anyone who opens this link will land on registration with your referral code already filled in.
+                </div>
+              </Col>
+            </Row>
+          </CardBody>
+        </Card>
+
         {/* My Listings */}
         <div className="d-flex align-items-center justify-content-between mb-3">
           <h5 className="fw-bold mb-0">My Listings</h5>
@@ -156,7 +221,7 @@ export default function DashboardPage() {
                     <tr key={listing.id}>
                       <td className="ps-3 fw-semibold">{listing.product_name}</td>
                       <td className="text-muted">{listing.category_name}</td>
-                      <td>₱{Number(listing.price).toLocaleString()}</td>
+                      <td>{formatDisplayCurrency(listing.price)}</td>
                       <td>
                         {listing.product_status === "Sold" ? (
                           <Badge color="secondary" pill>Sold</Badge>
@@ -287,7 +352,7 @@ export default function DashboardPage() {
                       <div className="text-muted small">by {favorite.user?.name || "Unknown seller"}</div>
                       {favorite.user?.address ? <div className="text-muted small">{favorite.user.address}</div> : null}
                     </div>
-                    <div className="fw-bold text-primary">₱{Number(favorite.price).toLocaleString()}</div>
+                    <div className="fw-bold text-primary">{formatDisplayCurrency(favorite.price)}</div>
                   </div>
                   <div className="text-muted small">
                     Saved {favorite.favoriteCreatedAt ? new Date(favorite.favoriteCreatedAt).toLocaleDateString() : "recently"}
@@ -335,11 +400,11 @@ export default function DashboardPage() {
               </Col>
               <Col md={6}>
                 <label className="text-muted small d-block mb-1">Member Since</label>
-                <div className="fw-semibold">May 2026</div>
+                <div className="fw-semibold">{memberSince}</div>
               </Col>
               <Col md={6}>
                 <label className="text-muted small d-block mb-1">Account Status</label>
-                <Badge color="success" pill>Active</Badge>
+                <Badge color={user.status === "active" ? "success" : "secondary"} pill>{user.status || "Active"}</Badge>
               </Col>
             </Row>
           </CardBody>

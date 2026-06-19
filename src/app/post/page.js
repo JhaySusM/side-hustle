@@ -7,15 +7,7 @@ import {
 } from "reactstrap";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-function formatPeso(value) {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0));
-}
+import { formatDisplayCurrency } from "@/lib/currency";
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -80,7 +72,7 @@ export default function PostPage() {
     setError("");
     if (postingEligibility && !postingEligibility.canPostProduct) {
       setError(
-        `You have ${postingEligibility.outstandingFeeCount} unpaid platform fee${postingEligibility.outstandingFeeCount > 1 ? "s" : ""} totaling ${formatPeso(postingEligibility.outstandingFeeAmount)}. Settle them before posting a new ad.`
+        `You have ${postingEligibility.outstandingFeeCount} unpaid platform fee${postingEligibility.outstandingFeeCount > 1 ? "s" : ""} totaling ${formatDisplayCurrency(postingEligibility.outstandingFeeAmount)}. Settle them before posting a new ad.`
       );
       return;
     }
@@ -157,7 +149,7 @@ export default function PostPage() {
             {error && <Alert color="danger">{error}</Alert>}
             {postingEligibility && !postingEligibility.canPostProduct && (
               <Alert color="warning">
-                You cannot post a new ad while you have unpaid platform fees. Outstanding balance: {formatPeso(postingEligibility.outstandingFeeAmount)} across {postingEligibility.outstandingFeeCount} completed transaction{postingEligibility.outstandingFeeCount > 1 ? "s" : ""}.
+                You cannot post a new ad while you have unpaid platform fees. Outstanding balance: {formatDisplayCurrency(postingEligibility.outstandingFeeAmount)} across {postingEligibility.outstandingFeeCount} completed transaction{postingEligibility.outstandingFeeCount > 1 ? "s" : ""}.
               </Alert>
             )}
             {success && <Alert color="success">Ad submitted for approval. It will appear in listings once an admin approves it.</Alert>}
@@ -184,7 +176,7 @@ export default function PostPage() {
                 </Input>
               </FormGroup>
               <FormGroup>
-                <Label>Price (₱) <span className="text-danger">*</span></Label>
+                <Label>Price (Rs.) <span className="text-danger">*</span></Label>
                 <Input
                   type="number"
                   min="1"

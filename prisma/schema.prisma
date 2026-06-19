@@ -42,12 +42,16 @@ model User {
   addressCity String?
   addressPostalCode String?
   addressCountry String?
+  referralCode String?    @unique
+  referredById Int?
   sellerRatingAvg Float @default(0)
   sellerRatingCount Int @default(0)
   password  String
   user_type String        @default("user")
   status    String        @default("active")
   createdAt DateTime      @default(now())
+  referredBy User?        @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals  User[]       @relation("UserReferrals")
   products  ProductList[]
   favorites Favorite[]
   buyerConversations Conversation[]    @relation("BuyerConversations")
@@ -62,6 +66,7 @@ model User {
   notifications      UserNotification[]
 
   @@index([createdAt])
+  @@index([referredById])
 }
 
 model NotificationCampaign {

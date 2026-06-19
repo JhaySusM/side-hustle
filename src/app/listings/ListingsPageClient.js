@@ -16,6 +16,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FavoriteButton from "@/components/FavoriteButton";
+import { formatDisplayCurrency } from "@/lib/currency";
 
 const FALLBACK_IMG = "https://placehold.co/640x420?text=No+Image";
 
@@ -328,7 +329,7 @@ export default function ListingsPageClient({ initialQuery, initialCategory, init
                             ) : null}
                           </div>
                           <div className="listing-browser-price">
-                            {String.fromCharCode(8369)}{Number(item.price).toLocaleString()}
+                            {formatDisplayCurrency(item.price)}
                           </div>
                         </div>
 

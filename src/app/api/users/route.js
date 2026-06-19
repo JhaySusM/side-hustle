@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
+import { generateUniqueReferralCode, normalizeReferralCode } from '@/lib/referrals';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
 
@@ -28,6 +29,7 @@ export async function POST(request) {
       addressCity,
       addressPostalCode,
       addressCountry,
+      referralCode,
     } = body;
 
     const houseNo = addressHouseNo?.trim() || '';
@@ -41,6 +43,7 @@ export async function POST(request) {
     const hasStructuredAddress = houseNo || streetNo || area || city || postalCode || country;
 
     const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedReferralCode = normalizeReferralCode(referralCode);
 
     if (!normalizedEmail || !password) {
       return Response.json({ error: 'Email and password are required' }, { status: 400 });
@@ -75,6 +78,24 @@ export async function POST(request) {
       return Response.json({ error: 'Email is already registered. Please sign in instead.' }, { status: 409 });
     }
 
+    let referrer = null;
+
+    if (normalizedReferralCode) {
+      referrer = await prisma.user.findUnique({
+        where: { referralCode: normalizedReferralCode },
+        select: { id: true },
+      });
+
+      if (!referrer) {
+        return Response.json({ error: 'Referral code is invalid.' }, { status: 400 });
+      }
+    }
+
+    const generatedReferralCode = await generateUniqueReferralCode({
+      name,
+      email: normalizedEmail,
+    });
+
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
@@ -86,6 +107,8 @@ export async function POST(request) {
         addressCity: hasStructuredAddress ? city : null,
         addressPostalCode: hasStructuredAddress ? postalCode : null,
         addressCountry: hasStructuredAddress ? country : null,
+        referralCode: generatedReferralCode,
+        referredById: referrer?.id || null,
         password,
         user_type: 'user',
       },

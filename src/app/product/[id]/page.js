@@ -17,6 +17,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { sendMessage, uploadMessageImage } from "@/lib/message-client";
+import { formatDisplayCurrency } from "@/lib/currency";
 
 const FALLBACK_IMG = "https://placehold.co/800x520?text=No+Image";
 
@@ -330,7 +331,7 @@ export default function ProductDetailPage() {
                       </Badge>
                     </div>
                     <div className="product-detail-price mb-3">
-                      {String.fromCharCode(8369)}{Number(product.price).toLocaleString()}
+                      {formatDisplayCurrency(product.price)}
                     </div>
                     <p className="product-detail-meta mb-4">
                       Listed {formatPostedDate(product.upload_date_time)}

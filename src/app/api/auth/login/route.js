@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
+import { ensureUserReferralCode } from '@/lib/referrals';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
 
@@ -15,10 +15,11 @@ export async function POST(request) {
     if (!user || user.password !== password) {
       return Response.json({ error: 'Invalid email or password' }, { status: 401 });
     }
+    const hydratedUser = await ensureUserReferralCode(user);
     // Create JWT
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: hydratedUser.id, email: hydratedUser.email }, JWT_SECRET, { expiresIn: '7d' });
     // Set cookie
-    return new Response(JSON.stringify({ user }), {
+    return new Response(JSON.stringify({ user: hydratedUser }), {
       status: 200,
       headers: {
         'Set-Cookie': `batjee_token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict`,

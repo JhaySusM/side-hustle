@@ -9,6 +9,7 @@ import {
 } from "reactstrap";
 import { HIDDEN_CATEGORY_NAMES, normalizeCategoryName } from "@/lib/category-catalog";
 import FavoriteButton from "@/components/FavoriteButton";
+import { formatDisplayCurrency } from "@/lib/currency";
 
 const FALLBACK_IMG = "https://placehold.co/400x180?text=No+Image";
 
@@ -272,7 +273,7 @@ function FeaturedListings({ filter, search: searchProp }) {
                 onClick={(event) => handleFavoriteToggle(event, item)}
               />
             </div>
-            <CardText className={`text-primary fw-bold${mobileHome ? " featured-listings-mobile-price" : ""}`}>{String.fromCharCode(8369)} {Number(item.price).toLocaleString()}</CardText>
+            <CardText className={`text-primary fw-bold${mobileHome ? " featured-listings-mobile-price" : ""}`}>{formatDisplayCurrency(item.price)}</CardText>
             {mobileHome ? (
               <div className="featured-listings-mobile-meta mb-2">
                 <span>{normalizeCategoryName(item.category?.category_name || "For Sale")}</span>

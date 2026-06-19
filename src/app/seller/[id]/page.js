@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { sendMessage } from "@/lib/message-client";
 import { uploadMessageImage } from "@/lib/message-client";
+import { formatDisplayCurrency } from "@/lib/currency";
 
 const FALLBACK_IMG = "https://placehold.co/400x180?text=No+Image";
 
@@ -127,7 +128,7 @@ function ListingModal({ item, isOpen, toggle, seller, viewer }) {
           </div>
           <h5 className="fw-bold mb-1">{item.product_name}</h5>
           <div className="fw-bold mb-3" style={{ fontSize: 22, color: "#0d6efd" }}>
-            &#8369;{Number(item.price).toLocaleString()}
+            {formatDisplayCurrency(item.price)}
           </div>
           {item.description && (
             <div className="mb-3">
@@ -595,7 +596,7 @@ export default function SellerProfilePage() {
                       </Badge>
                     </div>
                     <CardTitle tag="h6" className="fw-semibold mb-1">{item.product_name}</CardTitle>
-                    <CardText className="text-primary fw-bold mb-1">&#8369;{Number(item.price).toLocaleString()}</CardText>
+                    <CardText className="text-primary fw-bold mb-1">{formatDisplayCurrency(item.price)}</CardText>
                     <div className="text-muted small mt-auto">
                       {item.upload_date_time ? new Date(item.upload_date_time).toLocaleDateString() : ""}
                     </div>

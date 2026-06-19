@@ -1,3 +1,5 @@
+import { formatDisplayCurrency } from "@/lib/currency";
+
 export const PLATFORM_COMMISSION_RATE = 0.05;
 
 export const TRANSACTION_STATUS_LABELS = {
@@ -26,14 +28,7 @@ function roundToCurrency(value) {
 }
 
 export function formatCurrency(value) {
-  const amount = Number(value || 0);
-
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number.isFinite(amount) ? amount : 0);
+  return formatDisplayCurrency(value);
 }
 
 export function calculateTransactionAmounts(agreedAmount, commissionRate = PLATFORM_COMMISSION_RATE) {

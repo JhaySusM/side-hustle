@@ -31,10 +31,13 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
     addressCity: "",
     addressPostalCode: "",
     addressCountry: "PAKISTAN",
+    referralCode: "",
     password: "",
     confirm: "",
   });
   const [error, setError] = useState("");
+  const [referralFromQuery, setReferralFromQuery] = useState("");
+  const referralLocked = Boolean(referralFromQuery);
 
   // Seed default credential
   useEffect(() => {
@@ -45,6 +48,39 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
       localStorage.setItem("batjee_users", JSON.stringify(users));
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const referralParam = String(params.get("ref") || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 24);
+
+    setReferralFromQuery(referralParam);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !referralFromQuery) {
+      return;
+    }
+
+    setActiveTab("register");
+    setRegisterData((current) => {
+      if (current.referralCode === referralFromQuery) {
+        return current;
+      }
+
+      return {
+        ...current,
+        referralCode: referralFromQuery,
+      };
+    });
+  }, [isOpen, referralFromQuery]);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -111,6 +147,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
           addressCity: registerData.addressCity.trim(),
           addressPostalCode: registerData.addressPostalCode.trim(),
           addressCountry: registerData.addressCountry.trim(),
+          referralCode: registerData.referralCode.trim(),
           password: registerData.password
         })
       });
@@ -228,6 +265,26 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                   onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                   autoComplete="email"
                 />
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-referral">Referral Code <span className="text-muted">(Optional)</span></Label>
+                <Input
+                  id="reg-referral"
+                  type="text"
+                  placeholder="Enter referral code"
+                  value={registerData.referralCode}
+                  disabled={referralLocked}
+                  onChange={(e) => setRegisterData({
+                    ...registerData,
+                    referralCode: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 24),
+                  })}
+                  autoComplete="off"
+                />
+                <small className="text-muted d-block mt-2">
+                  {referralLocked
+                    ? "This referral code came from your invite link and cannot be changed here."
+                    : "If someone shared a TradiGO referral with you, paste the code here before creating your account."}
+                </small>
               </FormGroup>
               <FormGroup>
                 <Label for="reg-house">House No.</Label>
