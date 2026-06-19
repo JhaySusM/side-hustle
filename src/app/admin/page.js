@@ -163,6 +163,8 @@ const styles = {
     borderRadius: 10,
     padding: "0 12px",
     fontSize: 14,
+    backgroundColor: "#ffffff",
+    color: "#111827",
     outline: "none",
   },
   primaryButton: {
@@ -170,7 +172,7 @@ const styles = {
     height: 42,
     border: "none",
     borderRadius: 10,
-    background: "#0a6e6e",
+    background: "#2563eb",
     color: "#ffffff",
     fontWeight: 700,
     cursor: "pointer",

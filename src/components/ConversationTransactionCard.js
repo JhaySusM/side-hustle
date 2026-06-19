@@ -192,18 +192,6 @@ export default function ConversationTransactionCard({
               <div className="text-muted">Final amount</div>
               <div className="fw-semibold">{formatCurrency(transaction.agreedAmount)}</div>
             </div>
-            {transaction.isSeller ? (
-              <>
-                <div>
-                  <div className="text-muted">Platform fee</div>
-                  <div className="fw-semibold text-warning">{formatCurrency(transaction.platformFeeAmount)}</div>
-                </div>
-                <div>
-                  <div className="text-muted">Seller net</div>
-                  <div className="fw-semibold text-success">{formatCurrency(transaction.sellerNetAmount)}</div>
-                </div>
-              </>
-            ) : null}
           </>
         ) : null}
       </div>

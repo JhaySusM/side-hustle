@@ -268,9 +268,6 @@ input:checked+.slider:before{transform:translateX(18px)}
         <div class="stat"><div class="label">Active Sellers</div><div class="val">28,764</div><div class="delta up">▲ 6.7%</div><div class="ic-bg">🏪</div></div>
         <div class="stat"><div class="label">Active Buyers</div><div class="val">41,982</div><div class="delta up">▲ 9.1%</div><div class="ic-bg">🛒</div></div>
         <div class="stat"><div class="label">Transactions Today</div><div class="val">892</div><div class="delta up">▲ 14.2%</div><div class="ic-bg">💸</div></div>
-        <div class="stat"><div class="label">GMV</div><div class="val">Rs 3.2M</div><div class="delta up">▲ 18.5% MoM</div><div class="ic-bg">💰</div></div>
-        <div class="stat"><div class="label">Revenue</div><div class="val">Rs 142K</div><div class="delta up">▲ 22.1%</div><div class="ic-bg">📊</div></div>
-        <div class="stat"><div class="label">Conversion Rate</div><div class="val">6.1%</div><div class="delta up">▲ 0.4pp</div><div class="ic-bg">🎯</div></div>
         <div class="stat"><div class="label">Pending Approval</div><div class="val" style="color:var(--warn)">218</div><div class="delta" style="color:var(--warn)">⚠ Needs review</div><div class="ic-bg">⏳</div></div>
       </div>
 
@@ -724,8 +721,14 @@ function closeProfileMenu() {
 }
 
 function adminLogout() {
-  sessionStorage.removeItem('batjee_admin');
-  window.location.reload();
+  try {
+    const targetWindow = window.top && window.top !== window ? window.top : window;
+    targetWindow.sessionStorage.removeItem('batjee_admin');
+    targetWindow.location.reload();
+  } catch {
+    sessionStorage.removeItem('batjee_admin');
+    window.location.reload();
+  }
 }
 
 document.addEventListener('click', function(event) {
