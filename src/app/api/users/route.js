@@ -17,17 +17,75 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, name, address, password } = body;
-    const trimmedAddress = address?.trim();
+    const {
+      email,
+      name,
+      address,
+      password,
+      addressHouseNo,
+      addressStreetNo,
+      addressArea,
+      addressCity,
+      addressPostalCode,
+      addressCountry,
+    } = body;
 
-    if (!email || !password || !trimmedAddress) {
-      return Response.json({ error: 'Email, password, and address are required' }, { status: 400 });
+    const houseNo = addressHouseNo?.trim() || '';
+    const streetNo = addressStreetNo?.trim() || '';
+    const area = addressArea?.trim() || '';
+    const city = addressCity?.trim() || '';
+    const postalCode = addressPostalCode?.trim() || '';
+    const country = addressCountry?.trim() || '';
+    const trimmedAddress = address?.trim() || '';
+
+    const hasStructuredAddress = houseNo || streetNo || area || city || postalCode || country;
+
+    const normalizedEmail = email?.trim().toLowerCase();
+
+    if (!normalizedEmail || !password) {
+      return Response.json({ error: 'Email and password are required' }, { status: 400 });
     }
+
+    if (!trimmedAddress && !hasStructuredAddress) {
+      return Response.json({ error: 'Address is required' }, { status: 400 });
+    }
+
+    if (hasStructuredAddress && (!houseNo || !streetNo || !area || !city || !postalCode || !country)) {
+      return Response.json(
+        { error: 'Please complete all address fields (house, street, area, city, postal code, country)' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedAddress = hasStructuredAddress
+      ? [
+          `House No. ${houseNo}, Street No. ${streetNo}`,
+          area,
+          `${city} - ${postalCode}`,
+          country,
+        ].join(', ')
+      : trimmedAddress;
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      return Response.json({ error: 'Email is already registered. Please sign in instead.' }, { status: 409 });
+    }
+
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         name,
-        address: trimmedAddress,
+        address: normalizedAddress,
+        addressHouseNo: hasStructuredAddress ? houseNo : null,
+        addressStreetNo: hasStructuredAddress ? streetNo : null,
+        addressArea: hasStructuredAddress ? area : null,
+        addressCity: hasStructuredAddress ? city : null,
+        addressPostalCode: hasStructuredAddress ? postalCode : null,
+        addressCountry: hasStructuredAddress ? country : null,
         password,
         user_type: 'user',
       },
@@ -43,6 +101,10 @@ export async function POST(request) {
       },
     });
   } catch (error) {
-    return Response.json({ error: error.message || 'Failed to create user' }, { status: 500 });
+    if (error?.code === 'P2002') {
+      return Response.json({ error: 'Email is already registered. Please sign in instead.' }, { status: 409 });
+    }
+
+    return Response.json({ error: 'Failed to create user' }, { status: 500 });
   }
 }

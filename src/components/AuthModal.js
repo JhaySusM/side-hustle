@@ -22,7 +22,18 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("login");
   const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [registerData, setRegisterData] = useState({ name: "", email: "", address: "", password: "", confirm: "" });
+  const [registerData, setRegisterData] = useState({
+    name: "",
+    email: "",
+    addressHouseNo: "",
+    addressStreetNo: "",
+    addressArea: "",
+    addressCity: "",
+    addressPostalCode: "",
+    addressCountry: "PAKISTAN",
+    password: "",
+    confirm: "",
+  });
   const [error, setError] = useState("");
 
   // Seed default credential
@@ -68,7 +79,18 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
   async function handleRegister(e) {
     e.preventDefault();
     setError("");
-    if (!registerData.name || !registerData.email || !registerData.address.trim() || !registerData.password || !registerData.confirm) {
+    if (
+      !registerData.name ||
+      !registerData.email ||
+      !registerData.addressHouseNo.trim() ||
+      !registerData.addressStreetNo.trim() ||
+      !registerData.addressArea.trim() ||
+      !registerData.addressCity.trim() ||
+      !registerData.addressPostalCode.trim() ||
+      !registerData.addressCountry.trim() ||
+      !registerData.password ||
+      !registerData.confirm
+    ) {
       setError("Please fill in all fields.");
       return;
     }
@@ -83,7 +105,12 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
         body: JSON.stringify({
           name: registerData.name,
           email: registerData.email,
-          address: registerData.address.trim(),
+          addressHouseNo: registerData.addressHouseNo.trim(),
+          addressStreetNo: registerData.addressStreetNo.trim(),
+          addressArea: registerData.addressArea.trim(),
+          addressCity: registerData.addressCity.trim(),
+          addressPostalCode: registerData.addressPostalCode.trim(),
+          addressCountry: registerData.addressCountry.trim(),
           password: registerData.password
         })
       });
@@ -203,16 +230,74 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                 />
               </FormGroup>
               <FormGroup>
-                <Label for="reg-address">Address</Label>
+                <Label for="reg-house">House No.</Label>
                 <Input
-                  id="reg-address"
+                  id="reg-house"
                   type="text"
-                  placeholder="Street, city, barangay"
-                  value={registerData.address}
-                  onChange={(e) => setRegisterData({ ...registerData, address: e.target.value })}
+                  placeholder="e.g. 12-B"
+                  value={registerData.addressHouseNo}
+                  onChange={(e) => setRegisterData({ ...registerData, addressHouseNo: e.target.value })}
                   autoComplete="street-address"
                   required
                 />
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-street">Street No.</Label>
+                <Input
+                  id="reg-street"
+                  type="text"
+                  placeholder="e.g. 7"
+                  value={registerData.addressStreetNo}
+                  onChange={(e) => setRegisterData({ ...registerData, addressStreetNo: e.target.value })}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-area">Sector / Area / Sub-locality</Label>
+                <Input
+                  id="reg-area"
+                  type="text"
+                  placeholder="e.g. DHA Phase 5"
+                  value={registerData.addressArea}
+                  onChange={(e) => setRegisterData({ ...registerData, addressArea: e.target.value })}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-city">City Name</Label>
+                <Input
+                  id="reg-city"
+                  type="text"
+                  placeholder="e.g. Lahore"
+                  value={registerData.addressCity}
+                  onChange={(e) => setRegisterData({ ...registerData, addressCity: e.target.value })}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-postal">Postal Code</Label>
+                <Input
+                  id="reg-postal"
+                  type="text"
+                  placeholder="e.g. 54000"
+                  value={registerData.addressPostalCode}
+                  onChange={(e) => setRegisterData({ ...registerData, addressPostalCode: e.target.value })}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-country">Country</Label>
+                <Input
+                  id="reg-country"
+                  type="text"
+                  placeholder="PAKISTAN"
+                  value={registerData.addressCountry}
+                  onChange={(e) => setRegisterData({ ...registerData, addressCountry: e.target.value })}
+                  required
+                />
+                <small className="text-muted d-block mt-2">
+                  Pakistan mailing format: House No., Street No., Area, City, Postal Code, Country.
+                </small>
               </FormGroup>
               <FormGroup>
                 <Label for="reg-password">Password</Label>

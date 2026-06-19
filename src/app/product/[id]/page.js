@@ -16,7 +16,7 @@ import {
 } from "reactstrap";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { sendMessage } from "@/lib/message-client";
+import { sendMessage, uploadMessageImage } from "@/lib/message-client";
 
 const FALLBACK_IMG = "https://placehold.co/800x520?text=No+Image";
 
@@ -80,6 +80,13 @@ export default function ProductDetailPage() {
   const [sending, setSending] = useState(false);
   const [messageError, setMessageError] = useState("");
   const [activeImg, setActiveImg] = useState(0);
+  const [reportType, setReportType] = useState("scam");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportImage, setReportImage] = useState(null);
+  const [reportImagePreview, setReportImagePreview] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const [reportSuccess, setReportSuccess] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -166,6 +173,73 @@ export default function ProductDetailPage() {
       setMessageError(sendError.message || "Failed to send message.");
     } finally {
       setSending(false);
+    }
+  }
+
+  function handleReportImageChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (reportImagePreview) {
+      URL.revokeObjectURL(reportImagePreview);
+    }
+
+    setReportImage(file);
+    setReportImagePreview(URL.createObjectURL(file));
+  }
+
+  async function handleSubmitReport() {
+    setReportError("");
+    setReportSuccess("");
+
+    if (!viewer) {
+      setReportError("Please sign in to submit a report.");
+      return;
+    }
+
+    if (!product?.id || !product?.user?.id) {
+      setReportError("Listing information is unavailable.");
+      return;
+    }
+
+    if (viewer.id === product.user.id) {
+      setReportError("You cannot report your own listing.");
+      return;
+    }
+
+    setReportSubmitting(true);
+
+    try {
+      const imageUrl = reportImage ? await uploadMessageImage(reportImage) : null;
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: product.id,
+          reportType,
+          details: reportDetails.trim(),
+          imageUrl,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to submit report.");
+      }
+
+      setReportSuccess("Report submitted. Our team will review this listing shortly.");
+      setReportDetails("");
+      setReportImage(null);
+      if (reportImagePreview) {
+        URL.revokeObjectURL(reportImagePreview);
+        setReportImagePreview("");
+      }
+    } catch (submitError) {
+      setReportError(submitError.message || "Failed to submit report.");
+    } finally {
+      setReportSubmitting(false);
     }
   }
 
@@ -280,6 +354,9 @@ export default function ProductDetailPage() {
                       <div>
                         <div className="fw-semibold">{product.user?.name || "Unknown seller"}</div>
                         <div className="product-detail-meta">{product.user?.email || "Seller profile"}</div>
+                        <div className="product-detail-meta">
+                          ⭐ {(Number(product.user?.sellerRatingAvg || 0)).toFixed(1)} ({Number(product.user?.sellerRatingCount || 0)} review{Number(product.user?.sellerRatingCount || 0) !== 1 ? "s" : ""})
+                        </div>
                         {product.user?.address ? (
                           <div className="product-detail-meta">{product.user.address}</div>
                         ) : null}
@@ -312,6 +389,61 @@ export default function ProductDetailPage() {
                         </Button>
                       </>
                     )}
+                  </CardBody>
+                </Card>
+
+                <Card className="product-detail-card border-0 mt-4">
+                  <CardBody className="p-4">
+                    <h2 className="product-detail-section-title">Report listing</h2>
+                    <p className="product-detail-meta mb-3">Found something suspicious or unsafe? Send a report to our moderation team.</p>
+
+                    {reportError ? <Alert color="danger">{reportError}</Alert> : null}
+                    {reportSuccess ? <Alert color="success">{reportSuccess}</Alert> : null}
+
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Reason</label>
+                      <Input
+                        type="select"
+                        value={reportType}
+                        onChange={(event) => setReportType(event.target.value)}
+                      >
+                        <option value="scam">Scam / Fraud</option>
+                        <option value="illegal_item">Illegal Item</option>
+                        <option value="fake_item">Fake / Misleading Listing</option>
+                        <option value="abusive_seller">Abusive Seller</option>
+                        <option value="spam">Spam</option>
+                        <option value="wrong_category">Wrong Category</option>
+                        <option value="other">Other</option>
+                      </Input>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Details</label>
+                      <Input
+                        type="textarea"
+                        rows={3}
+                        value={reportDetails}
+                        onChange={(event) => setReportDetails(event.target.value)}
+                        placeholder="Tell us what happened..."
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Screenshot (optional)</label>
+                      <Input type="file" accept="image/*" onChange={handleReportImageChange} />
+                      {reportImagePreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={reportImagePreview}
+                          alt="Report preview"
+                          style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 10, marginTop: 10, border: "1px solid #dbe3ea" }}
+                        />
+                      ) : null}
+                    </div>
+
+                    <Button color="danger" className="w-100" onClick={handleSubmitReport} disabled={reportSubmitting}>
+                      {reportSubmitting ? "Submitting..." : "Submit report"}
+                    </Button>
                   </CardBody>
                 </Card>
               </Col>

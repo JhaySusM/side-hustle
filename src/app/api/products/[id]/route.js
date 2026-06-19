@@ -11,7 +11,16 @@ export async function GET(request, { params }) {
       where: { id: Number(id) },
       include: {
         category: true,
-        user: { select: { id: true, name: true, email: true, address: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            address: true,
+            sellerRatingAvg: true,
+            sellerRatingCount: true,
+          },
+        },
       },
     });
 

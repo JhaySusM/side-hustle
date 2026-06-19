@@ -13,7 +13,15 @@ export async function GET(request, { params }) {
     }
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, name: true, email: true, address: true, user_type: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        address: true,
+        user_type: true,
+        sellerRatingAvg: true,
+        sellerRatingCount: true,
+      },
     });
     if (!user) {
       return Response.json({ error: 'Seller not found' }, { status: 404 });

@@ -11,7 +11,18 @@ export async function GET(request) {
 
   try {
     const products = await prisma.productList.findMany({
-      include: { category: true, user: { select: { id: true, name: true, email: true } } },
+      include: {
+        category: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            sellerRatingAvg: true,
+            sellerRatingCount: true,
+          },
+        },
+      },
       orderBy: { upload_date_time: 'desc' },
     });
     return Response.json({ products: products.map(normalizeProductCategory) });

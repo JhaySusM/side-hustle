@@ -30,6 +30,10 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
+  const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationLoading, setNotificationLoading] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   useEffect(() => {
@@ -67,6 +71,153 @@ export default function Navbar() {
     });
   }, [user]);
 
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      setNotificationUnreadCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadNotifications() {
+      setNotificationLoading(true);
+      try {
+        const response = await fetch("/api/notifications", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch notifications");
+        }
+
+        if (!cancelled) {
+          setNotifications(data.notifications || []);
+          setNotificationUnreadCount(Number(data.unreadCount || 0));
+        }
+      } catch {
+        if (!cancelled) {
+          setNotifications([]);
+          setNotificationUnreadCount(0);
+        }
+      } finally {
+        if (!cancelled) {
+          setNotificationLoading(false);
+        }
+      }
+    }
+
+    loadNotifications();
+    const intervalId = setInterval(loadNotifications, 45000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [user]);
+
+  function relativeTime(value) {
+    const ts = value ? new Date(value).getTime() : NaN;
+    if (!Number.isFinite(ts)) return "just now";
+
+    const diff = Date.now() - ts;
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+
+    if (diff < hour) {
+      return `${Math.max(1, Math.round(diff / minute))}m ago`;
+    }
+
+    if (diff < day) {
+      return `${Math.round(diff / hour)}h ago`;
+    }
+
+    return `${Math.round(diff / day)}d ago`;
+  }
+
+  async function refreshNotifications() {
+    try {
+      const response = await fetch("/api/notifications", {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch notifications");
+      }
+
+      setNotifications(data.notifications || []);
+      setNotificationUnreadCount(Number(data.unreadCount || 0));
+    } catch {
+      setNotifications([]);
+      setNotificationUnreadCount(0);
+    }
+  }
+
+  async function markNotificationRead(notification) {
+    if (!notification || notification.isRead) {
+      return;
+    }
+
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ notificationId: notification.id }),
+      });
+      await refreshNotifications();
+    } catch {
+      // Ignore passive failures and keep local state.
+    }
+  }
+
+  async function markAllNotificationsRead() {
+    if (!notificationUnreadCount) {
+      return;
+    }
+
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ markAll: true }),
+      });
+      await refreshNotifications();
+    } catch {
+      // Ignore passive failures and keep local state.
+    }
+  }
+
+  async function openNotification(notification) {
+    await markNotificationRead(notification);
+    setNotificationMenuOpen(false);
+
+    const deepLink = String(notification?.deepLink || "").trim();
+
+    if (deepLink) {
+      if (deepLink === "home" || deepLink === "/" || deepLink === "/#home") {
+        if (typeof window !== "undefined" && window.location.pathname === "/") {
+          if (window.location.hash !== "#home") {
+            window.location.hash = "#home";
+          }
+          return;
+        }
+
+        router.push("/#home");
+        return;
+      }
+
+      router.push(deepLink);
+      return;
+    }
+
+    router.push("/");
+  }
+
   function handlePostClick() {
     if (!user) {
       setAuthOpen(true);
@@ -80,8 +231,11 @@ export default function Navbar() {
     window.dispatchEvent(new Event("batjee:logout"));
     setUser(null);
     setUnreadCount(0);
+    setNotificationUnreadCount(0);
+    setNotifications([]);
     router.push("/");
     setDropdownOpen(false);
+    setNotificationMenuOpen(false);
     setLogoutModalOpen(false);
   }
 
@@ -151,6 +305,68 @@ export default function Navbar() {
 
             {user ? (
               <div className="d-flex align-items-center gap-2">
+                <Dropdown isOpen={notificationMenuOpen} toggle={() => setNotificationMenuOpen(!notificationMenuOpen)}>
+                  <DropdownToggle tag="div" style={{ cursor: "pointer", position: "relative", padding: "4px 6px" }} title="Notifications">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#ffffff" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.73 21a2 2 0 01-3.46 0" />
+                    </svg>
+                    {notificationUnreadCount > 0 && (
+                      <span style={{
+                        position: "absolute", top: 0, right: 0,
+                        background: "#e53935", color: "#fff",
+                        borderRadius: "50%", width: 17, height: 17,
+                        fontSize: 10, fontWeight: 700,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        lineHeight: 1,
+                      }}>
+                        {notificationUnreadCount > 9 ? "9+" : notificationUnreadCount}
+                      </span>
+                    )}
+                  </DropdownToggle>
+                  <DropdownMenu end style={{ minWidth: 320, maxWidth: 360 }}>
+                    <DropdownItem header className="d-flex justify-content-between align-items-center">
+                      <span>Notifications</span>
+                      {notificationUnreadCount > 0 && (
+                        <span className="badge bg-danger rounded-pill">{notificationUnreadCount}</span>
+                      )}
+                    </DropdownItem>
+                    <DropdownItem divider />
+                    <div style={{ maxHeight: 340, overflowY: "auto" }}>
+                      {notificationLoading ? (
+                        <div className="px-3 py-2 text-muted" style={{ fontSize: 12 }}>Loading...</div>
+                      ) : notifications.length ? (
+                        notifications.slice(0, 8).map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => openNotification(item)}
+                            style={{
+                              width: "100%",
+                              border: "none",
+                              background: item.isRead ? "#fff" : "#f5faff",
+                              textAlign: "left",
+                              padding: "10px 12px",
+                              borderBottom: "1px solid #eef2f7",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <div style={{ fontSize: 13, fontWeight: item.isRead ? 600 : 700, color: "#1f2937" }}>{item.title}</div>
+                            <div style={{ fontSize: 12, color: "#4b5563", marginTop: 2 }}>{item.body}</div>
+                            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{relativeTime(item.createdAt)}</div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-muted" style={{ fontSize: 12 }}>No notifications yet.</div>
+                      )}
+                    </div>
+                    <DropdownItem divider />
+                    <DropdownItem onClick={markAllNotificationsRead} disabled={!notificationUnreadCount}>
+                      Mark all as read
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+
                 <div
                   onClick={() => router.push("/messages")}
                   style={{ position: "relative", cursor: "pointer", padding: "4px 6px" }}

@@ -8,6 +8,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { sendMessage } from "@/lib/message-client";
+import { uploadMessageImage } from "@/lib/message-client";
 
 const FALLBACK_IMG = "https://placehold.co/400x180?text=No+Image";
 
@@ -197,6 +198,20 @@ export default function SellerProfilePage() {
   const [tab, setTab] = useState("all");
   const [selectedItem, setSelectedItem] = useState(null);
   const [viewer, setViewer] = useState(null);
+  const [ratingSummary, setRatingSummary] = useState({ avg: 0, count: 0 });
+  const [viewerRating, setViewerRating] = useState(null);
+  const [ratingScore, setRatingScore] = useState(5);
+  const [ratingComment, setRatingComment] = useState("");
+  const [ratingError, setRatingError] = useState("");
+  const [ratingSuccess, setRatingSuccess] = useState("");
+  const [ratingSaving, setRatingSaving] = useState(false);
+  const [reportType, setReportType] = useState("abusive_seller");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportImage, setReportImage] = useState(null);
+  const [reportImagePreview, setReportImagePreview] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const [reportSuccess, setReportSuccess] = useState("");
 
   useEffect(() => {
     async function fetchSeller() {
@@ -232,6 +247,151 @@ export default function SellerProfilePage() {
 
     fetchViewer();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchRatings() {
+      try {
+        const response = await fetch(`/api/seller/${id}/ratings`, { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok || cancelled) {
+          return;
+        }
+
+        setRatingSummary(data.summary || { avg: 0, count: 0 });
+        setViewerRating(data.viewerRating || null);
+        if (data.viewerRating) {
+          setRatingScore(Number(data.viewerRating.score) || 5);
+          setRatingComment(data.viewerRating.comment || "");
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    fetchRatings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  async function handleSubmitSellerRating() {
+    setRatingError("");
+    setRatingSuccess("");
+
+    if (!viewer) {
+      setRatingError("Please sign in to rate this seller.");
+      return;
+    }
+
+    if (!seller?.id || viewer.id === seller.id) {
+      setRatingError("You cannot rate this seller.");
+      return;
+    }
+
+    setRatingSaving(true);
+
+    try {
+      const response = await fetch(`/api/seller/${id}/ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          score: Number(ratingScore),
+          comment: ratingComment.trim(),
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save rating.");
+      }
+
+      setRatingSummary({
+        avg: Number(data.summary?.sellerRatingAvg || 0),
+        count: Number(data.summary?.sellerRatingCount || 0),
+      });
+      setViewerRating(data.rating || { score: Number(ratingScore), comment: ratingComment.trim() });
+      setRatingSuccess("Seller rating saved.");
+      setSeller((prev) => prev ? {
+        ...prev,
+        sellerRatingAvg: Number(data.summary?.sellerRatingAvg || 0),
+        sellerRatingCount: Number(data.summary?.sellerRatingCount || 0),
+      } : prev);
+    } catch (submitError) {
+      setRatingError(submitError.message || "Failed to save rating.");
+    } finally {
+      setRatingSaving(false);
+    }
+  }
+
+  function handleReportImageChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (reportImagePreview) {
+      URL.revokeObjectURL(reportImagePreview);
+    }
+
+    setReportImage(file);
+    setReportImagePreview(URL.createObjectURL(file));
+  }
+
+  async function handleSubmitSellerReport() {
+    setReportError("");
+    setReportSuccess("");
+
+    if (!viewer) {
+      setReportError("Please sign in to submit a report.");
+      return;
+    }
+
+    if (!seller?.id) {
+      setReportError("Seller information is unavailable.");
+      return;
+    }
+
+    if (viewer.id === seller.id) {
+      setReportError("You cannot report your own seller account.");
+      return;
+    }
+
+    setReportSubmitting(true);
+
+    try {
+      const imageUrl = reportImage ? await uploadMessageImage(reportImage) : null;
+      const response = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerId: seller.id,
+          reportType,
+          details: reportDetails.trim(),
+          imageUrl,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to submit seller report.");
+      }
+
+      setReportSuccess("Report submitted. Our team will review this seller shortly.");
+      setReportDetails("");
+      setReportImage(null);
+      if (reportImagePreview) {
+        URL.revokeObjectURL(reportImagePreview);
+        setReportImagePreview("");
+      }
+    } catch (submitError) {
+      setReportError(submitError.message || "Failed to submit seller report.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  }
 
   const activeProducts = products.filter((p) => p.product_status !== "Sold");
   const soldProducts = products.filter((p) => p.product_status === "Sold");
@@ -274,6 +434,9 @@ export default function SellerProfilePage() {
                   <span className="badge rounded-pill" style={{ background: "#fce4ec", color: "#c62828", fontSize: 12 }}>
                     {soldProducts.length} sold
                   </span>
+                  <span className="badge rounded-pill" style={{ background: "#fff3e0", color: "#b26a00", fontSize: 12 }}>
+                    ⭐ {(Number(seller?.sellerRatingAvg || ratingSummary.avg || 0)).toFixed(1)} ({Number(seller?.sellerRatingCount || ratingSummary.count || 0)})
+                  </span>
                 </div>
               </div>
               <Button color="light" className="border ms-auto" size="sm" onClick={() => router.back()}>
@@ -308,6 +471,84 @@ export default function SellerProfilePage() {
 
         {/* Listings */}
         <h5 className="fw-bold mb-3">Listed Products</h5>
+
+        <Card className="border-0 shadow-sm mb-4">
+          <CardBody className="p-4">
+            <h6 className="fw-bold mb-2">Rate this seller</h6>
+            <div className="text-muted small mb-3">
+              Current rating: ⭐ {(Number(seller?.sellerRatingAvg || ratingSummary.avg || 0)).toFixed(1)} from {Number(seller?.sellerRatingCount || ratingSummary.count || 0)} review(s)
+            </div>
+            {ratingError ? <Alert color="danger" className="mb-3">{ratingError}</Alert> : null}
+            {ratingSuccess ? <Alert color="success" className="mb-3">{ratingSuccess}</Alert> : null}
+            <Row className="g-2">
+              <Col md={3}>
+                <Input type="select" value={ratingScore} onChange={(e) => setRatingScore(Number(e.target.value))}>
+                  <option value={5}>5 - Excellent</option>
+                  <option value={4}>4 - Good</option>
+                  <option value={3}>3 - Average</option>
+                  <option value={2}>2 - Poor</option>
+                  <option value={1}>1 - Bad</option>
+                </Input>
+              </Col>
+              <Col md={7}>
+                <Input
+                  type="text"
+                  placeholder="Optional comment"
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)}
+                />
+              </Col>
+              <Col md={2}>
+                <Button className="w-100" color="warning" onClick={handleSubmitSellerRating} disabled={ratingSaving || !viewer || viewer?.id === seller?.id}>
+                  {ratingSaving ? "Saving..." : (viewerRating ? "Update" : "Rate")}
+                </Button>
+              </Col>
+            </Row>
+          </CardBody>
+        </Card>
+
+        <Card className="border-0 shadow-sm mb-4">
+          <CardBody className="p-4">
+            <h6 className="fw-bold mb-2">Report this seller</h6>
+            <div className="text-muted small mb-3">Found suspicious behavior? Send a report directly to moderation.</div>
+            {reportError ? <Alert color="danger" className="mb-3">{reportError}</Alert> : null}
+            {reportSuccess ? <Alert color="success" className="mb-3">{reportSuccess}</Alert> : null}
+            <Row className="g-2">
+              <Col md={4}>
+                <Input type="select" value={reportType} onChange={(e) => setReportType(e.target.value)}>
+                  <option value="abusive_seller">Abusive Seller</option>
+                  <option value="scam">Scam / Fraud</option>
+                  <option value="spam">Spam</option>
+                  <option value="fake_item">Fake / Misleading Info</option>
+                  <option value="other">Other</option>
+                </Input>
+              </Col>
+              <Col md={8}>
+                <Input
+                  type="text"
+                  placeholder="Optional details"
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                />
+              </Col>
+              <Col md={8}>
+                <Input type="file" accept="image/*" onChange={handleReportImageChange} />
+              </Col>
+              <Col md={4}>
+                <Button color="danger" className="w-100" onClick={handleSubmitSellerReport} disabled={reportSubmitting || !viewer || viewer?.id === seller?.id}>
+                  {reportSubmitting ? "Submitting..." : "Report Seller"}
+                </Button>
+              </Col>
+            </Row>
+            {reportImagePreview ? (
+              <div className="mt-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={reportImagePreview} alt="Seller report evidence" style={{ maxWidth: 220, borderRadius: 8, border: "1px solid #dee2e6" }} />
+              </div>
+            ) : null}
+          </CardBody>
+        </Card>
+
         {loading ? (
           <div className="text-muted py-4 text-center">Loading...</div>
         ) : displayed.length === 0 ? (

@@ -14,6 +14,7 @@ model ProductList {
   conversations     Conversation[]
   favorites         Favorite[]
   transactions      Transaction[]
+  reports           ProductReport[]
 }
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -35,6 +36,14 @@ model User {
   email     String        @unique
   name      String?
   address   String?
+  addressHouseNo String?
+  addressStreetNo String?
+  addressArea String?
+  addressCity String?
+  addressPostalCode String?
+  addressCountry String?
+  sellerRatingAvg Float @default(0)
+  sellerRatingCount Int @default(0)
   password  String
   user_type String        @default("user")
   status    String        @default("active")
@@ -46,8 +55,85 @@ model User {
   sentMessages       ConversationMessage[] @relation("SentMessages")
   buyerTransactions  Transaction[]         @relation("BuyerTransactions")
   sellerTransactions Transaction[]         @relation("SellerTransactions")
+  reports            ProductReport[]
+  reportsReceived    ProductReport[]      @relation("SellerReports")
+  ratingsGiven       SellerRating[]        @relation("BuyerGivenRatings")
+  ratingsReceived    SellerRating[]        @relation("SellerReceivedRatings")
+  notifications      UserNotification[]
 
   @@index([createdAt])
+}
+
+model NotificationCampaign {
+  id            Int                @id @default(autoincrement())
+  title         String
+  body          String
+  deepLink      String?
+  audienceType  String
+  audienceValue String?
+  createdAt     DateTime           @default(now())
+  recipients    UserNotification[]
+
+  @@index([createdAt])
+  @@index([audienceType, createdAt])
+}
+
+model UserNotification {
+  id         Int                  @id @default(autoincrement())
+  userId     Int
+  campaignId Int
+  title      String
+  body       String
+  deepLink   String?
+  isRead     Boolean              @default(false)
+  readAt     DateTime?
+  createdAt  DateTime             @default(now())
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign   NotificationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, campaignId])
+  @@index([userId, isRead, createdAt])
+  @@index([campaignId, createdAt])
+}
+
+model SellerRating {
+  id        Int      @id @default(autoincrement())
+  buyerId   Int
+  sellerId  Int
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  buyer     User     @relation("BuyerGivenRatings", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller    User     @relation("SellerReceivedRatings", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([buyerId, sellerId])
+  @@index([sellerId, createdAt])
+}
+
+model ProductReport {
+  id          Int         @id @default(autoincrement())
+  listingId   Int?
+  sellerId    Int?
+  reporterId  Int
+  reportType  String
+  details     String?
+  imageUrl    String?
+  status      String      @default("open")
+  priority    String      @default("medium")
+  actionTaken String?
+  adminNote   String?
+  resolvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  listing     ProductList? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  seller      User?       @relation("SellerReports", fields: [sellerId], references: [id], onDelete: Cascade)
+  reporter    User        @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, status])
+  @@index([sellerId, status])
+  @@index([reporterId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Category {
