@@ -22,7 +22,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section id="about" className="container py-5">
+    <section id="how-it-works" className="container py-5">
       <h3 className="fw-bold mb-4">How It Works</h3>
       <Row className="text-center g-4">
         {steps.map((step) => (

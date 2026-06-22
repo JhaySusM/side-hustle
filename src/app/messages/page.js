@@ -143,17 +143,19 @@ export default function MessagesPage() {
     setSelectedImagePreview(URL.createObjectURL(file));
   }
 
-  const loadMessages = useCallback(async () => {
+  const loadMessages = useCallback(async (preferredConversationId = null) => {
     const inbox = await fetchInbox();
     const nextConversations = inbox.conversations || [];
     setConversations(nextConversations);
     setActiveConversationId((currentId) => {
+      const nextActiveId = preferredConversationId ?? currentId;
+
       if (!nextConversations.length) {
         return null;
       }
 
-      if (currentId && nextConversations.some((conversation) => conversation.id === currentId)) {
-        return currentId;
+      if (nextActiveId && nextConversations.some((conversation) => conversation.id === nextActiveId)) {
+        return nextActiveId;
       }
 
       if (isMobile) {
@@ -231,6 +233,7 @@ export default function MessagesPage() {
   const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId) || null;
   const showInboxList = !isMobile || !activeConversation;
   const showThreadPane = !isMobile || Boolean(activeConversation);
+  const mobileBottomNavHeight = 108;
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -278,8 +281,7 @@ export default function MessagesPage() {
     try {
       const result = await openSupportConversation();
       setTransactionError("");
-      setActiveConversationId(result.conversation.id);
-      await loadMessages();
+      await loadMessages(result.conversation.id);
     } catch (supportError) {
       setError(supportError.message || "Failed to open admin support chat.");
     }
@@ -370,7 +372,13 @@ export default function MessagesPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: isMobile ? "#ffffff" : "#f8fafc" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: isMobile ? "#ffffff" : "#f8fafc",
+        paddingBottom: isMobile ? mobileBottomNavHeight : 0,
+      }}
+    >
       <ChatImageModal isOpen={Boolean(viewerImage)} toggle={() => setViewerImage("")} imageUrl={viewerImage} />
       <Navbar />
       <Container className={isMobile ? "px-0 py-0" : "py-5"}>
@@ -418,8 +426,8 @@ export default function MessagesPage() {
             </CardBody>
           </Card>
         ) : (
-          <Card className={`border-0 overflow-hidden ${isMobile ? "shadow-none rounded-0" : "shadow-sm"}`}>
-            <div className="d-flex flex-column flex-lg-row" style={{ minHeight: isMobile ? "100dvh" : 560 }}>
+          <Card className={`border-0 ${isMobile ? "shadow-none rounded-0" : "overflow-hidden shadow-sm"}`}>
+            <div className="d-flex flex-column flex-lg-row" style={{ minHeight: isMobile ? "auto" : 560 }}>
               {showInboxList ? (
               <div style={{ width: "100%", maxWidth: isMobile ? "none" : 360, borderRight: isMobile ? "none" : "1px solid #eef2f7", background: "#fff" }}>
                 <div className="px-3 py-3 border-bottom">
@@ -459,7 +467,13 @@ export default function MessagesPage() {
                   </div>
                 ) : null}
 
-                <div style={{ maxHeight: isMobile ? "calc(100dvh - 160px)" : 500, overflowY: "auto" }}>
+                <div
+                  style={{
+                    maxHeight: isMobile ? "none" : 500,
+                    overflowY: isMobile ? "visible" : "auto",
+                    paddingBottom: isMobile ? 12 : 0,
+                  }}
+                >
                   {conversations.map((conversation) => {
                     const active = conversation.id === activeConversationId;
                     return (
@@ -504,7 +518,13 @@ export default function MessagesPage() {
               ) : null}
 
               {showThreadPane ? (
-              <div className="d-flex flex-column flex-grow-1" style={{ background: "#f8fafc", minHeight: isMobile ? "100dvh" : undefined }}>
+              <div
+                className="d-flex flex-column flex-grow-1"
+                style={{
+                  background: "#f8fafc",
+                  minHeight: isMobile ? `calc(100vh - ${mobileBottomNavHeight}px)` : undefined,
+                }}
+              >
                 {activeConversation ? (
                   <>
                     <div

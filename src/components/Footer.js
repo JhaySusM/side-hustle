@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Row, Col } from "reactstrap";
 import { fetchInbox, subscribeToInbox } from "@/lib/message-client";
 import AuthModal from "@/components/AuthModal";
@@ -33,12 +33,14 @@ const MOBILE_NAV_LINKS = [
 ];
 
 export default function Footer() {
+  const router = useRouter();
   const pathname = usePathname();
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [authOpen, setAuthOpen] = useState(false);
+  const [authRedirectPath, setAuthRedirectPath] = useState("/dashboard");
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 575.98px)");
@@ -127,17 +129,19 @@ export default function Footer() {
   }
 
   function handleMobileNavClick(event, item) {
-    const requiresAuth = item.label === "Acc" || item.label === "My Ads";
+    const requiresAuth = item.label === "Acc" || item.label === "My Ads" || item.label === "Chat" || item.label === "Sell";
 
     if (!requiresAuth || user) {
       return;
     }
 
     event.preventDefault();
+    setAuthRedirectPath(item.href || "/dashboard");
     setAuthOpen(true);
   }
 
   const showMobileFooter = isMobile;
+  const hideMobileMarketingFooter = pathname === "/messages" || pathname.startsWith("/messages/");
 
   return (
     <>
@@ -148,7 +152,7 @@ export default function Footer() {
         </button>
       ) : null}
 
-      {showMobileFooter ? (
+      {showMobileFooter && !hideMobileMarketingFooter ? (
         <footer className="footer-mobile-home">
           <div className="footer-mobile-home-socials">
             {SOCIAL_LINKS.map((item) => (
@@ -232,6 +236,10 @@ export default function Footer() {
         isOpen={authOpen}
         toggle={() => setAuthOpen(false)}
         onAuthSuccess={(nextUser) => setUser(nextUser)}
+        onLoginSuccess={(nextUser) => {
+          setUser(nextUser);
+          router.push(authRedirectPath || "/dashboard");
+        }}
       />
     </>
   );

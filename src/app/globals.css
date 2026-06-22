@@ -571,26 +571,37 @@ body {
   }
 
   .featured-mobile-home-banner {
-    display: block;
-    margin: 0;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: 0 auto;
     border-radius: 14px;
   }
 
   .featured-mobile-home-banner .featured-mid-banner-image {
+    display: block;
+    width: min(320px, calc(100vw - 40px));
+    max-width: 100%;
+    margin: 0 auto;
     height: auto;
     object-fit: contain;
   }
 
   .featured-mobile-home-header {
-    margin-top: 2px;
+    margin-top: 0;
+    align-items: center;
   }
 
   .featured-mobile-home-title {
     font-size: 1.05rem;
+    line-height: 1.2;
   }
 
   .featured-mobile-home-link {
+    display: inline-flex;
+    align-items: center;
     font-size: 0.98rem;
+    line-height: 1.2;
   }
 
   .featured-mobile-home-grid {
@@ -616,6 +627,11 @@ body {
     margin-top: 6px;
   }
 
+  .cta-mobile-accordion-item {
+    border-bottom: 1px solid #cfe0dd;
+    background: #f9fcfb;
+  }
+
   .cta-mobile-link-row {
     width: 100%;
     border: none;
@@ -631,13 +647,70 @@ body {
     text-align: left;
   }
 
-  .cta-mobile-link-row:last-of-type {
-    border-bottom: 1px solid #cfe0dd;
+  .cta-mobile-accordion-item:first-child .cta-mobile-link-row {
+    border-top: 1px solid #cfe0dd;
   }
 
   .cta-mobile-link-arrow {
     font-size: 2rem;
     line-height: 1;
+    transition: transform 0.2s ease;
+  }
+
+  .cta-mobile-accordion-item.is-open .cta-mobile-link-arrow {
+    transform: rotate(90deg);
+  }
+
+  .cta-mobile-link-panel {
+    padding: 0 4px 16px;
+  }
+
+  .cta-mobile-step-list,
+  .cta-mobile-fact-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .cta-mobile-step-card,
+  .cta-mobile-fact-item,
+  .cta-mobile-copy {
+    border-radius: 14px;
+    background: #ffffff;
+    border: 1px solid #d9e6e3;
+    padding: 12px 14px;
+    color: #334155;
+  }
+
+  .cta-mobile-step-title {
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+  }
+
+  .cta-mobile-step-copy,
+  .cta-mobile-fact-item,
+  .cta-mobile-copy {
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .cta-mobile-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .cta-mobile-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1px solid #d9e6e3;
+    color: #0f172a;
+    font-size: 0.88rem;
+    font-weight: 600;
+    padding: 8px 12px;
   }
 
   .cta-mobile-app-banner {
