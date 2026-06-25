@@ -1,5 +1,8 @@
 import { serializeTransaction } from "@/lib/transaction-utils";
 
+const SUPPORT_LISTING_NAME = "Batjee Support";
+const SUPPORT_RESOLVED_MARKER = "__BATJEE_SUPPORT_RESOLVED__";
+
 export function formatMessageDate(value) {
   return new Date(value).toLocaleString();
 }
@@ -23,7 +26,10 @@ export function getMessagePreview(message) {
 export function serializeConversation(conversation, currentUserId) {
   const isSeller = conversation.sellerId === currentUserId;
   const otherParty = isSeller ? conversation.buyer : conversation.seller;
-  const messages = conversation.messages.map((message) => ({
+  const isSupportConversation = conversation.listing?.product_name === SUPPORT_LISTING_NAME;
+  const isSupportResolved = isSupportConversation && conversation.messages.at(-1)?.body === SUPPORT_RESOLVED_MARKER;
+  const visibleMessages = conversation.messages.filter((message) => message.body !== SUPPORT_RESOLVED_MARKER);
+  const messages = visibleMessages.map((message) => ({
     id: message.id,
     senderId: message.senderId,
     senderName: message.sender?.name || message.sender?.email || "User",
@@ -36,7 +42,7 @@ export function serializeConversation(conversation, currentUserId) {
   }));
 
   const lastMessage = messages[messages.length - 1] || null;
-  const unreadCount = conversation.messages.filter(
+  const unreadCount = visibleMessages.filter(
     (message) => message.senderId !== currentUserId && !message.readAt
   ).length;
 
@@ -46,6 +52,8 @@ export function serializeConversation(conversation, currentUserId) {
     listingTitle: conversation.listing.product_name,
     listingStatus: conversation.listing.product_status,
     listingPrice: conversation.listing.price,
+    isSupportConversation,
+    isSupportResolved,
     transaction: serializeTransaction(conversation.transaction, currentUserId),
     sellerId: conversation.sellerId,
     buyerId: conversation.buyerId,

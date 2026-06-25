@@ -20,8 +20,32 @@ import {
   ModalFooter,
 } from "reactstrap";
 import AuthModal from "./AuthModal";
-import { fetchInbox, subscribeToInbox } from "@/lib/message-client";
+import { fetchInbox, getConversationPreview, subscribeToInbox } from "@/lib/message-client";
 import HeroSearchBar from "@/components/HeroSearchBar";
+
+function MessageAvatar({ name, size = 40, background = "#0d6efd" }) {
+  const label = String(name || "U").trim();
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        flexShrink: 0,
+        background,
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 700,
+        fontSize: Math.round(size * 0.42),
+      }}
+    >
+      {label.charAt(0).toUpperCase()}
+    </div>
+  );
+}
 
 export default function Navbar() {
   const router = useRouter();
@@ -31,6 +55,9 @@ export default function Navbar() {
   const [authChecked, setAuthChecked] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [messageMenuOpen, setMessageMenuOpen] = useState(false);
+  const [messageLoading, setMessageLoading] = useState(false);
+  const [messageConversations, setMessageConversations] = useState([]);
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -44,14 +71,14 @@ export default function Navbar() {
     }
 
     const params = new URLSearchParams(window.location.search);
-    const nextReferral = String(params.get("ref") || "")
+    const nextReferralParam = String(params.get("ref") || "")
       .trim()
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "")
       .slice(0, 24);
 
-    setReferralParam(nextReferral);
-  }, [pathname]);
+    setReferralParam(nextReferralParam);
+  }, []);
 
   useEffect(() => {
     async function fetchUser() {
@@ -77,31 +104,73 @@ export default function Navbar() {
       return;
     }
 
-    setAuthOpen(true);
+    const timeoutId = setTimeout(() => {
+      setAuthOpen(true);
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [authChecked, referralParam, user]);
 
   useEffect(() => {
-    if (!user) return;
-    async function calcUnread() {
+    if (!user) {
+      const timeoutId = setTimeout(() => {
+        setUnreadCount(0);
+        setMessageConversations([]);
+        setMessageMenuOpen(false);
+      }, 0);
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
+
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadInboxSummary() {
+      if (!cancelled) {
+        setMessageLoading(true);
+      }
+
       try {
         const inbox = await fetchInbox();
-        setUnreadCount(inbox.unreadCount || 0);
+        if (!cancelled) {
+          setUnreadCount(Number(inbox.unreadCount || 0));
+          setMessageConversations(inbox.conversations || []);
+        }
       } catch {
-        setUnreadCount(0);
+        if (!cancelled) {
+          setUnreadCount(0);
+          setMessageConversations([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setMessageLoading(false);
+        }
       }
     }
 
-    calcUnread();
+    loadInboxSummary();
 
     return subscribeToInbox(() => {
-      calcUnread();
+      loadInboxSummary();
     });
   }, [user]);
 
   useEffect(() => {
     if (!user) {
-      setNotifications([]);
-      setNotificationUnreadCount(0);
+      const timeoutId = setTimeout(() => {
+        setNotifications([]);
+        setNotificationUnreadCount(0);
+      }, 0);
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
+
       return;
     }
 
@@ -245,6 +314,25 @@ export default function Navbar() {
     router.push("/");
   }
 
+  function openMessagePreview(conversation) {
+    if (!conversation) {
+      return;
+    }
+
+    setMessageMenuOpen(false);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("batjee:open-chat", {
+          detail: {
+            conversationId: conversation.id,
+            conversation,
+          },
+        })
+      );
+    }
+  }
+
   function handlePostClick() {
     if (!user) {
       setAuthOpen(true);
@@ -262,6 +350,7 @@ export default function Navbar() {
     setNotifications([]);
     router.push("/");
     setDropdownOpen(false);
+    setMessageMenuOpen(false);
     setNotificationMenuOpen(false);
     setLogoutModalOpen(false);
   }
@@ -303,6 +392,7 @@ export default function Navbar() {
   );
 
   const showGlobalSearch = pathname !== "/" && !pathname.startsWith("/admin");
+  const showMessageIcon = pathname !== "/messages";
 
   return (
     <>
@@ -311,7 +401,7 @@ export default function Navbar() {
         expand="lg"
         className={`py-0 tradigo-navbar${pathname === "/" ? " tradigo-navbar-home" : ""}`}
         style={{
-          position: "relative",
+          zIndex: 45,
           background: "#0d1f67",
           minHeight: 42,
           boxShadow: "0 2px 8px rgba(8, 18, 58, 0.18)",
@@ -332,6 +422,114 @@ export default function Navbar() {
 
             {user ? (
               <div className="d-flex align-items-center gap-2">
+                {showMessageIcon ? (
+                  <Dropdown isOpen={messageMenuOpen} toggle={() => {
+                    setMessageMenuOpen((current) => !current);
+                    setNotificationMenuOpen(false);
+                    setDropdownOpen(false);
+                  }}>
+                    <DropdownToggle tag="div" style={{ cursor: "pointer", position: "relative", padding: "4px 6px" }} title="Messages">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#ffffff" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 18H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H10l-4 3v-3z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5" />
+                      </svg>
+                      {unreadCount > 0 && (
+                        <span style={{
+                          position: "absolute", top: 0, right: 0,
+                          background: "#e53935", color: "#fff",
+                          borderRadius: "50%", width: 17, height: 17,
+                          fontSize: 10, fontWeight: 700,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          lineHeight: 1,
+                        }}>
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </DropdownToggle>
+                    <DropdownMenu end style={{ minWidth: 340, maxWidth: 360, paddingBottom: 0 }}>
+                      <DropdownItem header className="d-flex justify-content-between align-items-center">
+                        <span>Messages</span>
+                        {unreadCount > 0 && (
+                          <span className="badge bg-danger rounded-pill">{unreadCount}</span>
+                        )}
+                      </DropdownItem>
+                      <DropdownItem divider />
+                      <div style={{ maxHeight: 360, overflowY: "auto" }}>
+                        {messageLoading ? (
+                          <div className="px-3 py-2 text-muted" style={{ fontSize: 12 }}>Loading...</div>
+                        ) : messageConversations.length ? (
+                          messageConversations.slice(0, 8).map((conversation) => {
+                            const hasUnread = conversation.unreadCount > 0;
+
+                            return (
+                              <button
+                                key={conversation.id}
+                                type="button"
+                                onClick={() => openMessagePreview(conversation)}
+                                style={{
+                                  width: "100%",
+                                  border: "none",
+                                  background: hasUnread ? "#f5faff" : "#fff",
+                                  textAlign: "left",
+                                  padding: "10px 12px",
+                                  borderBottom: "1px solid #eef2f7",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 10,
+                                }}
+                              >
+                                <MessageAvatar
+                                  name={conversation.otherParty?.name}
+                                  size={40}
+                                  background={hasUnread ? "#0a9e8f" : "#0d6efd"}
+                                />
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ fontSize: 13, fontWeight: hasUnread ? 700 : 600, color: "#1f2937" }}>
+                                    {conversation.otherParty?.name || "User"}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {conversation.listingTitle}
+                                  </div>
+                                  <div style={{ fontSize: 12, color: "#4b5563", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {getConversationPreview(conversation)}
+                                  </div>
+                                </div>
+                                {hasUnread ? (
+                                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#0a9e8f", flexShrink: 0 }} />
+                                ) : null}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="px-3 py-2 text-muted" style={{ fontSize: 12 }}>No messages yet.</div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMessageMenuOpen(false);
+                          router.push("/messages");
+                        }}
+                        style={{
+                          width: "100%",
+                          border: "none",
+                          borderTop: "1px solid #eef2f7",
+                          background: "#fff",
+                          color: "#0a9e8f",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          padding: "12px 14px",
+                          textAlign: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        See all messages
+                      </button>
+                    </DropdownMenu>
+                  </Dropdown>
+                ) : null}
+
                 <Dropdown isOpen={notificationMenuOpen} toggle={() => setNotificationMenuOpen(!notificationMenuOpen)}>
                   <DropdownToggle tag="div" style={{ cursor: "pointer", position: "relative", padding: "4px 6px" }} title="Notifications">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#ffffff" strokeWidth={1.8}>
@@ -393,28 +591,6 @@ export default function Navbar() {
                     </DropdownItem>
                   </DropdownMenu>
                 </Dropdown>
-
-                <div
-                  onClick={() => router.push("/messages")}
-                  style={{ position: "relative", cursor: "pointer", padding: "4px 6px" }}
-                  title="Messages"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#ffffff" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {unreadCount > 0 && (
-                    <span style={{
-                      position: "absolute", top: 0, right: 0,
-                      background: "#e53935", color: "#fff",
-                      borderRadius: "50%", width: 17, height: 17,
-                      fontSize: 10, fontWeight: 700,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      lineHeight: 1,
-                    }}>
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </div>
 
                 <Dropdown isOpen={dropdownOpen} toggle={() => setDropdownOpen(!dropdownOpen)}>
                   <DropdownToggle tag="div" style={{ cursor: "pointer" }} className="d-flex align-items-center gap-2 border rounded-pill px-3 py-1 bg-light">

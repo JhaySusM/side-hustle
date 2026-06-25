@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batjee / TradiGo Stakeholder Handoff</title>
+  <style>
+    body {
+      font-family: Calibri, Arial, sans-serif;
+      color: #1f2937;
+      line-height: 1.5;
+      margin: 36px;
+    }
+
+    h1, h2, h3 {
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 28px;
+      border-bottom: 3px solid #2563eb;
+      padding-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-top: 28px;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 6px;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin-top: 18px;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ul {
+      margin: 8px 0 12px 22px;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    .meta {
+      color: #475569;
+      font-size: 12px;
+      margin-top: -2px;
+    }
+
+    .summary-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 18px 0 24px;
+    }
+
+    .pill-row {
+      margin: 12px 0 18px;
+    }
+
+    .pill {
+      display: inline-block;
+      background: #e2e8f0;
+      color: #0f172a;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      margin: 0 8px 8px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 18px;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+    }
+
+    .note {
+      background: #fff7ed;
+      border-left: 4px solid #f97316;
+      padding: 10px 12px;
+      margin: 12px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Batjee / TradiGo Stakeholder Handoff</h1>
+  <p class="meta">Prepared for non-technical review and project handoff</p>
+
+  <div class="summary-box">
+    <strong>Executive summary:</strong> Batjee, branded in the interface as TradiGo, is a marketplace platform focused on local buying and selling in Pakistan. It already supports the full core journey from account creation, listing, browsing, and messaging through to moderation, seller ratings, support chat, and a structured transaction and platform-fee workflow for completed deals.
+  </div>
+
+  <div class="pill-row">
+    <span class="pill">Marketplace Listings</span>
+    <span class="pill">Buyer-Seller Chat</span>
+    <span class="pill">Admin Moderation</span>
+    <span class="pill">Seller Ratings</span>
+    <span class="pill">Favorites</span>
+    <span class="pill">Referrals</span>
+    <span class="pill">Notifications</span>
+    <span class="pill">Transaction Tracking</span>
+  </div>
+
+  <h2>1. What This Product Is</h2>
+  <p>
+    The platform is designed as a local classifieds and marketplace product where sellers can publish ads and buyers can discover items, contact sellers, and complete deals. It is not just a listing board. It also includes moderation tools, support workflows, and internal controls that help manage quality and trust.
+  </p>
+
+  <h2>2. What Users Can Do</h2>
+
+  <h3>Account and onboarding</h3>
+  <ul>
+    <li>Create an account with name, email, password, and address details.</li>
+    <li>Log in and maintain a session in the app.</li>
+    <li>Join with a referral code from an invite link.</li>
+  </ul>
+
+  <h3>Buying experience</h3>
+  <ul>
+    <li>Browse active marketplace listings.</li>
+    <li>Search by keyword, category, and location.</li>
+    <li>Open a product page with images, pricing, seller details, and safety guidance.</li>
+    <li>Message sellers directly from a listing.</li>
+    <li>Save listings to favorites for later review.</li>
+    <li>Rate sellers after interacting with them.</li>
+    <li>Report suspicious listings or abusive sellers.</li>
+  </ul>
+
+  <h3>Selling experience</h3>
+  <ul>
+    <li>Post a new ad with title, description, category, price, and images.</li>
+    <li>See listing status inside a dashboard.</li>
+    <li>Track active, pending, inactive, and sold ads.</li>
+    <li>Share a personal referral code and referral link.</li>
+    <li>Manage deals through in-app chat and transaction steps.</li>
+  </ul>
+
+  <h2>3. How the Marketplace Works</h2>
+  <table>
+    <tr>
+      <th>Stage</th>
+      <th>Business behavior</th>
+    </tr>
+    <tr>
+      <td>Listing creation</td>
+      <td>A seller creates an ad with images and product details.</td>
+    </tr>
+    <tr>
+      <td>Moderation</td>
+      <td>New listings do not go live immediately. They first enter a pending state for admin review.</td>
+    </tr>
+    <tr>
+      <td>Discovery</td>
+      <td>Only approved active listings appear in the public marketplace.</td>
+    </tr>
+    <tr>
+      <td>Conversation</td>
+      <td>Buyers and sellers communicate inside the app instead of outside channels.</td>
+    </tr>
+    <tr>
+      <td>Transaction</td>
+      <td>The conversation can carry a structured deal amount, completion steps, and fee submission.</td>
+    </tr>
+    <tr>
+      <td>Completion</td>
+      <td>Once both sides confirm completion, the listing is marked sold.</td>
+    </tr>
+  </table>
+
+  <h2>4. Messaging and Deal Management</h2>
+  <p>
+    Messaging is one of the strongest existing parts of the product. It lets buyers and sellers communicate directly inside the platform, which keeps engagement and trust-building within the app rather than sending users to external apps immediately.
+  </p>
+  <ul>
+    <li>Users can open conversations from product pages and seller pages.</li>
+    <li>Users can send both text and image attachments.</li>
+    <li>Unread counts are tracked and shown in the mobile navigation.</li>
+    <li>Support conversations with the admin team reuse the same chat system.</li>
+  </ul>
+
+  <p>
+    On top of chat, the platform includes a structured transaction layer. This allows both sides to confirm an agreed amount, mark a deal completed, and track the related platform fee before final administrative verification.
+  </p>
+
+  <h2>5. Admin and Backoffice Capabilities</h2>
+  <p>
+    The project already includes a working admin backoffice. This is important because the platform is not only user-facing; it also has internal tools to manage content, risk, and revenue-related workflows.
+  </p>
+
+  <ul>
+    <li>Approve or reject newly submitted listings.</li>
+    <li>Review and respond to support messages.</li>
+    <li>Inspect and resolve user-submitted abuse and fraud reports.</li>
+    <li>Verify platform fee payments attached to completed transactions.</li>
+    <li>Send in-app notification campaigns to users.</li>
+    <li>Apply promotional seller placements such as homepage or search boosts.</li>
+  </ul>
+
+  <h2>6. Trust and Safety Features</h2>
+  <ul>
+    <li>Listing moderation before public visibility.</li>
+    <li>Seller ratings and review comments.</li>
+    <li>Product and seller reporting flows.</li>
+    <li>Support chat with platform admins.</li>
+    <li>Account status control for inactive or suspended users.</li>
+  </ul>
+
+  <h2>7. Growth and Retention Features</h2>
+  <ul>
+    <li>Referral codes and invite links.</li>
+    <li>Favorites for saved browsing intent.</li>
+    <li>In-app notifications for announcements and campaigns.</li>
+    <li>Seller promotion placements to improve listing visibility.</li>
+  </ul>
+
+  <h2>8. Current Product Strengths</h2>
+  <ul>
+    <li>The core marketplace loop is already implemented end to end.</li>
+    <li>The product goes beyond simple listings by including trust, moderation, and support flows.</li>
+    <li>There is already an administrative path for revenue tracking through transaction fee verification.</li>
+    <li>The app includes both buyer-facing and seller-facing value, not just one side.</li>
+    <li>The dashboard, chat, ratings, reports, and notification systems create a strong base for growth.</li>
+  </ul>
+
+  <h2>9. Current Constraints to Know Before Launch or Scale</h2>
+  <div class="note">
+    This section is intentionally business-oriented. These are the areas that matter most for launch planning, investor demos, or a future production hardening phase.
+  </div>
+  <ul>
+    <li>User password handling should be strengthened before a wider production rollout.</li>
+    <li>Admin access control is functional but should be hardened for long-term production use.</li>
+    <li>Realtime chat refresh works well for a single deployment instance but will need a more scalable architecture for larger traffic.</li>
+    <li>The admin dashboard exists today as a separate static backoffice interface, which is workable but not ideal for long-term maintainability.</li>
+    <li>The fee workflow is tracked inside the app, but it is not yet tied to a full payment gateway integration.</li>
+  </ul>
+
+  <h2>10. Recommended Next-Phase Priorities</h2>
+  <table>
+    <tr>
+      <th>Priority</th>
+      <th>Recommendation</th>
+      <th>Why it matters</th>
+    </tr>
+    <tr>
+      <td>High</td>
+      <td>Harden authentication for both users and admins.</td>
+      <td>Reduces security risk and improves production readiness.</td>
+    </tr>
+    <tr>
+      <td>High</td>
+      <td>Add a production-grade realtime layer for messaging.</td>
+      <td>Prepares the platform for scale and multi-instance deployment.</td>
+    </tr>
+    <tr>
+      <td>High</td>
+      <td>Integrate real payment rails for platform fee collection.</td>
+      <td>Turns fee tracking into a complete monetization flow.</td>
+    </tr>
+    <tr>
+      <td>Medium</td>
+      <td>Rebuild the admin backoffice inside the main app.</td>
+      <td>Improves maintainability, consistency, and future feature velocity.</td>
+    </tr>
+    <tr>
+      <td>Medium</td>
+      <td>Add analytics and reporting dashboards.</td>
+      <td>Supports product decisions, growth tracking, and stakeholder visibility.</td>
+    </tr>
+  </table>
+
+  <h2>11. Simple Stakeholder Takeaway</h2>
+  <p>
+    This is already more than a prototype listing site. It is a functioning marketplace foundation with moderation, trust features, messaging, dashboarding, referrals, notifications, and transaction governance. The main next step is not feature invention; it is production hardening, scaling decisions, and refinement of admin and payment infrastructure.
+  </p>
+
+  <h2>12. Suggested Use of This Document</h2>
+  <ul>
+    <li>Internal handoff to founders, operators, or project owners.</li>
+    <li>Demo preparation for investors or partners.</li>
+    <li>Planning input for next-phase product, engineering, and operations work.</li>
+    <li>Reference material for non-technical decision-makers who need a concise understanding of the platform.</li>
+  </ul>
+</body>
+</html>

@@ -141,18 +141,22 @@ body {
   margin-bottom: 5px;
 }
 
-@media (max-width: 767.98px) {
-  .tradigo-navbar {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 45;
-  }
+.tradigo-navbar {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 45;
+}
 
+.tradigo-navbar-mobile-spacer {
+  display: block;
+  height: 42px;
+}
+
+@media (max-width: 767.98px) {
   .tradigo-navbar-mobile-spacer {
-    display: block;
     height: 56px;
   }
 
@@ -1510,6 +1514,10 @@ a {
 .product-detail-seller-avatar {
   width: 56px;
   height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  flex: 0 0 56px;
+  aspect-ratio: 1;
   border-radius: 50%;
   background: linear-gradient(135deg, #0a9e8f, #0d6efd);
   color: #fff;

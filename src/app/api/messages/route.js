@@ -53,7 +53,17 @@ async function loadInbox(userId) {
     orderBy: { updatedAt: "desc" },
   });
 
-  return summarizeInbox(conversations, userId);
+  const inbox = summarizeInbox(conversations, userId);
+
+  return {
+    ...inbox,
+    conversations: inbox.conversations.filter(
+      (conversation) => !(conversation.isSupportConversation && conversation.isSupportResolved)
+    ),
+    unreadCount: inbox.conversations
+      .filter((conversation) => !(conversation.isSupportConversation && conversation.isSupportResolved))
+      .reduce((total, conversation) => total + conversation.unreadCount, 0),
+  };
 }
 
 function getParticipantIds(conversation) {

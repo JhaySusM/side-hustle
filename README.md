@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Batjee / TradiGo
 
-## Getting Started
+Batjee, branded in the UI as TradiGo, is a local marketplace platform built with Next.js, React, Prisma, and PostgreSQL. It supports listing creation, marketplace browsing, favorites, seller profiles, in-app messaging, structured transactions, reporting, referrals, notifications, and an admin backoffice.
 
-First, run the development server:
+## What the project does
+
+- Users register and log in with a JWT cookie.
+- Sellers post listings that enter a pending moderation state.
+- Admin approves listings before they become publicly visible.
+- Buyers browse active listings and contact sellers through in-app chat.
+- Conversations can include a transaction lifecycle with dual confirmations, completion tracking, and platform fee submission.
+- Users can save favorites, rate sellers, submit reports, and receive in-app notifications.
+- Admins manage support, reports, notifications, seller features, and transaction fee verification.
+
+## Tech stack
+
+- Next.js 16 App Router
+- React 19
+- Prisma ORM
+- PostgreSQL
+- Reactstrap and Bootstrap
+- Cloudinary for image uploads
+- Server-Sent Events for inbox refresh
+
+## Main routes
+
+- `/`: Homepage
+- `/listings`: Marketplace browsing
+- `/product/[id]`: Product detail
+- `/seller/[id]`: Seller profile
+- `/messages`: Inbox and chat
+- `/post`: Create listing
+- `/dashboard`: User dashboard
+- `/admin`: Admin login and backoffice shell
+
+## Setup
+
+### Required environment variables
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
+- `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`
+
+### Install and run
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Other scripts
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm run start
+npm run lint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Documentation
 
-## Learn More
+Full project documentation is in `docs/PROJECT_DOCUMENTATION.md`.
 
-To learn more about Next.js, take a look at the following resources:
+It covers:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- System overview
+- Route and page map
+- Data model summary
+- Auth and admin behavior
+- Messaging and transactions
+- Reports, favorites, ratings, referrals, and notifications
+- Deployment and maintenance notes
+- Current risks and suggested improvements
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Important implementation notes
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- New listings start as `Pending` and require admin approval.
+- Messaging realtime updates currently rely on SSE plus an in-process event bus.
+- The admin backoffice is loaded from `public/admin-backoffice.html`.
+- Prisma migrations live under `prisma/migrations`.
+- On Windows, `prisma generate` can fail if a running Node process is locking the Prisma engine DLL.

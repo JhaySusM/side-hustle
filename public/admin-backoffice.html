@@ -1116,7 +1116,10 @@ input:checked+.slider:before{transform:translateX(18px)}
                   <div class="messages-thread-sub" id="adminMessagesSelectedMeta">Choose a thread from the inbox to review messages.</div>
                   <div class="messages-thread-tags" id="adminMessagesSelectedTags"></div>
                 </div>
-                <button class="btn btn-outline btn-sm" id="adminMarkReadButton" onclick="markSelectedAdminConversationRead()">Mark as read</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                  <button class="btn btn-ok btn-sm" id="adminResolveButton" onclick="markSelectedAdminConversationSolved()">Mark as solved</button>
+                  <button class="btn btn-outline btn-sm" id="adminMarkReadButton" onclick="markSelectedAdminConversationRead()">Mark as read</button>
+                </div>
               </div>
               <div class="messages-thread-body">
                 <div class="messages-thread-scroll" id="adminMessagesThread"></div>
@@ -2536,6 +2539,38 @@ function markSelectedAdminConversationRead() {
   markAdminConversationRead(adminSelectedConversationId);
 }
 
+async function markSelectedAdminConversationSolved() {
+  if (!adminSelectedConversationId) return;
+
+  try {
+    const response = await fetch('/api/admin/messages', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...ADMIN_HEADERS,
+      },
+      body: JSON.stringify({
+        conversationId: adminSelectedConversationId,
+        action: 'solve_support',
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || 'Failed to mark conversation as solved');
+    }
+
+    const updated = payload.conversation;
+    LIVE_CONTEXT.conversations = [
+      updated,
+      ...(LIVE_CONTEXT.conversations || []).filter((item) => item.id !== updated.id),
+    ];
+    adminSelectedConversationId = updated.id;
+    renderAdminMessagesPage();
+  } catch (error) {
+    alert(error.message || 'Failed to mark conversation as solved');
+  }
+}
+
 function renderAdminMessagesPage() {
   const conversations = LIVE_CONTEXT.conversations || [];
   const list = document.getElementById('adminMessagesList');
@@ -2544,12 +2579,13 @@ function renderAdminMessagesPage() {
   const meta = document.getElementById('adminMessagesSelectedMeta');
   const tags = document.getElementById('adminMessagesSelectedTags');
   const markReadButton = document.getElementById('adminMarkReadButton');
+  const resolveButton = document.getElementById('adminResolveButton');
 
   setNodeText('adminMessagesCount', conversations.length.toLocaleString());
   setNodeText('adminMessagesUnread', conversations.reduce((sum, item) => sum + Number(item.unreadCount || 0), 0).toLocaleString());
   setNodeText('adminMessagesTransactions', conversations.filter((item) => item.transaction).length.toLocaleString());
 
-  if (!list || !thread || !title || !meta || !tags || !markReadButton) return;
+  if (!list || !thread || !title || !meta || !tags || !markReadButton || !resolveButton) return;
 
   if (!conversations.length) {
     list.innerHTML = '<div class="messages-empty"><strong>No conversations yet.</strong>No buyer messages have reached the admin support desk.</div>';
@@ -2559,6 +2595,8 @@ function renderAdminMessagesPage() {
     tags.innerHTML = '';
     markReadButton.disabled = true;
     markReadButton.style.opacity = '0.5';
+    resolveButton.disabled = true;
+    resolveButton.style.opacity = '0.5';
     return;
   }
 
@@ -2592,11 +2630,14 @@ function renderAdminMessagesPage() {
   tags.innerHTML = `
     <span class="tag ${messageStatusTag(selected.listingStatus)}">${escapeHtml(selected.listingStatus || 'Unknown')}</span>
     <span class="tag tag-info">${escapeHtml(selected.listingTitle || 'Unknown listing')}</span>
+    ${selected.isSupportResolved ? '<span class="tag tag-ok">Solved</span>' : ''}
     ${selected.transaction ? `<span class="tag tag-ok">Transaction ${escapeHtml(selected.transaction.status || 'active')}</span>` : '<span class="tag tag-muted">No transaction</span>'}
   `;
 
   markReadButton.disabled = selected.unreadCount === 0;
   markReadButton.style.opacity = selected.unreadCount === 0 ? '0.5' : '1';
+  resolveButton.disabled = Boolean(selected.isSupportResolved);
+  resolveButton.style.opacity = selected.isSupportResolved ? '0.5' : '1';
 
   thread.innerHTML = selected.messages?.length
     ? `<div class="messages-bubble-col">${selected.messages.map((message) => {

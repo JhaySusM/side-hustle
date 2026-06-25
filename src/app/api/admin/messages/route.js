@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 
 const ADMIN_EMAIL = "admin@gmail.com";
 const ADMIN_PASSWORD = "admin1234";
+const SUPPORT_LISTING_NAME = "Batjee Support";
+const SUPPORT_RESOLVED_MARKER = "__BATJEE_SUPPORT_RESOLVED__";
 
 const conversationInclude = {
   listing: {
@@ -166,6 +168,7 @@ export async function PATCH(request) {
     const admin = await ensureAdminUser();
     const body = await request.json();
     const conversationId = Number(body.conversationId);
+    const action = String(body.action || "mark_read").trim();
 
     if (!conversationId) {
       return Response.json({ error: "conversationId is required" }, { status: 400 });
@@ -176,15 +179,41 @@ export async function PATCH(request) {
         id: conversationId,
         sellerId: admin.id,
       },
-      select: {
-        id: true,
-        buyerId: true,
-        sellerId: true,
-      },
+      include: conversationInclude,
     });
 
     if (!conversation) {
       return Response.json({ error: "Conversation not found" }, { status: 404 });
+    }
+
+    if (action === "solve_support") {
+      if (conversation.listing?.product_name !== SUPPORT_LISTING_NAME) {
+        return Response.json({ error: "Only admin support conversations can be marked as solved" }, { status: 400 });
+      }
+
+      const updatedConversation = await prisma.conversation.update({
+        where: { id: conversationId },
+        data: {
+          updatedAt: new Date(),
+          messages: {
+            create: {
+              senderId: admin.id,
+              body: SUPPORT_RESOLVED_MARKER,
+            },
+          },
+        },
+        include: conversationInclude,
+      });
+
+      publishMessageEvent(getParticipantIds(updatedConversation), {
+        type: "refresh",
+        conversationId,
+      });
+
+      return Response.json({
+        success: true,
+        conversation: summarizeInbox([updatedConversation], admin.id).conversations[0],
+      });
     }
 
     await prisma.conversationMessage.updateMany({

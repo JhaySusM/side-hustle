@@ -115,7 +115,10 @@ export default function MessagesPage() {
   const [error, setError] = useState("");
   const [transactionError, setTransactionError] = useState("");
   const threadEndRef = useRef(null);
+  const threadBodyRef = useRef(null);
   const imageInputRef = useRef(null);
+  const composerInputRef = useRef(null);
+  const pendingComposerFocusRef = useRef(false);
 
   function clearSelectedImage() {
     if (selectedImagePreview) {
@@ -236,7 +239,24 @@ export default function MessagesPage() {
   const mobileBottomNavHeight = 108;
 
   useEffect(() => {
-    threadEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const threadBody = threadBodyRef.current;
+    if (!threadBody) {
+      return;
+    }
+
+    threadBody.scrollTo({
+      top: threadBody.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [activeConversation]);
+
+  useEffect(() => {
+    if (!activeConversation || !pendingComposerFocusRef.current) {
+      return;
+    }
+
+    pendingComposerFocusRef.current = false;
+    composerInputRef.current?.focus();
   }, [activeConversation]);
 
   useEffect(() => {
@@ -277,12 +297,14 @@ export default function MessagesPage() {
 
   async function handleContactAdmin() {
     setError("");
+    pendingComposerFocusRef.current = true;
 
     try {
       const result = await openSupportConversation();
       setTransactionError("");
       await loadMessages(result.conversation.id);
     } catch (supportError) {
+      pendingComposerFocusRef.current = false;
       setError(supportError.message || "Failed to open admin support chat.");
     }
   }
@@ -438,14 +460,6 @@ export default function MessagesPage() {
                         {conversations.length} conversation{conversations.length !== 1 ? "s" : ""}
                       </div>
                     </div>
-                    <Button
-                      onClick={handleContactAdmin}
-                      color="light"
-                      size="sm"
-                      className="border"
-                    >
-                      Contact Admin
-                    </Button>
                   </div>
                 </div>
 
@@ -489,16 +503,17 @@ export default function MessagesPage() {
                           background: active ? "#f0fdf9" : "#fff",
                           padding: "16px 18px",
                           borderBottom: "1px solid #f3f4f6",
+                          color: "#0f172a",
                         }}
                       >
                         <div className="d-flex align-items-start gap-3">
                           <Avatar name={conversation.otherParty.name} color={active ? "#0a9e8f" : "#0d6efd"} />
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div className="d-flex align-items-center justify-content-between gap-2">
-                              <div className="fw-semibold text-truncate">{conversation.otherParty.name}</div>
+                              <div className="fw-semibold text-truncate" style={{ color: "#0f172a" }}>{conversation.otherParty.name}</div>
                               {conversation.unreadCount > 0 && <Badge pill color="success">{conversation.unreadCount}</Badge>}
                             </div>
-                            <div className="text-muted small text-truncate">{conversation.listingTitle}</div>
+                            <div className="small text-truncate" style={{ color: "#475569" }}>{conversation.listingTitle}</div>
                             <div
                               className="small mt-1 text-truncate"
                               style={{
@@ -549,31 +564,26 @@ export default function MessagesPage() {
                         <div className="fw-semibold">{activeConversation.otherParty.name}</div>
                         <div className="text-muted small">Re: {activeConversation.listingTitle}</div>
                       </div>
-                      <Button
-                        onClick={handleContactAdmin}
-                        color="light"
-                        size="sm"
-                        className="border ms-auto"
-                      >
-                        Contact Admin
-                      </Button>
                     </div>
 
-                    <div className="px-3 px-md-4 pt-3" style={{ background: "#f8fafc" }}>
-                      <ConversationTransactionCard
-                        key={`${activeConversation.id}-${activeConversation.transaction?.updatedAt || "none"}`}
-                        conversation={activeConversation}
-                        currentUserId={user.id}
-                        actionError={transactionError}
-                        onSaveAmount={handleSaveTransactionAmount}
-                        onConfirmAmount={handleConfirmTransactionAmount}
-                        onMarkCompleted={handleMarkTransactionCompleted}
-                        onVoid={handleVoidTransaction}
-                        onSubmitFeePayment={handleSubmitFeePayment}
-                      />
-                    </div>
+                    {!activeConversation.isSupportConversation ? (
+                      <div className="px-3 px-md-4 pt-3" style={{ background: "#f8fafc" }}>
+                        <ConversationTransactionCard
+                          key={`${activeConversation.id}-${activeConversation.transaction?.updatedAt || "none"}`}
+                          conversation={activeConversation}
+                          currentUserId={user.id}
+                          actionError={transactionError}
+                          onSaveAmount={handleSaveTransactionAmount}
+                          onConfirmAmount={handleConfirmTransactionAmount}
+                          onMarkCompleted={handleMarkTransactionCompleted}
+                          onVoid={handleVoidTransaction}
+                          onSubmitFeePayment={handleSubmitFeePayment}
+                        />
+                      </div>
+                    ) : null}
 
                     <CardBody
+                      innerRef={threadBodyRef}
                       style={{
                         flex: 1,
                         background: "linear-gradient(180deg, #fbfdff 0%, #f4f8fb 100%)",
@@ -631,6 +641,7 @@ export default function MessagesPage() {
                           📷
                         </Button>
                         <Input
+                          innerRef={composerInputRef}
                           type="text"
                           placeholder="Write a message..."
                           value={draft}

@@ -161,7 +161,7 @@ export default function Footer() {
               </a>
             ))}
           </div>
-          <div className="footer-mobile-home-copy">Classified in Pakistan. @ 2026-2026 TradiGo</div>
+          <div className="footer-mobile-home-copy">Classified in Pakistan. @ 2026 TradiGo</div>
         </footer>
       ) : null}
 

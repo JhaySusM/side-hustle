@@ -10,6 +10,7 @@ const ADMIN_EMAIL = "admin@gmail.com";
 const ADMIN_PASSWORD = "admin1234";
 const SUPPORT_LISTING_NAME = "Batjee Support";
 const SUPPORT_IMAGE = "https://placehold.co/640x420?text=Batjee+Support";
+const SUPPORT_RESOLVED_MARKER = "__BATJEE_SUPPORT_RESOLVED__";
 
 const conversationInclude = {
   listing: {
@@ -141,6 +142,20 @@ export async function POST(request) {
           listingId: supportListing.id,
           buyerId: user.id,
           sellerId: admin.id,
+          messages: {
+            create: {
+              senderId: admin.id,
+              body: "Hello! Tell us your concern here and the Batjee admin team will review it.",
+            },
+          },
+        },
+        include: conversationInclude,
+      });
+    } else if (conversation.messages.at(-1)?.body === SUPPORT_RESOLVED_MARKER) {
+      conversation = await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          updatedAt: new Date(),
           messages: {
             create: {
               senderId: admin.id,
