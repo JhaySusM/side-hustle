@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Modal,
@@ -16,7 +16,10 @@ import {
   Input,
   Button,
   Alert,
+  Spinner,
+  FormFeedback,
 } from "reactstrap";
+import { PAKISTAN_CITIES, getPostalCodeForCity } from "@/lib/pakistan-cities";
 
 export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSuccess, onRegisterSuccess }) {
   const router = useRouter();
@@ -36,8 +39,53 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
     confirm: "",
   });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [referralFromQuery, setReferralFromQuery] = useState("");
   const referralLocked = Boolean(referralFromQuery);
+
+  const emailRef = useRef(null);
+  const referralRef = useRef(null);
+  const confirmRef = useRef(null);
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const [verifyContext, setVerifyContext] = useState(null); // { email, origin, user } | null
+  const [otpCode, setOtpCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setVerifyContext(null);
+      setOtpCode("");
+      setResendCooldown(0);
+      setSubmitting(false);
+      setFieldErrors({});
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  function completeAuth(user, origin) {
+    window.dispatchEvent(new CustomEvent("batjee:login", { detail: { user } }));
+    onAuthSuccess(user);
+    if (origin === "register") {
+      onRegisterSuccess?.(user);
+    } else {
+      onLoginSuccess?.(user);
+    }
+    toggle();
+    if (origin === "register" ? !onRegisterSuccess : !onLoginSuccess) {
+      router.push("/dashboard");
+    }
+  }
 
   // Seed default credential
   useEffect(() => {
@@ -89,6 +137,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
       setError("Please enter your email and password.");
       return;
     }
+    setSubmitting(true);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -100,21 +149,22 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
         setError(data.error || "Login failed.");
         return;
       }
-      window.dispatchEvent(new CustomEvent("batjee:login", { detail: { user: data.user } }));
-      onAuthSuccess(data.user);
-      onLoginSuccess?.(data.user);
-      toggle();
-      if (!onLoginSuccess) {
-        router.push("/dashboard");
+      if (data.requiresVerification) {
+        setVerifyContext({ email: data.user.email, origin: "login" });
+        return;
       }
+      completeAuth(data.user, "login");
     } catch (err) {
       setError("Login failed. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   async function handleRegister(e) {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
     if (
       !registerData.name ||
       !registerData.email ||
@@ -131,9 +181,11 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
       return;
     }
     if (registerData.password !== registerData.confirm) {
-      setError("Passwords do not match.");
+      setFieldErrors({ confirm: "Passwords do not match." });
+      confirmRef.current?.focus();
       return;
     }
+    setSubmitting(true);
     try {
       const res = await fetch("/api/users", {
         method: "POST",
@@ -153,24 +205,143 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Registration failed.");
+        const message = data.error || "Registration failed.";
+        if (/email/i.test(message)) {
+          setFieldErrors({ email: message });
+          emailRef.current?.focus();
+        } else if (/referral/i.test(message)) {
+          setFieldErrors({ referralCode: message });
+          referralRef.current?.focus();
+        } else {
+          setError(message);
+        }
         return;
       }
-      window.dispatchEvent(new CustomEvent("batjee:login", { detail: { user: data.user } }));
-      onAuthSuccess(data.user);
-      onRegisterSuccess?.(data.user);
-      toggle();
-      if (!onRegisterSuccess) {
-        router.push("/dashboard");
+      if (data.requiresVerification) {
+        setVerifyContext({ email: data.user.email, origin: "register" });
+        return;
       }
+      completeAuth(data.user, "register");
     } catch (err) {
       setError("Registration failed. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
+  }
+
+  async function handleVerifyOtp(e) {
+    e.preventDefault();
+    setError("");
+    if (!otpCode.trim()) {
+      setError("Please enter the verification code.");
+      return;
+    }
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: otpCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Verification failed.");
+        return;
+      }
+      completeAuth(data.user, verifyContext?.origin);
+    } catch (err) {
+      setError("Verification failed. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function handleResendOtp() {
+    setError("");
+    setResending(true);
+    try {
+      const res = await fetch("/api/auth/resend-otp", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to resend code.");
+        return;
+      }
+      setResendCooldown(60);
+    } catch (err) {
+      setError("Failed to resend code. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  }
+
+  function handleCityChange(e) {
+    const city = e.target.value;
+    setRegisterData((current) => ({
+      ...current,
+      addressCity: city,
+      addressPostalCode: getPostalCodeForCity(city),
+    }));
   }
 
   function switchTab(tab) {
     setActiveTab(tab);
     setError("");
+    setFieldErrors({});
+  }
+
+  if (verifyContext) {
+    return (
+      <Modal isOpen={isOpen} toggle={toggle} centered>
+        <ModalHeader toggle={toggle}>Verify your email</ModalHeader>
+        <ModalBody>
+          {error && <Alert color="danger">{error}</Alert>}
+          <p style={{ fontSize: 14 }}>
+            We sent a 6-digit code to <strong>{verifyContext.email}</strong>. Enter it below to
+            continue.
+          </p>
+          <Form onSubmit={handleVerifyOtp}>
+            <FormGroup>
+              <Label for="otp-code">Verification Code</Label>
+              <Input
+                id="otp-code"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="123456"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                autoComplete="one-time-code"
+                autoFocus
+              />
+            </FormGroup>
+            <Button color="primary" block type="submit" disabled={verifying}>
+              {verifying ? (
+                <>
+                  <Spinner size="sm" className="me-2" /> Verifying...
+                </>
+              ) : (
+                "Verify"
+              )}
+            </Button>
+            <p className="text-center mt-3 mb-0" style={{ fontSize: 14 }}>
+              Didn&apos;t get a code?{" "}
+              <span
+                style={{
+                  color: resendCooldown > 0 || resending ? "#94a3b8" : "#0d6efd",
+                  cursor: resendCooldown > 0 || resending ? "default" : "pointer",
+                }}
+                onClick={() => {
+                  if (resendCooldown > 0 || resending) return;
+                  handleResendOtp();
+                }}
+              >
+                {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : "Resend code"}
+              </span>
+            </p>
+          </Form>
+        </ModalBody>
+      </Modal>
+    );
   }
 
   return (
@@ -229,7 +400,15 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                   autoComplete="current-password"
                 />
               </FormGroup>
-              <Button color="primary" block type="submit">Sign In</Button>
+              <Button color="primary" block type="submit" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Spinner size="sm" className="me-2" /> Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
               <p className="text-center mt-3 mb-0" style={{ fontSize: 14 }}>
                 No account?{" "}
                 <span
@@ -262,9 +441,15 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                   type="email"
                   placeholder="you@example.com"
                   value={registerData.email}
-                  onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                  onChange={(e) => {
+                    setRegisterData({ ...registerData, email: e.target.value });
+                    setFieldErrors((current) => ({ ...current, email: undefined }));
+                  }}
                   autoComplete="email"
+                  innerRef={emailRef}
+                  invalid={Boolean(fieldErrors.email)}
                 />
+                {fieldErrors.email && <FormFeedback>{fieldErrors.email}</FormFeedback>}
               </FormGroup>
               <FormGroup>
                 <Label for="reg-referral">Referral Code <span className="text-muted">(Optional)</span></Label>
@@ -274,17 +459,56 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                   placeholder="Enter referral code"
                   value={registerData.referralCode}
                   disabled={referralLocked}
-                  onChange={(e) => setRegisterData({
-                    ...registerData,
-                    referralCode: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 24),
-                  })}
+                  onChange={(e) => {
+                    setRegisterData({
+                      ...registerData,
+                      referralCode: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 24),
+                    });
+                    setFieldErrors((current) => ({ ...current, referralCode: undefined }));
+                  }}
                   autoComplete="off"
+                  innerRef={referralRef}
+                  invalid={Boolean(fieldErrors.referralCode)}
                 />
+                {fieldErrors.referralCode && <FormFeedback>{fieldErrors.referralCode}</FormFeedback>}
                 <small className="text-muted d-block mt-2">
                   {referralLocked
                     ? "This referral code came from your invite link and cannot be changed here."
                     : "If someone shared a TradiGO referral with you, paste the code here before creating your account."}
                 </small>
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-country">Country</Label>
+                <Input id="reg-country" type="text" value={registerData.addressCountry} disabled readOnly />
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-city">City Name</Label>
+                <Input
+                  id="reg-city"
+                  type="select"
+                  value={registerData.addressCity}
+                  onChange={handleCityChange}
+                  required
+                >
+                  <option value="">Select a city</option>
+                  {PAKISTAN_CITIES.map((city) => (
+                    <option key={city.name} value={city.name}>
+                      {city.name}
+                    </option>
+                  ))}
+                </Input>
+              </FormGroup>
+              <FormGroup>
+                <Label for="reg-postal">Postal Code</Label>
+                <Input
+                  id="reg-postal"
+                  type="text"
+                  placeholder="Auto-filled from selected city"
+                  value={registerData.addressPostalCode}
+                  disabled
+                  readOnly
+                  required
+                />
               </FormGroup>
               <FormGroup>
                 <Label for="reg-house">House No.</Label>
@@ -321,42 +545,6 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                 />
               </FormGroup>
               <FormGroup>
-                <Label for="reg-city">City Name</Label>
-                <Input
-                  id="reg-city"
-                  type="text"
-                  placeholder="e.g. Lahore"
-                  value={registerData.addressCity}
-                  onChange={(e) => setRegisterData({ ...registerData, addressCity: e.target.value })}
-                  required
-                />
-              </FormGroup>
-              <FormGroup>
-                <Label for="reg-postal">Postal Code</Label>
-                <Input
-                  id="reg-postal"
-                  type="text"
-                  placeholder="e.g. 54000"
-                  value={registerData.addressPostalCode}
-                  onChange={(e) => setRegisterData({ ...registerData, addressPostalCode: e.target.value })}
-                  required
-                />
-              </FormGroup>
-              <FormGroup>
-                <Label for="reg-country">Country</Label>
-                <Input
-                  id="reg-country"
-                  type="text"
-                  placeholder="PAKISTAN"
-                  value={registerData.addressCountry}
-                  onChange={(e) => setRegisterData({ ...registerData, addressCountry: e.target.value })}
-                  required
-                />
-                <small className="text-muted d-block mt-2">
-                  Pakistan mailing format: House No., Street No., Area, City, Postal Code, Country.
-                </small>
-              </FormGroup>
-              <FormGroup>
                 <Label for="reg-password">Password</Label>
                 <Input
                   id="reg-password"
@@ -374,11 +562,25 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                   type="password"
                   placeholder="Repeat password"
                   value={registerData.confirm}
-                  onChange={(e) => setRegisterData({ ...registerData, confirm: e.target.value })}
+                  onChange={(e) => {
+                    setRegisterData({ ...registerData, confirm: e.target.value });
+                    setFieldErrors((current) => ({ ...current, confirm: undefined }));
+                  }}
                   autoComplete="new-password"
+                  innerRef={confirmRef}
+                  invalid={Boolean(fieldErrors.confirm)}
                 />
+                {fieldErrors.confirm && <FormFeedback>{fieldErrors.confirm}</FormFeedback>}
               </FormGroup>
-              <Button color="primary" block type="submit">Create Account</Button>
+              <Button color="primary" block type="submit" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Spinner size="sm" className="me-2" /> Creating account...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </Button>
               <p className="text-center mt-3 mb-0" style={{ fontSize: 14 }}>
                 Already have an account?{" "}
                 <span

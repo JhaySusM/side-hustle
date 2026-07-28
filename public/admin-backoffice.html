@@ -2224,10 +2224,10 @@ renderListingTable();
 })();
 
 // Live data integration
-const ADMIN_HEADERS = {
-  'x-admin-email': 'admin@gmail.com',
-  'x-admin-password': 'admin1234',
-};
+// Admin identity now comes from the httpOnly session cookie set by
+// /api/auth/login (sent automatically on same-origin fetches), verified
+// server-side against the user's role. No credentials need to travel here.
+const ADMIN_HEADERS = {};
 
 const LIVE_CONTEXT = {
   users: [],

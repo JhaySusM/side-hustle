@@ -49,6 +49,10 @@ model User {
   password  String
   user_type String        @default("user")
   status    String        @default("active")
+  emailVerifiedAt DateTime?
+  emailVerificationCodeHash String?
+  emailVerificationExpiresAt DateTime?
+  emailVerificationAttempts Int @default(0)
   createdAt DateTime      @default(now())
   referredBy User?        @relation("UserReferrals", fields: [referredById], references: [id])
   referrals  User[]       @relation("UserReferrals")

@@ -42,7 +42,7 @@ export async function GET(request, { params }) {
       product.product_status === 'Active' ||
       product.product_status === 'Sold' ||
       product.user_id === viewer?.id ||
-      isAdminRequest(request);
+      (await isAdminRequest(request));
 
     if (!canView) {
       return Response.json({ error: 'Product not found' }, { status: 404 });

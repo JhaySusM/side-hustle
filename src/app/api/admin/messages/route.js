@@ -1,9 +1,11 @@
 import { publishMessageEvent } from "@/lib/message-events";
 import { summarizeInbox } from "@/lib/messages";
 import { prisma } from "@/lib/prisma";
+import { isAdminRequest } from "@/lib/admin-auth";
+import { hashPassword } from "@/lib/passwords";
 
-const ADMIN_EMAIL = "admin@gmail.com";
-const ADMIN_PASSWORD = "admin1234";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@gmail.com";
+const ADMIN_DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || "admin1234";
 const SUPPORT_LISTING_NAME = "Batjee Support";
 const SUPPORT_RESOLVED_MARKER = "__BATJEE_SUPPORT_RESOLVED__";
 
@@ -45,40 +47,33 @@ const conversationInclude = {
   transaction: true,
 };
 
-function isAuthorized(request) {
-  return (
-    request.headers.get("x-admin-email") === ADMIN_EMAIL &&
-    request.headers.get("x-admin-password") === ADMIN_PASSWORD
-  );
-}
-
 function getParticipantIds(conversation) {
   return [conversation.buyerId, conversation.sellerId];
 }
 
+// Only seeds the admin account on first run — never overwrites an existing
+// password, so rotating it doesn't get silently reset back to the default.
 async function ensureAdminUser() {
-  return prisma.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    update: {
-      name: "Batjee Admin",
-      password: ADMIN_PASSWORD,
-      user_type: "admin",
-      status: "active",
-      address: "Batjee Support Desk",
-    },
-    create: {
+  const existing = await prisma.user.findUnique({ where: { email: ADMIN_EMAIL } });
+  if (existing) {
+    return existing;
+  }
+
+  return prisma.user.create({
+    data: {
       email: ADMIN_EMAIL,
       name: "Batjee Admin",
-      password: ADMIN_PASSWORD,
+      password: await hashPassword(ADMIN_DEFAULT_PASSWORD),
       user_type: "admin",
       status: "active",
+      emailVerifiedAt: new Date(),
       address: "Batjee Support Desk",
     },
   });
 }
 
 export async function GET(request) {
-  if (!isAuthorized(request)) {
+  if (!(await isAdminRequest(request))) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -102,7 +97,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  if (!isAuthorized(request)) {
+  if (!(await isAdminRequest(request))) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -160,7 +155,7 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  if (!isAuthorized(request)) {
+  if (!(await isAdminRequest(request))) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 

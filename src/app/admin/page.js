@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ADMIN_EMAIL, ADMIN_PASSWORD } from "@/lib/admin-auth";
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
@@ -12,25 +11,47 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState("");
 
   useEffect(() => {
-    const restoreId = window.setTimeout(() => {
-      setAuthed(sessionStorage.getItem("batjee_admin") === "true");
-      setAuthChecked(true);
-    }, 0);
+    let cancelled = false;
 
-    return () => window.clearTimeout(restoreId);
+    async function restoreSession() {
+      try {
+        const res = await fetch("/api/admin/login", { cache: "no-store" });
+        if (!cancelled) {
+          setAuthed(res.ok);
+        }
+      } catch {
+        if (!cancelled) setAuthed(false);
+      } finally {
+        if (!cancelled) setAuthChecked(true);
+      }
+    }
+
+    restoreSession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
     setLoginError("");
 
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      sessionStorage.setItem("batjee_admin", "true");
-      setAuthed(true);
-      return;
-    }
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    setLoginError("Invalid admin credentials.");
+      if (!res.ok) {
+        setLoginError("Invalid admin credentials.");
+        return;
+      }
+
+      setAuthed(true);
+    } catch {
+      setLoginError("Invalid admin credentials.");
+    }
   }
 
   if (!authChecked) {

@@ -19,7 +19,7 @@ export async function PATCH(request) {
       return Response.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    if (isAdminRequest(request)) {
+    if (await isAdminRequest(request)) {
       const updated = await prisma.productList.update({
         where: { id: product.id },
         data: { product_status },

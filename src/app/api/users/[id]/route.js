@@ -1,18 +1,28 @@
 import { PrismaClient } from '@prisma/client';
+import { toSafeUser } from '@/lib/auth';
+import { isAdminRequest } from '@/lib/admin-auth';
 const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
+  if (!(await isAdminRequest(request))) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { id } = await params;
   try {
     const user = await prisma.user.findUnique({ where: { id: Number(id) } });
     if (!user) return Response.json({ error: 'User not found' }, { status: 404 });
-    return Response.json({ user });
+    return Response.json({ user: toSafeUser(user) });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function PUT(request, { params }) {
+  if (!(await isAdminRequest(request))) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { id } = await params;
   try {
     const body = await request.json();
@@ -21,13 +31,17 @@ export async function PUT(request, { params }) {
       where: { id: Number(id) },
       data: { status },
     });
-    return Response.json({ user });
+    return Response.json({ user: toSafeUser(user) });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function DELETE(request, { params }) {
+  if (!(await isAdminRequest(request))) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { id } = await params;
   try {
     await prisma.user.delete({ where: { id: Number(id) } });

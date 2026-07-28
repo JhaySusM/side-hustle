@@ -1,14 +1,23 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 import { generateUniqueReferralCode, normalizeReferralCode } from '@/lib/referrals';
+import { toSafeUser } from '@/lib/auth';
+import { isAdminRequest } from '@/lib/admin-auth';
+import { hashPassword } from '@/lib/passwords';
+import { generateOtp, hashOtp, OTP_EXPIRY_MS } from '@/lib/otp';
+import { sendOtpEmail } from '@/lib/email';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
 
-// GET: List users
+// GET: List users (admin only — returns account data for every user)
 export async function GET(request) {
+  if (!(await isAdminRequest(request))) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const users = await prisma.user.findMany();
-    return Response.json({ users });
+    return Response.json({ users: users.map(toSafeUser) });
   } catch (error) {
     return Response.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
@@ -96,6 +105,8 @@ export async function POST(request) {
       email: normalizedEmail,
     });
 
+    const otp = generateOtp();
+
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
@@ -109,14 +120,32 @@ export async function POST(request) {
         addressCountry: hasStructuredAddress ? country : null,
         referralCode: generatedReferralCode,
         referredById: referrer?.id || null,
-        password,
+        password: await hashPassword(password),
         user_type: 'user',
+        emailVerificationCodeHash: await hashOtp(otp),
+        emailVerificationExpiresAt: new Date(Date.now() + OTP_EXPIRY_MS),
+        emailVerificationAttempts: 0,
       },
     });
 
+    try {
+      await sendOtpEmail(user.email, otp);
+    } catch (emailError) {
+      try {
+        await prisma.user.delete({ where: { id: user.id } });
+      } catch {
+        // Rollback failing isn't fatal — the account can still recover via
+        // the login flow, which also resends a fresh OTP.
+      }
+      return Response.json(
+        { error: 'Failed to send verification email. Please try again.' },
+        { status: 500 }
+      );
+    }
+
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 
-    return new Response(JSON.stringify({ user }), {
+    return new Response(JSON.stringify({ user: toSafeUser(user), requiresVerification: true }), {
       status: 200,
       headers: {
         'Set-Cookie': `batjee_token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict`,

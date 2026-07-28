@@ -2,15 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PAKISTAN_CITIES } from "@/lib/pakistan-cities";
 
-const LOCATION_OPTIONS = [
-  "Pakistan",
-  "Islamabad",
-  "Karachi",
-  "Lahore",
-  "Rawalpindi",
-  "Peshawar",
-];
+const LOCATION_OPTIONS = ["Pakistan", ...PAKISTAN_CITIES.map((city) => city.name)];
 
 function SearchIcon() {
   return (

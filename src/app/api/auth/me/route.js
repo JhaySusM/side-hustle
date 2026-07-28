@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 import { ensureUserReferralCode } from '@/lib/referrals';
+import { toSafeUser } from '@/lib/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
 
@@ -23,7 +24,7 @@ export async function GET(request) {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
     const hydratedUser = await ensureUserReferralCode(user);
-    return Response.json({ user: hydratedUser });
+    return Response.json({ user: toSafeUser(hydratedUser) });
   } catch (error) {
     return Response.json({ error: 'Failed to fetch user' }, { status: 500 });
   }

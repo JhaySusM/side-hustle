@@ -66,7 +66,7 @@ function buildSummary(transactions) {
 }
 
 export async function GET(request) {
-  if (!isAdminRequest(request)) {
+  if (!(await isAdminRequest(request))) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -112,7 +112,7 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  if (!isAdminRequest(request)) {
+  if (!(await isAdminRequest(request))) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 

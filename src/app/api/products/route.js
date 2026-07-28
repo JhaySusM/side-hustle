@@ -5,7 +5,7 @@ import { normalizeProductCategory } from '@/lib/category-catalog';
 import { getSellerOutstandingFeeSummary } from '@/lib/seller-fee-status';
 
 export async function GET(request) {
-  if (!isAdminRequest(request)) {
+  if (!(await isAdminRequest(request))) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -18,6 +18,8 @@ export async function GET(request) {
             id: true,
             name: true,
             email: true,
+            address: true,
+            addressCity: true,
             sellerRatingAvg: true,
             sellerRatingCount: true,
           },

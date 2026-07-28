@@ -37,7 +37,7 @@ export async function GET(request, { params }) {
     }
 
     const viewer = await getRequestUser(request);
-    const canViewAllProducts = viewer?.id === id || isAdminRequest(request);
+    const canViewAllProducts = viewer?.id === id || (await isAdminRequest(request));
     const products = await prisma.productList.findMany({
       where: {
         user_id: id,

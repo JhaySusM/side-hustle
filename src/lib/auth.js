@@ -30,8 +30,21 @@ export async function getRequestUser(request) {
       name: true,
       user_type: true,
       status: true,
+      emailVerifiedAt: true,
     },
   });
+}
+
+export function toSafeUser(user) {
+  if (!user) return user;
+  const {
+    password,
+    emailVerificationCodeHash,
+    emailVerificationExpiresAt,
+    emailVerificationAttempts,
+    ...safeUser
+  } = user;
+  return safeUser;
 }
 
 export async function requireRequestUser(request) {
@@ -46,6 +59,13 @@ export async function requireRequestUser(request) {
   if (user.status && user.status !== "active") {
     return {
       errorResponse: Response.json({ error: "Account is inactive" }, { status: 403 }),
+      user: null,
+    };
+  }
+
+  if (!user.emailVerifiedAt) {
+    return {
+      errorResponse: Response.json({ error: "Email not verified" }, { status: 403 }),
       user: null,
     };
   }
