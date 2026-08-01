@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { sendOtpEmail } from "@/lib/email";
+import { sendWhatsappOtp } from "@/lib/whatsapp";
 
 export const OTP_EXPIRY_MS = 10 * 60_000;
 export const MAX_OTP_ATTEMPTS = 5;
@@ -31,4 +32,18 @@ export async function issueAndSendOtp(prisma, user) {
     },
   });
   await sendOtpEmail(user.email, code);
+}
+
+// Same as issueAndSendOtp, but for the phone/WhatsApp verification channel.
+export async function issueAndSendPhoneOtp(prisma, user) {
+  const code = generateOtp();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      phoneVerificationCodeHash: await hashOtp(code),
+      phoneVerificationExpiresAt: new Date(Date.now() + OTP_EXPIRY_MS),
+      phoneVerificationAttempts: 0,
+    },
+  });
+  await sendWhatsappOtp(user.phone, code);
 }

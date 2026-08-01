@@ -4,11 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  Card, CardBody, CardTitle, CardText, Badge,
-  Button, Input, Alert, InputGroup,
+  Card, CardBody, CardTitle, CardText,
+  Button, Alert,
 } from "reactstrap";
 import { HIDDEN_CATEGORY_NAMES, normalizeCategoryName } from "@/lib/category-catalog";
 import FavoriteButton from "@/components/FavoriteButton";
+import ProductQuickViewModal from "@/components/ProductQuickViewModal";
+import { useIsMobile } from "@/lib/useIsMobile";
 import { formatDisplayCurrency } from "@/lib/currency";
 
 const FALLBACK_IMG = "https://placehold.co/400x180?text=No+Image";
@@ -74,7 +76,7 @@ function ListingImage({ src, alt, style }) {
   );
 }
 
-function FeaturedListings({ filter, search: searchProp }) {
+function FeaturedListings({ filter, subcategoryFilter, locationFilter, search = "" }) {
   const router = useRouter();
   const [listings, setListings] = useState([]);
   const [viewer, setViewer] = useState(null);
@@ -82,11 +84,12 @@ function FeaturedListings({ filter, search: searchProp }) {
   const [favoritePendingId, setFavoritePendingId] = useState(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [quickViewId, setQuickViewId] = useState(null);
+  const isMobile = useIsMobile();
   const pageSize = 5;
-  const [search, setSearch] = useState(searchProp || "");
   const scrollRef = useRef(null);
   const normalizedSearch = search.trim();
-  const isGroupedHome = !filter && !normalizedSearch;
+  const isGroupedHome = !filter && !subcategoryFilter && !normalizedSearch && !locationFilter;
   const requestPage = isGroupedHome ? 1 : page;
   const requestPageSize = isGroupedHome ? 50 : pageSize;
 
@@ -102,8 +105,16 @@ function FeaturedListings({ filter, search: searchProp }) {
           params.set("category", filter);
         }
 
+        if (subcategoryFilter) {
+          params.set("subcategory", subcategoryFilter);
+        }
+
         if (normalizedSearch) {
           params.set("q", normalizedSearch);
+        }
+
+        if (locationFilter) {
+          params.set("location", locationFilter);
         }
 
         const res = await fetch(`/api/products/active?${params.toString()}`);
@@ -121,7 +132,7 @@ function FeaturedListings({ filter, search: searchProp }) {
       }
     }
     fetchListings();
-  }, [filter, normalizedSearch, requestPage, requestPageSize]);
+  }, [filter, subcategoryFilter, locationFilter, normalizedSearch, requestPage, requestPageSize]);
 
   useEffect(() => {
     async function fetchViewer() {
@@ -171,10 +182,16 @@ function FeaturedListings({ filter, search: searchProp }) {
   const mobileHomeListings = groupedSource.slice(0, 4);
   const normalizedFilter = normalizeCategoryName(filter || "");
 
-  const heading = search
-    ? `Results for "${search}"`
+  const heading = normalizedSearch
+    ? locationFilter
+      ? `Results for "${normalizedSearch}" in ${locationFilter}`
+      : `Results for "${normalizedSearch}"`
+    : normalizedFilter && subcategoryFilter
+    ? `${normalizedFilter} – ${subcategoryFilter} Listings`
     : normalizedFilter
     ? `${normalizedFilter} Listings`
+    : locationFilter
+    ? `Ads in ${locationFilter}`
     : "Featured Listings";
 
   function openListingsPage() {
@@ -182,8 +199,14 @@ function FeaturedListings({ filter, search: searchProp }) {
     if (filter) {
       params.set("category", filter);
     }
-    if (search.trim()) {
-      params.set("q", search.trim());
+    if (subcategoryFilter) {
+      params.set("subcategory", subcategoryFilter);
+    }
+    if (locationFilter) {
+      params.set("location", locationFilter);
+    }
+    if (normalizedSearch) {
+      params.set("q", normalizedSearch);
     }
 
     const target = params.toString() ? `/listings?${params.toString()}` : "/listings";
@@ -250,56 +273,36 @@ function FeaturedListings({ filter, search: searchProp }) {
         <Card
           className={`h-100 shadow-sm d-flex flex-column${mobileHome ? " featured-listings-mobile-card" : ""}`}
           style={{ cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s" }}
-          onClick={() => router.push(`/product/${item.id}`)}
+          onClick={() => { if (isMobile) { setQuickViewId(item.id); } else { router.push(`/product/${item.id}`); } }}
           onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
         >
-          <ListingImage
-            src={item.image}
-            alt={item.product_name}
-            style={mobileHome ? { width: "100%", height: 156, objectFit: "cover" } : compact ? { width: "100%", height: 150, objectFit: "cover" } : undefined}
-          />
+          <div className="product-tile-image-wrap">
+            <ListingImage
+              src={item.image}
+              alt={item.product_name}
+              style={mobileHome ? { width: "100%", height: 156, objectFit: "cover" } : compact ? { width: "100%", height: 150, objectFit: "cover" } : undefined}
+            />
+            <FavoriteButton
+              className="product-tile-favorite-btn"
+              isFavorited={Boolean(item.isFavorited)}
+              iconOnly
+              disabled={favoritePendingId === item.id || isOwnListing}
+              title={isOwnListing ? "You cannot favorite your own listing" : undefined}
+              onClick={(event) => handleFavoriteToggle(event, item)}
+            />
+          </div>
           <CardBody className={`d-flex flex-column${mobileHome ? " featured-listings-mobile-card-body" : ""}`}>
-            {!mobileHome ? <Badge color="secondary" pill className="mb-2 align-self-start">{normalizeCategoryName(item.category?.category_name || "")}</Badge> : null}
-            <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
-              <CardTitle tag="h6" className={`fw-semibold mb-0${mobileHome ? " featured-listings-mobile-title" : ""}`}>{item.product_name}</CardTitle>
-              <FavoriteButton
-                className="featured-listing-favorite-btn"
-                isFavorited={Boolean(item.isFavorited)}
-                iconOnly
-                style={mobileHome ? { width: 28, height: 28, minWidth: 28, boxShadow: "0 2px 8px rgba(15, 23, 42, 0.08)" } : undefined}
-                disabled={favoritePendingId === item.id || isOwnListing}
-                title={isOwnListing ? "You cannot favorite your own listing" : undefined}
-                onClick={(event) => handleFavoriteToggle(event, item)}
-              />
-            </div>
-            <CardText className={`text-primary fw-bold${mobileHome ? " featured-listings-mobile-price" : ""}`}>{formatDisplayCurrency(item.price)}</CardText>
-            {mobileHome ? (
-              <div className="featured-listings-mobile-meta mb-2">
-                <span>{normalizeCategoryName(item.category?.category_name || "For Sale")}</span>
-              </div>
-            ) : (
-              <div className="text-muted small mb-3">
-                by{" "}
-                <span
-                  style={{ color: "#0a9e8f", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
-                  onClick={(e) => { e.stopPropagation(); router.push(`/seller/${item.user?.id || ""}`); }}
-                >
-                  {item.user?.name || "Unknown"}
+            <CardText className="product-tile-price mb-0">{formatDisplayCurrency(item.price)}</CardText>
+            <CardTitle tag="h6" className="product-tile-title mb-0">{item.product_name}</CardTitle>
+            <div className="product-tile-meta-row">
+              {item.user?.city ? (
+                <span className="product-tile-location">
+                  <LocationPinIcon />
+                  <span>{item.user.city}</span>
                 </span>
-                {item.user?.isFeaturedSeller ? (
-                  <Badge color="warning" pill className="ms-2">Featured seller</Badge>
-                ) : null}
-              </div>
-            )}
-            {item.user?.address ? (
-              <div className={`featured-listings-location text-muted small ${mobileHome ? "mb-2" : "mb-3"}`}>
-                <LocationPinIcon />
-                <span>{item.user.address}</span>
-              </div>
-            ) : null}
-            <div className={`text-muted small ${mobileHome ? "featured-listings-mobile-time" : "mb-3"}`}>
-              {mobileHome ? formatPostedDate(item.upload_date_time) : `Posted ${formatPostedDate(item.upload_date_time)}`}
+              ) : <span />}
+              <span className="product-tile-date">{formatPostedDate(item.upload_date_time)}</span>
             </div>
           </CardBody>
         </Card>
@@ -308,43 +311,24 @@ function FeaturedListings({ filter, search: searchProp }) {
   }
 
   return (
+    <>
     <section className="container py-4">
       {!isGroupedHome ? (
-        <>
-          <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-1">
-            <h3 className="fw-bold mb-0">{heading}</h3>
-            <Button
-              color="light"
-              className="featured-listings-see-more"
-              onClick={openListingsPage}
-            >
-              See more
-            </Button>
-          </div>
-          <div className="mb-3" style={{ maxWidth: 420 }}>
-            <InputGroup>
-              <Input
-                type="text"
-                placeholder="Search for anything..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                onKeyDown={(e) => e.key === "Enter" && setPage(1)}
-              />
-              <Button color="primary" type="button" onClick={() => setPage(1)}>Search</Button>
-            </InputGroup>
-          </div>
-        </>
+        <p className="text-muted small mb-3">{heading}</p>
       ) : null}
-      {filter && !search && (
-        <p className="text-muted small mb-3">Showing ads in <strong>{normalizedFilter}</strong></p>
-      )}
       {favoriteError ? <Alert color="danger" className="mb-3">{favoriteError}</Alert> : null}
       {displayed.length === 0 ? (
         <div className="text-muted py-4 text-center border rounded-3">
-          {search
-            ? `No listings found for "${search}".`
+          {normalizedSearch
+            ? locationFilter
+              ? `No listings found for "${normalizedSearch}" in ${locationFilter}.`
+              : `No listings found for "${normalizedSearch}".`
+            : filter && subcategoryFilter
+            ? `No listings found in "${filter} – ${subcategoryFilter}" yet.`
             : filter
             ? `No listings found in "${filter}" yet.`
+            : locationFilter
+            ? `No listings found in "${locationFilter}" yet.`
             : "No listings yet. Be the first to post an ad!"}
         </div>
       ) : isGroupedHome ? (
@@ -455,6 +439,13 @@ function FeaturedListings({ filter, search: searchProp }) {
       )}
 
     </section>
+      <ProductQuickViewModal
+        productId={quickViewId}
+        isOpen={Boolean(quickViewId)}
+        onClose={() => setQuickViewId(null)}
+        viewer={viewer}
+      />
+    </>
   );
 }
 

@@ -31,6 +31,11 @@ const RATE_LIMITS = [
   { prefix: "/api/users", method: "POST", windowMs: 10 * 60_000, max: 5 },
   { prefix: "/api/auth/resend-otp", windowMs: 5 * 60_000, max: 3 },
   { prefix: "/api/auth/verify-otp", windowMs: 5 * 60_000, max: 20 },
+  { prefix: "/api/auth/google", windowMs: 60_000, max: 20 },
+  { prefix: "/api/auth/facebook", windowMs: 60_000, max: 20 },
+  { prefix: "/api/auth/whatsapp/start", windowMs: 10 * 60_000, max: 5 },
+  { prefix: "/api/auth/whatsapp/resend", windowMs: 5 * 60_000, max: 3 },
+  { prefix: "/api/auth/whatsapp/verify", windowMs: 5 * 60_000, max: 20 },
 ];
 
 // In-memory sliding-window counters, keyed by "ip:prefix".

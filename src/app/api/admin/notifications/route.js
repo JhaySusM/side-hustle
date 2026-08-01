@@ -1,5 +1,6 @@
 import { isAdminRequest } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { getUserCity } from "@/lib/address";
 
 function normalizeAudience(rawAudience) {
   const value = String(rawAudience || "all").trim();
@@ -20,25 +21,7 @@ function normalizeAudience(rawAudience) {
   return null;
 }
 
-function pickUserCity(user) {
-  if (user?.addressCity && String(user.addressCity).trim()) {
-    return String(user.addressCity).trim();
-  }
-
-  const text = String(user?.address || "").trim();
-  if (!text) return "";
-
-  const segments = text.split(",").map((part) => part.trim()).filter(Boolean);
-  if (!segments.length) return "";
-
-  if (segments.length >= 2) {
-    const cityPostal = segments[segments.length - 2];
-    const cityPart = cityPostal.split("-")[0]?.trim();
-    if (cityPart) return cityPart;
-  }
-
-  return segments[segments.length - 1];
-}
+const pickUserCity = getUserCity;
 
 async function resolveRecipientIds(audienceType, audienceValue) {
   const users = await prisma.user.findMany({

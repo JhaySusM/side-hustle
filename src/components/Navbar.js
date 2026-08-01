@@ -23,6 +23,13 @@ import AuthModal from "./AuthModal";
 import { fetchInbox, getConversationPreview, subscribeToInbox } from "@/lib/message-client";
 import HeroSearchBar from "@/components/HeroSearchBar";
 
+const AUTH_ERROR_MESSAGES = {
+  google_failed: "Google sign-in failed. Please try again.",
+  google_email_unverified: "That Google account's email isn't verified with Google. Please register normally.",
+  facebook_failed: "Facebook sign-in failed. Please try again.",
+  facebook_email_missing: "Facebook didn't share an email address. Please allow email access or use another sign-in method.",
+};
+
 function MessageAvatar({ name, size = 40, background = "#0d6efd" }) {
   const label = String(name || "U").trim();
 
@@ -64,6 +71,7 @@ export default function Navbar() {
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [referralParam, setReferralParam] = useState("");
+  const [authErrorParam, setAuthErrorParam] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -78,6 +86,7 @@ export default function Navbar() {
       .slice(0, 24);
 
     setReferralParam(nextReferralParam);
+    setAuthErrorParam(params.get("authError") || "");
   }, []);
 
   useEffect(() => {
@@ -112,6 +121,20 @@ export default function Navbar() {
       clearTimeout(timeoutId);
     };
   }, [authChecked, referralParam, user]);
+
+  useEffect(() => {
+    if (!authChecked || user || !authErrorParam) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setAuthOpen(true);
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [authChecked, authErrorParam, user]);
 
   useEffect(() => {
     if (!user) {
@@ -366,7 +389,7 @@ export default function Navbar() {
       color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
       fontWeight: 700, fontSize: 14, flexShrink: 0,
     }}>
-      {user.name.charAt(0).toUpperCase()}
+      {(user.name || user.email || user.phone || "U").charAt(0).toUpperCase()}
     </div>
   );
 
@@ -381,17 +404,9 @@ export default function Navbar() {
     />
   );
 
-  const loginButtonImage = (
-    <Image
-      src="/img/header/Login Button.png"
-      alt="Login"
-      width={92}
-      height={34}
-      className="tradigo-navbar-login-image"
-    />
-  );
 
-  const showGlobalSearch = pathname !== "/" && !pathname.startsWith("/admin");
+  const showGlobalSearch = pathname !== "/" && !pathname.startsWith("/admin") && !pathname.startsWith("/product/");
+  const showMobileTealHeader = pathname !== "/" && !pathname.startsWith("/admin");
   const showMessageIcon = pathname !== "/messages";
 
   return (
@@ -399,7 +414,7 @@ export default function Navbar() {
       <RSNavbar
         light
         expand="lg"
-        className={`py-0 tradigo-navbar${pathname === "/" ? " tradigo-navbar-home" : ""}`}
+        className={`py-0 tradigo-navbar${!pathname.startsWith("/admin") ? " tradigo-navbar-home" : ""}`}
         style={{
           zIndex: 45,
           background: "#0d1f67",
@@ -412,16 +427,16 @@ export default function Navbar() {
             {brandLogo}
           </NavbarBrand>
 
-          <Collapse navbar className="d-none d-lg-flex flex-grow-1 justify-content-end">
-            <Nav className="align-items-center me-3" navbar>
-              <NavItem><NavLink href="/#home" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>Home</NavLink></NavItem>
-              <NavItem><NavLink href="/#marketplace" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>Marketplace</NavLink></NavItem>
-              <NavItem><NavLink href="/#about" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>About</NavLink></NavItem>
-              <NavItem><NavLink href="/#contact" style={{ color: "#ffffff", fontWeight: 600, fontSize: "0.92rem" }}>Contact</NavLink></NavItem>
+          <Collapse navbar className="d-none d-lg-flex flex-grow-1 align-items-center">
+            <Nav className="align-items-center gap-1" navbar>
+              <NavItem><NavLink href="/#home" style={{ color: "#ffffff", fontWeight: 700, fontSize: "0.92rem" }}>Home</NavLink></NavItem>
+              <NavItem><NavLink href="/#marketplace" style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500, fontSize: "0.92rem" }}>Marketplace</NavLink></NavItem>
+              <NavItem><NavLink href="/#about" style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500, fontSize: "0.92rem" }}>About</NavLink></NavItem>
+              <NavItem><NavLink href="/#contact" style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500, fontSize: "0.92rem" }}>Contact</NavLink></NavItem>
             </Nav>
 
             {user ? (
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex align-items-center gap-2 ms-auto">
                 {showMessageIcon ? (
                   <Dropdown isOpen={messageMenuOpen} toggle={() => {
                     setMessageMenuOpen((current) => !current);
@@ -595,11 +610,11 @@ export default function Navbar() {
                 <Dropdown isOpen={dropdownOpen} toggle={() => setDropdownOpen(!dropdownOpen)}>
                   <DropdownToggle tag="div" style={{ cursor: "pointer" }} className="d-flex align-items-center gap-2 border rounded-pill px-3 py-1 bg-light">
                     {userAvatar}
-                    <span style={{ fontWeight: 500 }}>{user.name}</span>
+                    <span style={{ fontWeight: 500 }}>{user.name || user.email || user.phone}</span>
                     <span style={{ fontSize: 10, color: "#888" }}>▾</span>
                   </DropdownToggle>
                   <DropdownMenu end>
-                    <DropdownItem header>{user.email}</DropdownItem>
+                    <DropdownItem header>{user.email || user.phone}</DropdownItem>
                     <DropdownItem divider />
                     <DropdownItem onClick={() => router.push("/dashboard")}>My Dashboard</DropdownItem>
                     <DropdownItem onClick={() => router.push("/messages")}>
@@ -615,19 +630,36 @@ export default function Navbar() {
             ) : (
               <Button
                 onClick={handlePostClick}
-                style={{ background: "transparent", border: "none", padding: 0, whiteSpace: "nowrap" }}
+                className="tradigo-navbar-login-btn ms-auto"
+                style={{
+                  background: "#3b82f6",
+                  border: "none",
+                  color: "#ffffff",
+                  fontWeight: 700,
+                  fontSize: "0.92rem",
+                  padding: "8px 26px",
+                  borderRadius: 999,
+                  whiteSpace: "nowrap",
+                }}
               >
-                {loginButtonImage}
+                Login
               </Button>
             )}
           </Collapse>
         </Container>
       </RSNavbar>
 
-      <div className="tradigo-navbar-mobile-spacer" aria-hidden="true" />
+      <div className={`tradigo-navbar-mobile-spacer${!pathname.startsWith("/admin") ? " tradigo-navbar-mobile-spacer-home" : ""}`} aria-hidden="true" />
+
+      {showMobileTealHeader ? (
+        <div className="hero-mobile-pane">
+          <HeroSearchBar mobileTeal />
+          <div className="hero-mobile-teal-spacer" aria-hidden="true" />
+        </div>
+      ) : null}
 
       {showGlobalSearch ? (
-        <section className="pt-3 pb-2">
+        <section className="pt-3 pb-2 d-none d-sm-block">
           <Container>
             <HeroSearchBar />
           </Container>
@@ -638,6 +670,7 @@ export default function Navbar() {
         isOpen={authOpen}
         toggle={() => setAuthOpen(false)}
         onAuthSuccess={(u) => setUser(u)}
+        initialError={authErrorParam ? AUTH_ERROR_MESSAGES[authErrorParam] || "Sign-in failed. Please try again." : ""}
       />
 
       <Modal isOpen={logoutModalOpen} toggle={() => setLogoutModalOpen(false)} centered>

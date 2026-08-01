@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 import { ensureUserReferralCode } from '@/lib/referrals';
-import { toSafeUser } from '@/lib/auth';
+import { toSafeUser, requireRequestUser } from '@/lib/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
 
@@ -27,5 +27,51 @@ export async function GET(request) {
     return Response.json({ user: toSafeUser(hydratedUser) });
   } catch (error) {
     return Response.json({ error: 'Failed to fetch user' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request) {
+  const { errorResponse, user } = await requireRequestUser(request);
+  if (errorResponse) {
+    return errorResponse;
+  }
+
+  try {
+    const body = await request.json();
+    const {
+      addressHouseNo,
+      addressStreetNo,
+      addressArea,
+      addressCity,
+      addressPostalCode,
+      addressCountry,
+    } = body;
+
+    if (
+      !addressHouseNo?.trim() ||
+      !addressStreetNo?.trim() ||
+      !addressArea?.trim() ||
+      !addressCity?.trim() ||
+      !addressPostalCode?.trim() ||
+      !addressCountry?.trim()
+    ) {
+      return Response.json({ error: 'Please fill in all address fields.' }, { status: 400 });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        addressHouseNo: addressHouseNo.trim(),
+        addressStreetNo: addressStreetNo.trim(),
+        addressArea: addressArea.trim(),
+        addressCity: addressCity.trim(),
+        addressPostalCode: addressPostalCode.trim(),
+        addressCountry: addressCountry.trim(),
+      },
+    });
+
+    return Response.json({ user: toSafeUser(updated) });
+  } catch (error) {
+    return Response.json({ error: error.message || 'Failed to update address' }, { status: 500 });
   }
 }

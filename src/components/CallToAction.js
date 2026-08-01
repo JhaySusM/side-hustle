@@ -18,7 +18,7 @@ const MOBILE_SECTIONS = [
   {
     label: "Popular Categories",
     type: "chips",
-    items: ["Cars", "Flats for rent", "Mobile Phones", "Jobs", "Furniture", "Electronics"],
+    items: ["Cars", "Property", "Mobiles & tablets", "Jobs & careers", "Furniture & home", "Electronics & appliances"],
   },
   {
     label: "Trending Searches",

@@ -9,7 +9,10 @@ export async function GET(request) {
     const includeCatalog = searchParams.get('includeCatalog') === '1';
     const categories = await prisma.category.findMany({
       orderBy: { category_name: 'asc' },
-      include: { _count: { select: { products: true } } },
+      include: {
+        _count: { select: { products: true } },
+        subcategories: { orderBy: { id: 'asc' } },
+      },
     });
     const visibleCategories = filterVisibleCategories(categories);
 

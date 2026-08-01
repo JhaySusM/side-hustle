@@ -3,6 +3,7 @@ import { isAdminRequest } from '@/lib/admin-auth';
 import { normalizeProductCategory } from '@/lib/category-catalog';
 import { prisma } from '@/lib/prisma';
 import { attachSellerFeatureState, serializeSellerFeatures } from '@/lib/seller-features';
+import { getUserCity } from '@/lib/address';
 
 // GET: Get seller by ID with their products
 export async function GET(request, { params }) {
@@ -19,6 +20,7 @@ export async function GET(request, { params }) {
         name: true,
         email: true,
         address: true,
+        addressCity: true,
         user_type: true,
         sellerRatingAvg: true,
         sellerRatingCount: true,
@@ -67,9 +69,12 @@ export async function GET(request, { params }) {
           : { select: { id: true } },
       },
     });
+    const { address, addressCity, ...userWithoutAddress } = user;
+
     return Response.json({
       seller: {
-        ...user,
+        ...userWithoutAddress,
+        city: getUserCity(user),
         sellerFeatures: serializeSellerFeatures(user.sellerFeatures || []),
         isFeaturedSeller: (user.sellerFeatures || []).length > 0,
       },

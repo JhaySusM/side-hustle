@@ -31,6 +31,10 @@ export async function getRequestUser(request) {
       user_type: true,
       status: true,
       emailVerifiedAt: true,
+      phone: true,
+      phoneVerifiedAt: true,
+      googleId: true,
+      facebookId: true,
     },
   });
 }
@@ -42,9 +46,18 @@ export function toSafeUser(user) {
     emailVerificationCodeHash,
     emailVerificationExpiresAt,
     emailVerificationAttempts,
+    phoneVerificationCodeHash,
+    phoneVerificationExpiresAt,
+    phoneVerificationAttempts,
+    googleId,
+    facebookId,
     ...safeUser
   } = user;
-  return safeUser;
+  return {
+    ...safeUser,
+    googleLinked: Boolean(googleId),
+    facebookLinked: Boolean(facebookId),
+  };
 }
 
 export async function requireRequestUser(request) {
@@ -63,7 +76,7 @@ export async function requireRequestUser(request) {
     };
   }
 
-  if (!user.emailVerifiedAt) {
+  if (!user.emailVerifiedAt && !user.phoneVerifiedAt) {
     return {
       errorResponse: Response.json({ error: "Email not verified" }, { status: 403 }),
       user: null,

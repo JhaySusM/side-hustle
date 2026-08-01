@@ -329,6 +329,11 @@ export default function ProductDetailPage() {
                       <Badge pill color="light" className="text-muted border">
                         {product.category?.category_name || "General"}
                       </Badge>
+                      {product.subcategory?.subcategory_name ? (
+                        <Badge pill color="light" className="text-muted border">
+                          {product.subcategory.subcategory_name}
+                        </Badge>
+                      ) : null}
                     </div>
                     <div className="product-detail-price mb-3">
                       {formatDisplayCurrency(product.price)}
@@ -363,8 +368,8 @@ export default function ProductDetailPage() {
                         <div className="product-detail-meta">
                           ⭐ {(Number(product.user?.sellerRatingAvg || 0)).toFixed(1)} ({Number(product.user?.sellerRatingCount || 0)} review{Number(product.user?.sellerRatingCount || 0) !== 1 ? "s" : ""})
                         </div>
-                        {product.user?.address ? (
-                          <div className="product-detail-meta">{product.user.address}</div>
+                        {product.user?.city ? (
+                          <div className="product-detail-meta">{product.user.city}</div>
                         ) : null}
                       </div>
                     </div>

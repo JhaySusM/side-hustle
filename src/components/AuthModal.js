@@ -21,7 +21,7 @@ import {
 } from "reactstrap";
 import { PAKISTAN_CITIES, getPostalCodeForCity } from "@/lib/pakistan-cities";
 
-export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSuccess, onRegisterSuccess }) {
+export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSuccess, onRegisterSuccess, initialError }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("login");
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -66,6 +66,16 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen || !initialError) {
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      setError(initialError);
+    }, 0);
+    return () => clearTimeout(timeoutId);
+  }, [isOpen, initialError]);
+
+  useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => {
       setResendCooldown((current) => Math.max(0, current - 1));
@@ -87,15 +97,8 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
     }
   }
 
-  // Seed default credential
-  useEffect(() => {
-    const users = JSON.parse(localStorage.getItem("batjee_users") || "[]");
-    const seedEmail = "jhaysu@gmail.com";
-    if (!users.find((u) => u.email === seedEmail)) {
-      users.push({ name: "Jhaysu", email: seedEmail, password: "pass1234" });
-      localStorage.setItem("batjee_users", JSON.stringify(users));
-    }
-  }, []);
+  const [phone, setPhone] = useState("");
+  const [phoneSubmitting, setPhoneSubmitting] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -150,7 +153,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
         return;
       }
       if (data.requiresVerification) {
-        setVerifyContext({ email: data.user.email, origin: "login" });
+        setVerifyContext({ email: data.user.email, channel: "email", origin: "login" });
         return;
       }
       completeAuth(data.user, "login");
@@ -218,7 +221,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
         return;
       }
       if (data.requiresVerification) {
-        setVerifyContext({ email: data.user.email, origin: "register" });
+        setVerifyContext({ email: data.user.email, channel: "email", origin: "register" });
         return;
       }
       completeAuth(data.user, "register");
@@ -238,7 +241,9 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
     }
     setVerifying(true);
     try {
-      const res = await fetch("/api/auth/verify-otp", {
+      const endpoint =
+        verifyContext?.channel === "whatsapp" ? "/api/auth/whatsapp/verify" : "/api/auth/verify-otp";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: otpCode.trim() }),
@@ -260,7 +265,9 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
     setError("");
     setResending(true);
     try {
-      const res = await fetch("/api/auth/resend-otp", { method: "POST" });
+      const endpoint =
+        verifyContext?.channel === "whatsapp" ? "/api/auth/whatsapp/resend" : "/api/auth/resend-otp";
+      const res = await fetch(endpoint, { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Failed to resend code.");
@@ -271,6 +278,33 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
       setError("Failed to resend code. Please try again.");
     } finally {
       setResending(false);
+    }
+  }
+
+  async function handleStartWhatsapp(e) {
+    e.preventDefault();
+    setError("");
+    if (!phone.trim()) {
+      setError("Please enter your phone number.");
+      return;
+    }
+    setPhoneSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/whatsapp/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phone.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to send verification code.");
+        return;
+      }
+      setVerifyContext({ phone: data.phone, channel: "whatsapp", origin: "login" });
+    } catch (err) {
+      setError("Failed to send verification code. Please try again.");
+    } finally {
+      setPhoneSubmitting(false);
     }
   }
 
@@ -290,13 +324,15 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
   }
 
   if (verifyContext) {
+    const isWhatsapp = verifyContext.channel === "whatsapp";
     return (
       <Modal isOpen={isOpen} toggle={toggle} centered>
-        <ModalHeader toggle={toggle}>Verify your email</ModalHeader>
+        <ModalHeader toggle={toggle}>{isWhatsapp ? "Verify your phone" : "Verify your email"}</ModalHeader>
         <ModalBody>
           {error && <Alert color="danger">{error}</Alert>}
           <p style={{ fontSize: 14 }}>
-            We sent a 6-digit code to <strong>{verifyContext.email}</strong>. Enter it below to
+            We sent a 6-digit code {isWhatsapp ? "via WhatsApp to" : "to"}{" "}
+            <strong>{isWhatsapp ? verifyContext.phone : verifyContext.email}</strong>. Enter it below to
             continue.
           </p>
           <Form onSubmit={handleVerifyOtp}>
@@ -347,7 +383,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
   return (
     <Modal isOpen={isOpen} toggle={toggle} centered>
       <ModalHeader toggle={toggle}>
-        {activeTab === "login" ? "Sign In to Batjee" : "Create an Account"}
+        {activeTab === "login" ? "Sign In to Batjee" : activeTab === "register" ? "Create an Account" : "Continue with Phone"}
       </ModalHeader>
       <ModalBody>
         <Nav tabs className="mb-3">
@@ -371,7 +407,46 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
               Register
             </NavLink>
           </NavItem>
+          <NavItem>
+            <NavLink
+              href="#"
+              active={activeTab === "phone"}
+              onClick={() => switchTab("phone")}
+              style={{ cursor: "pointer", fontWeight: activeTab === "phone" ? 600 : 400 }}
+            >
+              Phone
+            </NavLink>
+          </NavItem>
         </Nav>
+
+        <div className="d-grid gap-2 mb-3">
+          <Button
+            tag="a"
+            href="/api/auth/google"
+            color="light"
+            className="border d-flex align-items-center justify-content-center gap-2"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z" />
+              <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.9v2.33A9 9 0 0 0 9 18z" />
+              <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.66 9c0-.59.1-1.16.29-1.7V4.97H.9A9 9 0 0 0 0 9c0 1.45.35 2.83.9 4.03z" />
+              <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .9 4.97l3.05 2.33C4.66 5.17 6.65 3.58 9 3.58z" />
+            </svg>
+            Continue with Google
+          </Button>
+          <Button
+            tag="a"
+            href="/api/auth/facebook"
+            className="text-white d-flex align-items-center justify-content-center gap-2"
+            style={{ background: "#1877F2", borderColor: "#1877F2" }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="#fff" aria-hidden="true">
+              <path d="M18 9a9 9 0 1 0-10.4 8.9v-6.3H5.3V9h2.3V7c0-2.3 1.36-3.56 3.45-3.56.98 0 2 .17 2 .17v2.2h-1.13c-1.11 0-1.46.7-1.46 1.4V9h2.5l-.4 2.6h-2.1v6.3A9 9 0 0 0 18 9z" />
+            </svg>
+            Continue with Facebook
+          </Button>
+        </div>
+        <div className="text-center text-muted mb-3" style={{ fontSize: 13 }}>or</div>
 
         {error && <Alert color="danger">{error}</Alert>}
 
@@ -590,6 +665,35 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                   Sign in
                 </span>
               </p>
+            </Form>
+          </TabPane>
+
+          <TabPane tabId="phone">
+            <Form onSubmit={handleStartWhatsapp}>
+              <FormGroup>
+                <Label for="phone-number">Phone Number</Label>
+                <Input
+                  id="phone-number"
+                  type="tel"
+                  placeholder="+923001234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
+                />
+                <small className="text-muted d-block mt-2">
+                  Include your country code. We&apos;ll text you a 6-digit code on WhatsApp — this
+                  works for both signing in and creating a new account.
+                </small>
+              </FormGroup>
+              <Button color="success" block type="submit" disabled={phoneSubmitting}>
+                {phoneSubmitting ? (
+                  <>
+                    <Spinner size="sm" className="me-2" /> Sending code...
+                  </>
+                ) : (
+                  "Send code via WhatsApp"
+                )}
+              </Button>
             </Form>
           </TabPane>
         </TabContent>

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PAKISTAN_CITIES } from "@/lib/pakistan-cities";
+import Image from "next/image";
+import { PAKISTAN_CITIES, NO_LOCATION_LABEL } from "@/lib/pakistan-cities";
 
-const LOCATION_OPTIONS = ["Pakistan", ...PAKISTAN_CITIES.map((city) => city.name)];
+const LOCATION_OPTIONS = [NO_LOCATION_LABEL, ...PAKISTAN_CITIES.map((city) => city.name)];
 
 function SearchIcon() {
   return (
@@ -24,15 +25,15 @@ function LocationPinIcon() {
   );
 }
 
-export default function HeroSearchBar({ homepage = false }) {
+export default function HeroSearchBar({ mobileTeal = false, onSearch, onLocationChange }) {
   const router = useRouter();
-  const [location, setLocation] = useState("Pakistan");
+  const [location, setLocation] = useState(NO_LOCATION_LABEL);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const nextQuery = params.get("q") || "";
-    const nextLocation = params.get("location") || "Pakistan";
+    const nextLocation = params.get("location") || NO_LOCATION_LABEL;
 
     setQuery(nextQuery);
     setLocation(nextLocation);
@@ -40,21 +41,76 @@ export default function HeroSearchBar({ homepage = false }) {
 
   function handleSearch(event) {
     event.preventDefault();
+
+    if (onSearch) {
+      onSearch(query.trim());
+      return;
+    }
+
     const params = new URLSearchParams();
 
     if (query.trim()) {
       params.set("q", query.trim());
     }
 
-    if (location.trim()) {
+    if (location.trim() && location !== NO_LOCATION_LABEL) {
       params.set("location", location.trim());
     }
 
     router.push(params.toString() ? `/listings?${params.toString()}` : "/listings");
   }
 
+  function handleLocationSelect(event) {
+    const value = event.target.value;
+    setLocation(value);
+    onLocationChange?.(value);
+  }
+
+  if (mobileTeal) {
+    return (
+      <div className="hero-mobile-teal-panel">
+        <div className="hero-mobile-teal-top">
+          <Image
+            src="/img/header/Logo TradiGo.png"
+            alt="TradiGo"
+            width={112}
+            height={35}
+            className="hero-mobile-teal-logo"
+          />
+          <label className="hero-mobile-location-pill" aria-label="Select location">
+            <span className="hero-mobile-location-pin"><LocationPinIcon /></span>
+            <span className="hero-mobile-location-value">{location}</span>
+            <span className="hero-mobile-location-caret">▾</span>
+            <select
+              value={location}
+              onChange={handleLocationSelect}
+              className="hero-mobile-location-select"
+            >
+              {LOCATION_OPTIONS.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <form className="hero-mobile-teal-search" onSubmit={handleSearch}>
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Find cars, mobiles, furniture..."
+            className="hero-mobile-teal-search-input"
+          />
+          <button type="submit" className="hero-mobile-teal-search-btn" aria-label="Search">
+            <SearchIcon />
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
-    <form className={`hero-search-shell${homepage ? " hero-search-shell-home" : ""}`} onSubmit={handleSearch}>
+    <form className="hero-search-shell" onSubmit={handleSearch}>
       <label className="hero-location-field" aria-label="Select location">
         <span className="hero-field-icon hero-location-icon"><LocationPinIcon /></span>
         <select
@@ -68,7 +124,7 @@ export default function HeroSearchBar({ homepage = false }) {
         </select>
       </label>
 
-      <label className={`hero-query-field${homepage ? " hero-query-field-home" : ""}`} aria-label="Search listings">
+      <label className="hero-query-field" aria-label="Search listings">
         <input
           type="text"
           value={query}

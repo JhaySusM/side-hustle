@@ -6,7 +6,7 @@ import { Row, Col } from "reactstrap";
 import { fetchInbox, subscribeToInbox } from "@/lib/message-client";
 import AuthModal from "@/components/AuthModal";
 
-const POPULAR_CATEGORIES = ["Cars", "Flats for rent", "Mobile Phones", "Jobs"];
+const POPULAR_CATEGORIES = ["Cars", "Property", "Mobiles & tablets", "Jobs & careers"];
 
 const FOOTER_LINKS = [
   { label: "Home", href: "/#home" },
@@ -26,11 +26,19 @@ const SOCIAL_LINKS = [
 
 const MOBILE_NAV_LINKS = [
   { label: "Home", href: "/", icon: "/img/mobile/Home Icon.png" },
-  { label: "Chat", href: "/messages", icon: "/img/mobile/Chat Icon.png" },
+  { label: "Saved", href: "/dashboard#favorites", iconType: "heart" },
   { label: "Sell", href: "/post", icon: "+", accent: true },
-  { label: "My Ads", href: "/dashboard", icon: "/img/mobile/My Ads Icon.png" },
+  { label: "Chat", href: "/messages", icon: "/img/mobile/Chat Icon.png" },
   { label: "Acc", href: "/dashboard", icon: "/img/mobile/Acc Icon.png" },
 ];
+
+function HeartNavIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#ef4444" aria-hidden="true">
+      <path d="M12 20.25c-.21 0-.42-.07-.58-.2-4.32-3.49-7.12-5.96-8.56-7.56C1.62 11.11 1 9.7 1 8.25 1 5.35 3.35 3 6.25 3c1.69 0 3.31.79 4.35 2.13A5.57 5.57 0 0 1 14.95 3c2.9 0 5.25 2.35 5.25 5.25 0 1.45-.62 2.86-1.86 4.24-1.44 1.6-4.24 4.07-8.56 7.56-.16.13-.37.2-.58.2Z" />
+    </svg>
+  );
+}
 
 export default function Footer() {
   const router = useRouter();
@@ -129,7 +137,7 @@ export default function Footer() {
   }
 
   function handleMobileNavClick(event, item) {
-    const requiresAuth = item.label === "Acc" || item.label === "My Ads" || item.label === "Chat" || item.label === "Sell";
+    const requiresAuth = item.label === "Acc" || item.label === "Saved" || item.label === "Chat" || item.label === "Sell";
 
     if (!requiresAuth || user) {
       return;
@@ -213,12 +221,14 @@ export default function Footer() {
               onClick={(event) => handleMobileNavClick(event, item)}
             >
               <span className="footer-mobile-bottom-icon" aria-hidden="true">
-                {item.accent ? item.icon : (
+                {item.accent ? item.icon : item.iconType === "heart" ? (
+                  <HeartNavIcon />
+                ) : (
                   <Image
                     src={item.icon}
                     alt=""
-                    width={26}
-                    height={26}
+                    width={22}
+                    height={22}
                     className="footer-mobile-bottom-icon-image"
                   />
                 )}

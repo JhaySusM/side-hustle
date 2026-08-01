@@ -13,6 +13,7 @@ export async function GET(request) {
     const products = await prisma.productList.findMany({
       include: {
         category: true,
+        subcategory: true,
         user: {
           select: {
             id: true,
@@ -61,11 +62,32 @@ export async function POST(request) {
       image,
       images,
       category_table_id,
+      subcategory_table_id,
       upload_date_time
     } = body;
     if (!product_name || !price || !category_table_id) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    const category = await prisma.category.findUnique({
+      where: { id: Number(category_table_id) },
+      include: { subcategories: true },
+    });
+    if (!category) {
+      return Response.json({ error: 'Invalid category selected' }, { status: 400 });
+    }
+
+    let resolvedSubcategoryId = null;
+    if (category.subcategories.length > 0) {
+      const matchedSubcategory = category.subcategories.find(
+        (subcategory) => subcategory.id === Number(subcategory_table_id)
+      );
+      if (!matchedSubcategory) {
+        return Response.json({ error: 'Please select a valid subcategory for this category' }, { status: 400 });
+      }
+      resolvedSubcategoryId = matchedSubcategory.id;
+    }
+
     const product = await prisma.productList.create({
       data: {
         product_name,
@@ -74,6 +96,7 @@ export async function POST(request) {
         image,
         images: images ? JSON.stringify(images) : null,
         category_table_id: Number(category_table_id),
+        subcategory_table_id: resolvedSubcategoryId,
         user_id: user.id,
         product_status: 'Pending',
         upload_date_time: upload_date_time ? new Date(upload_date_time) : undefined,

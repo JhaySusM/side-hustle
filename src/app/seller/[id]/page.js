@@ -153,8 +153,8 @@ function ListingModal({ item, isOpen, toggle, seller, viewer }) {
               <div className="text-muted" style={{ fontSize: 12 }}>
                 Posted {item.upload_date_time ? new Date(item.upload_date_time).toLocaleDateString() : ""}
               </div>
-              {seller?.address ? (
-                <div className="text-muted" style={{ fontSize: 12 }}>{seller.address}</div>
+              {seller?.city ? (
+                <div className="text-muted" style={{ fontSize: 12 }}>{seller.city}</div>
               ) : null}
             </div>
           </div>
@@ -424,7 +424,7 @@ export default function SellerProfilePage() {
               <div>
                 <h4 className="fw-bold mb-1">{sellerName}</h4>
                 <div className="text-muted small mb-2">{seller?.email}</div>
-                {seller?.address ? <div className="text-muted small mb-2">{seller.address}</div> : null}
+                {seller?.city ? <div className="text-muted small mb-2">{seller.city}</div> : null}
                 <div className="d-flex gap-2 flex-wrap">
                   {seller?.isFeaturedSeller ? (
                     <span className="badge rounded-pill" style={{ background: "#fff7d6", color: "#9a6700", fontSize: 12 }}>

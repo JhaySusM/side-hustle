@@ -6,6 +6,7 @@ import { Container, Row, Col, Card, CardBody, Button, Badge } from "reactstrap";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { formatDisplayCurrency } from "@/lib/currency";
+import { formatUserAddress } from "@/lib/address";
 
 const FALLBACK_IMG = "https://placehold.co/640x420?text=No+Image";
 
@@ -83,6 +84,86 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
+  function renderStatusControls(listing) {
+    if (listing.product_status === "Sold") {
+      return <Badge color="secondary" pill>Sold</Badge>;
+    }
+
+    if (listing.product_status === "Pending") {
+      return (
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <Badge color="warning" pill>Pending Approval</Badge>
+          <Button
+            size="sm"
+            color="secondary"
+            onClick={async () => {
+              await fetch("/api/products/status", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: listing.id, product_status: "Inactive" })
+              });
+              await loadDashboard();
+            }}
+          >
+            Withdraw
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="d-flex align-items-center gap-2 flex-wrap">
+        <Button
+          size="sm"
+          color={listing.product_status === "Active" ? "success" : "secondary"}
+          style={{ opacity: listing.product_status === "Active" ? 1 : 0.5, pointerEvents: listing.product_status === "Active" ? "none" : "auto" }}
+          disabled={listing.product_status === "Active"}
+          onClick={async () => {
+            if (listing.product_status !== "Active") {
+              await fetch("/api/products/status", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: listing.id, product_status: "Active" })
+              });
+              await loadDashboard();
+            }
+          }}
+        >
+          Active
+        </Button>
+        <Button
+          size="sm"
+          color={listing.product_status === "Inactive" ? "danger" : "secondary"}
+          style={{ opacity: listing.product_status === "Inactive" ? 1 : 0.5, pointerEvents: listing.product_status === "Inactive" ? "none" : "auto" }}
+          disabled={listing.product_status === "Inactive"}
+          onClick={async () => {
+            if (listing.product_status !== "Inactive") {
+              await fetch("/api/products/status", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: listing.id, product_status: "Inactive" })
+              });
+              await loadDashboard();
+            }
+          }}
+        >
+          Inactive
+        </Button>
+        <Button
+          size="sm"
+          color="warning"
+          style={{ color: "#fff" }}
+          onClick={() => {
+            setPendingSoldId(listing.id);
+            setShowSoldModal(true);
+          }}
+        >
+          Sold
+        </Button>
+      </div>
+    );
+  }
+
   const activeCount = listings.filter((l) => l.product_status === "Active").length;
   const pendingCount = listings.filter((l) => l.product_status === "Pending").length;
   const soldCount = listings.filter((l) => l.product_status === "Sold").length;
@@ -114,8 +195,8 @@ export default function DashboardPage() {
       <Container className="py-5">
         {/* Welcome Banner */}
         <div className="mb-4 p-4 rounded-3" style={{ background: "linear-gradient(90deg,#0d6efd 0%,#6610f2 100%)", color: "#fff" }}>
-          <h3 className="fw-bold mb-1">Welcome back, {user.name}! 👋</h3>
-          <p className="mb-0" style={{ opacity: 0.85 }}>{user.email}</p>
+          <h3 className="fw-bold mb-1">Welcome back{user.name ? `, ${user.name}` : ""}! 👋</h3>
+          <p className="mb-0" style={{ opacity: 0.85 }}>{user.email || user.phone}</p>
         </div>
 
         {/* Stats */}
@@ -206,128 +287,74 @@ export default function DashboardPage() {
                 <span style={{ color: "#0d6efd", cursor: "pointer" }} onClick={() => router.push("/post")}>Post your first ad!</span>
               </div>
             ) : (
-              <table className="table table-hover mb-0 align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th className="ps-3">Title</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th>Date Posted</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {listings.map((listing) => (
-                    <tr key={listing.id}>
-                      <td className="ps-3 fw-semibold">{listing.product_name}</td>
-                      <td className="text-muted">{listing.category_name}</td>
-                      <td>{formatDisplayCurrency(listing.price)}</td>
-                      <td>
-                        {listing.product_status === "Sold" ? (
-                          <Badge color="secondary" pill>Sold</Badge>
-                        ) : listing.product_status === "Pending" ? (
-                          <div className="d-flex align-items-center gap-2 flex-wrap">
-                            <Badge color="warning" pill>Pending Approval</Badge>
-                            <Button
-                              size="sm"
-                              color="secondary"
-                              onClick={async () => {
-                                await fetch("/api/products/status", {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ id: listing.id, product_status: "Inactive" })
-                                });
-                                await loadDashboard();
-                              }}
-                            >
-                              Withdraw
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="d-flex align-items-center gap-2">
-                            <Button
-                              size="sm"
-                              color={listing.product_status === "Active" ? "success" : "secondary"}
-                              style={{ opacity: listing.product_status === "Active" ? 1 : 0.5, pointerEvents: listing.product_status === "Active" ? "none" : "auto" }}
-                              disabled={listing.product_status === "Active"}
-                              onClick={async () => {
-                                if (listing.product_status !== "Active") {
-                                  await fetch("/api/products/status", {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ id: listing.id, product_status: "Active" })
-                                  });
-                                  await loadDashboard();
-                                }
-                              }}
-                            >
-                              Active
-                            </Button>
-                            <Button
-                              size="sm"
-                              color={listing.product_status === "Inactive" ? "danger" : "secondary"}
-                              style={{ opacity: listing.product_status === "Inactive" ? 1 : 0.5, pointerEvents: listing.product_status === "Inactive" ? "none" : "auto" }}
-                              disabled={listing.product_status === "Inactive"}
-                              onClick={async () => {
-                                if (listing.product_status !== "Inactive") {
-                                  await fetch("/api/products/status", {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ id: listing.id, product_status: "Inactive" })
-                                  });
-                                  await loadDashboard();
-                                }
-                              }}
-                            >
-                              Inactive
-                            </Button>
-                            <Button
-                              size="sm"
-                              color="warning"
-                              style={{ color: "#fff" }}
-                              onClick={() => {
-                                setPendingSoldId(listing.id);
-                                setShowSoldModal(true);
-                              }}
-                            >
-                              Sold
-                            </Button>
-                          </div>
-                        )}
-                      </td>
-                      <td className="text-muted">{listing.upload_date_time ? new Date(listing.upload_date_time).toLocaleDateString() : "-"}</td>
+              <>
+                <table className="table table-hover mb-0 align-middle d-none d-sm-table">
+                  <thead className="table-light">
+                    <tr>
+                      <th className="ps-3">Title</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Status</th>
+                      <th>Date Posted</th>
                     </tr>
+                  </thead>
+                  <tbody>
+                    {listings.map((listing) => (
+                      <tr key={listing.id}>
+                        <td className="ps-3 fw-semibold">{listing.product_name}</td>
+                        <td className="text-muted">{listing.category_name}</td>
+                        <td>{formatDisplayCurrency(listing.price)}</td>
+                        <td>{renderStatusControls(listing)}</td>
+                        <td className="text-muted">{listing.upload_date_time ? new Date(listing.upload_date_time).toLocaleDateString() : "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div className="d-sm-none">
+                  {listings.map((listing) => (
+                    <div key={listing.id} className="dashboard-listing-card">
+                      <div className="d-flex justify-content-between align-items-start gap-2 mb-1">
+                        <div className="fw-semibold">{listing.product_name}</div>
+                        <div className="fw-bold text-primary text-nowrap">{formatDisplayCurrency(listing.price)}</div>
+                      </div>
+                      <div className="text-muted small mb-1">{listing.category_name}</div>
+                      <div className="text-muted small mb-2">
+                        Posted {listing.upload_date_time ? new Date(listing.upload_date_time).toLocaleDateString() : "-"}
+                      </div>
+                      {renderStatusControls(listing)}
+                    </div>
                   ))}
-                      {/* Sold Modal */}
-                      <Modal isOpen={showSoldModal} toggle={() => setShowSoldModal(false)}>
-                        <ModalHeader toggle={() => setShowSoldModal(false)}>Mark as Sold</ModalHeader>
-                        <ModalBody>
-                          <div className="fw-bold mb-2">Are you sure you want to mark this item as <span style={{color:'#fd7e14'}}>Sold</span>?</div>
-                          <div>Once marked as <b>Sold</b>, this item cannot be made active again. This helps keep your listings accurate and prevents accidental reactivation of sold items.</div>
-                        </ModalBody>
-                        <ModalFooter>
-                          <Button color="secondary" onClick={() => setShowSoldModal(false)}>Cancel</Button>
-                          <Button color="warning" style={{color:'#fff'}} onClick={async () => {
-                            if (pendingSoldId) {
-                              await fetch("/api/products/status", {
-                                method: "PATCH",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: pendingSoldId, product_status: "Sold" })
-                              });
-                              setShowSoldModal(false);
-                              setPendingSoldId(null);
-                              await loadDashboard();
-                            }
-                          }}>Yes, mark as Sold</Button>
-                        </ModalFooter>
-                      </Modal>
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </CardBody>
         </Card>
 
-        <div className="d-flex align-items-center justify-content-between mt-5 mb-3">
+        <Modal isOpen={showSoldModal} toggle={() => setShowSoldModal(false)}>
+          <ModalHeader toggle={() => setShowSoldModal(false)}>Mark as Sold</ModalHeader>
+          <ModalBody>
+            <div className="fw-bold mb-2">Are you sure you want to mark this item as <span style={{color:'#fd7e14'}}>Sold</span>?</div>
+            <div>Once marked as <b>Sold</b>, this item cannot be made active again. This helps keep your listings accurate and prevents accidental reactivation of sold items.</div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="secondary" onClick={() => setShowSoldModal(false)}>Cancel</Button>
+            <Button color="warning" style={{color:'#fff'}} onClick={async () => {
+              if (pendingSoldId) {
+                await fetch("/api/products/status", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ id: pendingSoldId, product_status: "Sold" })
+                });
+                setShowSoldModal(false);
+                setPendingSoldId(null);
+                await loadDashboard();
+              }
+            }}>Yes, mark as Sold</Button>
+          </ModalFooter>
+        </Modal>
+
+        <div id="favorites" className="d-flex align-items-center justify-content-between mt-5 mb-3" style={{ scrollMarginTop: 80 }}>
           <h5 className="fw-bold mb-0">Favorites</h5>
           <Button color="light" size="sm" onClick={() => router.push("/listings")}>Browse listings</Button>
         </div>
@@ -392,11 +419,11 @@ export default function DashboardPage() {
               </Col>
               <Col md={6}>
                 <label className="text-muted small d-block mb-1">Email Address</label>
-                <div className="fw-semibold">{user.email}</div>
+                <div className="fw-semibold">{user.email || "Not added yet"}</div>
               </Col>
               <Col md={6}>
                 <label className="text-muted small d-block mb-1">Address</label>
-                <div className="fw-semibold">{user.address || "Not added yet"}</div>
+                <div className="fw-semibold">{formatUserAddress(user) || "Not added yet"}</div>
               </Col>
               <Col md={6}>
                 <label className="text-muted small d-block mb-1">Member Since</label>
@@ -405,6 +432,40 @@ export default function DashboardPage() {
               <Col md={6}>
                 <label className="text-muted small d-block mb-1">Account Status</label>
                 <Badge color={user.status === "active" ? "success" : "secondary"} pill>{user.status || "Active"}</Badge>
+              </Col>
+            </Row>
+          </CardBody>
+        </Card>
+
+        {/* Connected sign-in methods */}
+        <h5 className="fw-bold mt-5 mb-3">Connected Sign-In Methods</h5>
+        <Card className="border-0 shadow-sm">
+          <CardBody>
+            <Row className="g-3">
+              <Col md={4}>
+                <label className="text-muted small d-block mb-1">Google</label>
+                <Badge color={user.googleLinked ? "success" : "secondary"} pill>
+                  {user.googleLinked ? "Connected" : "Not connected"}
+                </Badge>
+              </Col>
+              <Col md={4}>
+                <label className="text-muted small d-block mb-1">Facebook</label>
+                <Badge color={user.facebookLinked ? "success" : "secondary"} pill>
+                  {user.facebookLinked ? "Connected" : "Not connected"}
+                </Badge>
+              </Col>
+              <Col md={4}>
+                <label className="text-muted small d-block mb-1">Phone / WhatsApp</label>
+                {user.phone ? (
+                  <div>
+                    <div className="fw-semibold small mb-1">{user.phone}</div>
+                    <Badge color={user.phoneVerifiedAt ? "success" : "warning"} pill>
+                      {user.phoneVerifiedAt ? "Verified" : "Unverified"}
+                    </Badge>
+                  </div>
+                ) : (
+                  <Badge color="secondary" pill>Not added</Badge>
+                )}
               </Col>
             </Row>
           </CardBody>

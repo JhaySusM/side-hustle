@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getRequestUser } from '@/lib/auth';
 import { getCategoryFilterNames, normalizeProductCategory } from '@/lib/category-catalog';
+import { getUserCity } from '@/lib/address';
 import {
   attachSellerFeatureState,
   compareProductsBySellerFeature,
@@ -15,6 +16,7 @@ export async function GET(request) {
     const pageSize = Math.min(60, Math.max(1, parseInt(searchParams.get('pageSize') || '5', 10)));
     const query = (searchParams.get('q') || '').trim();
     const category = (searchParams.get('category') || '').trim();
+    const subcategory = (searchParams.get('subcategory') || '').trim();
     const location = (searchParams.get('location') || '').trim();
     const skip = (page - 1) * pageSize;
 
@@ -37,10 +39,20 @@ export async function GET(request) {
             },
           }
         : {}),
+      ...(subcategory
+        ? {
+            subcategory: {
+              subcategory_name: subcategory,
+            },
+          }
+        : {}),
       ...(location
         ? {
             user: {
-              address: { contains: location, mode: 'insensitive' },
+              OR: [
+                { addressCity: { contains: location, mode: 'insensitive' } },
+                { address: { contains: location, mode: 'insensitive' } },
+              ],
             },
           }
         : {}),
@@ -52,12 +64,14 @@ export async function GET(request) {
         orderBy: { id: 'desc' },
         include: {
           category: true,
+          subcategory: true,
           user: {
             select: {
               id: true,
               name: true,
               email: true,
               address: true,
+              addressCity: true,
               createdAt: true,
               sellerRatingAvg: true,
               sellerRatingCount: true,
@@ -96,10 +110,14 @@ export async function GET(request) {
 
     const pagedProducts = sortedProducts.slice(skip, skip + pageSize);
 
-    const productsWithFavoriteState = pagedProducts.map((product) => ({
-      ...normalizeProductCategory(product),
-      isFavorited: viewer ? product.favorites.length > 0 : false,
-    }));
+    const productsWithFavoriteState = pagedProducts.map((product) => {
+      const { address, addressCity, ...userWithoutAddress } = product.user || {};
+      return {
+        ...normalizeProductCategory(product),
+        user: product.user ? { ...userWithoutAddress, city: getUserCity(product.user) } : product.user,
+        isFavorited: viewer ? product.favorites.length > 0 : false,
+      };
+    });
 
     return Response.json({
       products: productsWithFavoriteState,

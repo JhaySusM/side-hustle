@@ -1,20 +1,22 @@
 model ProductList {
-  id                Int      @id @default(autoincrement())
-  product_name      String
-  price             Float
-  upload_date_time  DateTime @default(now())
-  image             String?
-  images            String?
-  description       String?
-  product_status    String
-  category_table_id Int
-  user_id           Int
-  category          Category @relation(fields: [category_table_id], references: [id])
-  user              User     @relation(fields: [user_id], references: [id])
-  conversations     Conversation[]
-  favorites         Favorite[]
-  transactions      Transaction[]
-  reports           ProductReport[]
+  id                   Int          @id @default(autoincrement())
+  product_name         String
+  price                Float
+  upload_date_time     DateTime     @default(now())
+  image                String?
+  images               String?
+  description          String?
+  product_status       String
+  category_table_id    Int
+  subcategory_table_id Int?
+  user_id              Int
+  category             Category     @relation(fields: [category_table_id], references: [id])
+  subcategory          Subcategory? @relation(fields: [subcategory_table_id], references: [id], onDelete: SetNull)
+  user                 User         @relation(fields: [user_id], references: [id])
+  conversations        Conversation[]
+  favorites            Favorite[]
+  transactions         Transaction[]
+  reports              ProductReport[]
 }
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -33,7 +35,7 @@ datasource db {
 
 model User {
   id        Int           @id @default(autoincrement())
-  email     String        @unique
+  email     String?       @unique
   name      String?
   address   String?
   addressHouseNo String?
@@ -46,7 +48,14 @@ model User {
   referredById Int?
   sellerRatingAvg Float @default(0)
   sellerRatingCount Int @default(0)
-  password  String
+  password  String?
+  googleId   String?      @unique
+  facebookId String?      @unique
+  phone      String?      @unique
+  phoneVerifiedAt DateTime?
+  phoneVerificationCodeHash String?
+  phoneVerificationExpiresAt DateTime?
+  phoneVerificationAttempts Int @default(0)
   user_type String        @default("user")
   status    String        @default("active")
   emailVerifiedAt DateTime?
@@ -165,7 +174,18 @@ model ProductReport {
 model Category {
   id            Int           @id @default(autoincrement())
   category_name String        @unique
+  subcategories Subcategory[]
   products      ProductList[]
+}
+
+model Subcategory {
+  id                Int           @id @default(autoincrement())
+  subcategory_name  String
+  category_table_id Int
+  category          Category      @relation(fields: [category_table_id], references: [id], onDelete: Cascade)
+  products          ProductList[]
+
+  @@unique([category_table_id, subcategory_name])
 }
 
 model Conversation {

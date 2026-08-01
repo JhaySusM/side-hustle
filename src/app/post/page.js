@@ -7,10 +7,21 @@ import {
 } from "reactstrap";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AddAddressModal from "@/components/AddAddressModal";
 import { formatDisplayCurrency } from "@/lib/currency";
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+function hasCompleteAddress(user) {
+  return Boolean(
+    user?.addressHouseNo &&
+    user?.addressStreetNo &&
+    user?.addressArea &&
+    user?.addressCity &&
+    user?.addressPostalCode
+  );
+}
 
 async function uploadToCloudinary(file) {
   const formData = new FormData();
@@ -28,7 +39,7 @@ async function uploadToCloudinary(file) {
 export default function PostPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [form, setForm] = useState({ title: "", description: "", price: "", category: "" });
+  const [form, setForm] = useState({ title: "", description: "", price: "", category: "", subcategory: "" });
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -37,6 +48,9 @@ export default function PostPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [postingEligibility, setPostingEligibility] = useState(null);
+  const [needsAddress, setNeedsAddress] = useState(false);
+
+  const availableSubcategories = categories.find((cat) => cat.category_name === form.category)?.subcategories || [];
 
   useEffect(() => {
     async function checkAuthAndFetchCategories() {
@@ -48,6 +62,7 @@ export default function PostPage() {
           return;
         } else {
           setUser(data.user);
+          setNeedsAddress(!hasCompleteAddress(data.user));
         }
         const eligibilityRes = await fetch("/api/products/eligibility", { cache: "no-store" });
         const eligibilityData = await eligibilityRes.json();
@@ -80,6 +95,10 @@ export default function PostPage() {
       setError("Please fill in all required fields.");
       return;
     }
+    if (availableSubcategories.length > 0 && !form.subcategory) {
+      setError("Please select a subcategory.");
+      return;
+    }
     if (isNaN(form.price) || Number(form.price) <= 0) {
       setError("Please enter a valid price.");
       return;
@@ -91,6 +110,13 @@ export default function PostPage() {
     const selectedCategory = categories.find((cat) => cat.category_name === form.category);
     if (!selectedCategory) {
       setError("Invalid category selected.");
+      return;
+    }
+    const selectedSubcategory = availableSubcategories.find(
+      (subcat) => subcat.subcategory_name === form.subcategory
+    );
+    if (availableSubcategories.length > 0 && !selectedSubcategory) {
+      setError("Invalid subcategory selected.");
       return;
     }
     try {
@@ -113,6 +139,7 @@ export default function PostPage() {
           image: imageUrl,
           images: extraUrls.length ? extraUrls : null,
           category_table_id: selectedCategory.id,
+          subcategory_table_id: selectedSubcategory ? selectedSubcategory.id : null,
           upload_date_time: new Date().toISOString(),
         })
       });
@@ -142,6 +169,12 @@ export default function PostPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       <Navbar />
+      <AddAddressModal
+        isOpen={needsAddress}
+        onSaved={(updatedUser) => { setUser(updatedUser); setNeedsAddress(false); }}
+        onCancel={() => router.push("/dashboard")}
+      />
+      {needsAddress ? null : (
       <Container className="py-5" style={{ maxWidth: 660 }}>
         <h4 className="fw-bold mb-4">Post a New Ad</h4>
         <Card className="border-0 shadow-sm">
@@ -167,7 +200,7 @@ export default function PostPage() {
                 <Input
                   type="select"
                   value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  onChange={(e) => setForm({ ...form, category: e.target.value, subcategory: "" })}
                 >
                   <option value="">— Select a category —</option>
                   {categories.map((cat) => (
@@ -175,6 +208,21 @@ export default function PostPage() {
                   ))}
                 </Input>
               </FormGroup>
+              {availableSubcategories.length > 0 && (
+                <FormGroup>
+                  <Label>Subcategory <span className="text-danger">*</span></Label>
+                  <Input
+                    type="select"
+                    value={form.subcategory}
+                    onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
+                  >
+                    <option value="">— Select a subcategory —</option>
+                    {availableSubcategories.map((subcat) => (
+                      <option key={subcat.id} value={subcat.subcategory_name}>{subcat.subcategory_name}</option>
+                    ))}
+                  </Input>
+                </FormGroup>
+              )}
               <FormGroup>
                 <Label>Price (Rs.) <span className="text-danger">*</span></Label>
                 <Input
@@ -276,6 +324,7 @@ export default function PostPage() {
           </CardBody>
         </Card>
       </Container>
+      )}
       <Footer />
     </div>
   );

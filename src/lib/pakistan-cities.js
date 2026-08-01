@@ -1,3 +1,7 @@
+// Placeholder shown in location pickers before a user has picked a city —
+// treated as "no location filter" everywhere it's read back.
+export const NO_LOCATION_LABEL = "Add Location";
+
 // Major Pakistani cities mapped to their GPO postal code, used to auto-fill
 // the postal code once a user picks their city during registration.
 export const PAKISTAN_CITIES = [

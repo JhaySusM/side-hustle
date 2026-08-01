@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   Alert,
   Badge,
-  Button,
   Card,
   CardBody,
+  CardText,
   Col,
   Container,
   Row,
@@ -16,9 +16,26 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FavoriteButton from "@/components/FavoriteButton";
+import ProductQuickViewModal from "@/components/ProductQuickViewModal";
+import { useIsMobile } from "@/lib/useIsMobile";
 import { formatDisplayCurrency } from "@/lib/currency";
 
 const FALLBACK_IMG = "https://placehold.co/640x420?text=No+Image";
+
+function LocationPinIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 21s6-5.686 6-11a6 6 0 1 0-12 0c0 5.314 6 11 6 11Z"
+        stroke="#3b82f6"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="10" r="2.5" fill="#3b82f6" />
+    </svg>
+  );
+}
 
 function ListingImage({ src, alt }) {
   const [imgSrc, setImgSrc] = useState(src || FALLBACK_IMG);
@@ -67,14 +84,17 @@ function formatDate(value) {
   });
 }
 
-export default function ListingsPageClient({ initialQuery, initialCategory, initialLocation }) {
+export default function ListingsPageClient({ initialQuery, initialCategory, initialSubcategory, initialLocation }) {
   const router = useRouter();
 
   const [query] = useState(initialQuery);
   const [category] = useState(initialCategory);
+  const [subcategory] = useState(initialSubcategory);
   const [location] = useState(initialLocation);
   const [items, setItems] = useState([]);
   const [viewer, setViewer] = useState(null);
+  const [quickViewId, setQuickViewId] = useState(null);
+  const isMobile = useIsMobile();
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -134,6 +154,10 @@ export default function ListingsPageClient({ initialQuery, initialCategory, init
           params.set("category", category.trim());
         }
 
+        if (subcategory.trim()) {
+          params.set("subcategory", subcategory.trim());
+        }
+
         if (location.trim()) {
           params.set("location", location.trim());
         }
@@ -188,7 +212,7 @@ export default function ListingsPageClient({ initialQuery, initialCategory, init
     return () => {
       cancelled = true;
     };
-  }, [page, query, category, location]);
+  }, [page, query, category, subcategory, location]);
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -275,6 +299,11 @@ export default function ListingsPageClient({ initialQuery, initialCategory, init
                   Category: {category}
                 </Badge>
               ) : null}
+              {subcategory ? (
+                <Badge pill className="listing-browser-chip-button">
+                  Subcategory: {subcategory}
+                </Badge>
+              ) : null}
             </div>
           </div>
 
@@ -299,60 +328,33 @@ export default function ListingsPageClient({ initialQuery, initialCategory, init
                     <Card
                       className="listing-browser-card h-100 border-0"
                       role="button"
-                      onClick={() => router.push(`/product/${item.id}`)}
+                      onClick={() => { if (isMobile) { setQuickViewId(item.id); } else { router.push(`/product/${item.id}`); } }}
                     >
-                      <div className="listing-browser-image-wrap">
+                      <div className="product-tile-image-wrap">
                         <ListingImage src={item.image} alt={item.product_name} />
-                        <Badge pill className="listing-browser-badge">
-                          {item.category?.category_name || "General"}
-                        </Badge>
+                        <FavoriteButton
+                          className="product-tile-favorite-btn"
+                          isFavorited={Boolean(item.isFavorited)}
+                          iconOnly
+                          disabled={favoritePendingId === item.id || viewer?.id === item.user?.id}
+                          title={viewer?.id === item.user?.id ? "You cannot favorite your own listing" : undefined}
+                          onClick={(event) => handleFavoriteToggle(event, item)}
+                        />
                       </div>
-                      <CardBody className="d-flex flex-column gap-3">
-                        <div className="d-flex justify-content-between gap-3 align-items-start">
-                          <div>
-                            <div className="d-flex align-items-start justify-content-between gap-2">
-                              <h3 className="listing-browser-card-title mb-0">{item.product_name}</h3>
-                              <FavoriteButton
-                                className="listing-browser-favorite-btn"
-                                isFavorited={Boolean(item.isFavorited)}
-                                iconOnly
-                                disabled={favoritePendingId === item.id || viewer?.id === item.user?.id}
-                                title={viewer?.id === item.user?.id ? "You cannot favorite your own listing" : undefined}
-                                onClick={(event) => handleFavoriteToggle(event, item)}
-                              />
-                            </div>
-                            <p className="listing-browser-card-meta mb-0">
-                              Sold by {item.user?.name || "Unknown seller"}
-                            </p>
-                            {item.user?.isFeaturedSeller ? (
-                              <Badge pill className="listing-browser-chip mt-2">Featured seller</Badge>
-                            ) : null}
-                            {item.user?.address ? (
-                              <p className="listing-browser-card-meta mb-0">{item.user.address}</p>
-                            ) : null}
-                          </div>
-                          <div className="listing-browser-price">
-                            {formatDisplayCurrency(item.price)}
-                          </div>
-                        </div>
+                      <CardBody className="d-flex flex-column gap-2">
+                        <CardText className="product-tile-price mb-0">
+                          {formatDisplayCurrency(item.price)}
+                        </CardText>
+                        <h3 className="product-tile-title mb-0">{item.product_name}</h3>
 
-                        <p className="listing-browser-description">
-                          {item.description?.trim()
-                            ? item.description.slice(0, 120)
-                            : "See the seller profile for the full listing details and contact options."}
-                        </p>
-
-                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-auto">
-                          <span className="listing-browser-card-meta">Listed {formatDate(item.upload_date_time)}</span>
-                          <Button
-                            className="listing-browser-view-btn"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              router.push(`/product/${item.id}`);
-                            }}
-                          >
-                            View details
-                          </Button>
+                        <div className="product-tile-meta-row mt-auto">
+                          {item.user?.city ? (
+                            <span className="product-tile-location">
+                              <LocationPinIcon />
+                              <span>{item.user.city}</span>
+                            </span>
+                          ) : <span />}
+                          <span className="product-tile-date">{formatDate(item.upload_date_time)}</span>
                         </div>
                       </CardBody>
                     </Card>
@@ -378,6 +380,13 @@ export default function ListingsPageClient({ initialQuery, initialCategory, init
       </section>
 
       <Footer />
+
+      <ProductQuickViewModal
+        productId={quickViewId}
+        isOpen={Boolean(quickViewId)}
+        onClose={() => setQuickViewId(null)}
+        viewer={viewer}
+      />
     </div>
   );
 }
