@@ -13,8 +13,8 @@ const FOOTER_LINKS = [
   { label: "Marketplace", href: "/#marketplace" },
   { label: "About Us", href: "/#about" },
   { label: "Contact", href: "/#contact" },
-  { label: "Terms", href: "#" },
-  { label: "Privacy", href: "#" },
+  { label: "Terms", href: "/terms" },
+  { label: "Privacy", href: "/privacy" },
 ];
 
 const SOCIAL_LINKS = [
