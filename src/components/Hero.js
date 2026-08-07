@@ -7,19 +7,10 @@ import { Dropdown, DropdownToggle, DropdownMenu } from "reactstrap";
 import HeroSearchBar from "@/components/HeroSearchBar";
 import { CATEGORY_CATALOG } from "@/lib/category-catalog";
 
-const NEW_CATEGORY_ICONS = {
-  "Mobiles & tablets": "/img/category/new_category/Mobiles.png",
-  "Cars": "/img/category/new_category/Vehicles.png",
-  "Property": "/img/category/new_category/Property_For_Sale.png",
-  "Furniture & home": "/img/category/new_category/Furniture.png",
-  "Services": "/img/category/new_category/Service.png",
-  "Fashion & beauty": "/img/category/new_category/Fashion.png",
-};
-
 const QUICK_CATEGORIES = CATEGORY_CATALOG.map((item) => ({
   label: item.display_name,
   category: item.category_name,
-  icon: NEW_CATEGORY_ICONS[item.category_name] || item.image_url,
+  icon: item.image_url,
 }));
 
 function AllCategoriesIcon() {

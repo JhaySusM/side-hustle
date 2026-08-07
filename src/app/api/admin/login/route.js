@@ -68,3 +68,13 @@ export async function POST(request) {
     return Response.json({ error: 'Admin login failed' }, { status: 500 });
   }
 }
+
+export async function DELETE() {
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: {
+      'Set-Cookie': 'batjee_admin_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict',
+      'Content-Type': 'application/json',
+    },
+  });
+}

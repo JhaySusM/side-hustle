@@ -3,7 +3,7 @@ export const CATEGORY_CATALOG = [
     key: "cars",
     category_name: "Cars",
     display_name: "Cars",
-    image_url: "/img/category/Vehicles.png",
+    image_url: "/img/category/new_category/Vehicles.png",
     subcategories: [
       "Sale",
       "Purchase",
@@ -18,7 +18,7 @@ export const CATEGORY_CATALOG = [
     key: "property",
     category_name: "Property",
     display_name: "Property",
-    image_url: "/img/category/Property.png",
+    image_url: "/img/category/new_category/Property_For_Sale.png",
     subcategories: [
       "Sale",
       "Purchase",
@@ -32,14 +32,14 @@ export const CATEGORY_CATALOG = [
     key: "travel",
     category_name: "Travel",
     display_name: "Travel",
-    image_url: "https://img.icons8.com/ios-filled/50/000000/bed.png",
+    image_url: "/img/category/new_category/travel.png",
     subcategories: ["Hotels"],
   },
   {
     key: "electronics-appliances",
     category_name: "Electronics & appliances",
     display_name: "Electronics & appliances",
-    image_url: "https://img.icons8.com/ios-filled/50/000000/electrical.png",
+    image_url: "/img/category/new_category/electronics-appliances.png",
     subcategories: [
       "Computers & laptops",
       "Cameras & accessories",
@@ -53,7 +53,7 @@ export const CATEGORY_CATALOG = [
     key: "mobiles-tablets",
     category_name: "Mobiles & tablets",
     display_name: "Mobiles & tablets",
-    image_url: "/img/category/Mobiles1.png",
+    image_url: "/img/category/new_category/Mobiles.png",
     subcategories: [
       "Smartphones",
       "Tablets",
@@ -67,7 +67,7 @@ export const CATEGORY_CATALOG = [
     key: "bikes-two-wheelers",
     category_name: "Bikes & two-wheelers",
     display_name: "Bikes & two-wheelers",
-    image_url: "https://img.icons8.com/ios-filled/50/000000/motorcycle.png",
+    image_url: "/img/category/new_category/bikes-two-wheelers.png",
     subcategories: [
       "Motorbikes",
       "Bicycles",
@@ -81,7 +81,7 @@ export const CATEGORY_CATALOG = [
     key: "jobs-careers",
     category_name: "Jobs & careers",
     display_name: "Jobs & careers",
-    image_url: "https://img.icons8.com/ios-filled/50/000000/briefcase.png",
+    image_url: "/img/category/new_category/jobs-careers.png",
     subcategories: [
       "Full-time positions",
       "Part-time & freelance",
@@ -96,7 +96,7 @@ export const CATEGORY_CATALOG = [
     key: "business-industrial",
     category_name: "Business & industrial",
     display_name: "Business & industrial",
-    image_url: "https://img.icons8.com/ios-filled/50/000000/factory.png",
+    image_url: "/img/category/new_category/business-industrial.png",
     subcategories: [
       "Machinery & equipment",
       "Construction tools",
@@ -109,7 +109,7 @@ export const CATEGORY_CATALOG = [
     key: "services",
     category_name: "Services",
     display_name: "Services",
-    image_url: "/img/category/Service.png",
+    image_url: "/img/category/new_category/Service.png",
     subcategories: [
       "Home repair & maintenance",
       "Events & catering",
@@ -123,7 +123,7 @@ export const CATEGORY_CATALOG = [
     key: "fashion-beauty",
     category_name: "Fashion & beauty",
     display_name: "Fashion & beauty",
-    image_url: "/img/category/Fashion.png",
+    image_url: "/img/category/new_category/Fashion.png",
     subcategories: [
       "Clothing",
       "Footwear",
@@ -136,7 +136,7 @@ export const CATEGORY_CATALOG = [
     key: "furniture-home",
     category_name: "Furniture & home",
     display_name: "Furniture & home",
-    image_url: "/img/category/Furniture.png",
+    image_url: "/img/category/new_category/Furniture.png",
     subcategories: [
       "Beds & wardrobes",
       "Sofas & seating",
@@ -150,7 +150,7 @@ export const CATEGORY_CATALOG = [
     key: "animals-hobbies-kids",
     category_name: "Animals, hobbies & kids",
     display_name: "Animals, hobbies & kids",
-    image_url: "https://img.icons8.com/ios-filled/50/000000/pet.png",
+    image_url: "/img/category/new_category/animals-hobbies-kids.png",
     subcategories: [
       "Pets & adoption",
       "Livestock & birds",
