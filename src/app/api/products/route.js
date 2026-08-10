@@ -3,6 +3,7 @@ import { requireRequestUser } from '@/lib/auth';
 import { isAdminRequest } from '@/lib/admin-auth';
 import { normalizeProductCategory } from '@/lib/category-catalog';
 import { getSellerOutstandingFeeSummary } from '@/lib/seller-fee-status';
+import { creditReferralConversion } from '@/lib/rewards';
 
 export async function GET(request) {
   if (!(await isAdminRequest(request))) {
@@ -102,6 +103,13 @@ export async function POST(request) {
         upload_date_time: upload_date_time ? new Date(upload_date_time) : undefined,
       },
     });
+
+    try {
+      await creditReferralConversion(user.id);
+    } catch (rewardError) {
+      console.error('Failed to credit referral conversion', rewardError);
+    }
+
     return Response.json({ product });
   } catch (error) {
     return Response.json({ error: error.message || 'Failed to create product' }, { status: 500 });

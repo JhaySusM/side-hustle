@@ -383,7 +383,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
   return (
     <Modal isOpen={isOpen} toggle={toggle} centered>
       <ModalHeader toggle={toggle}>
-        {activeTab === "login" ? "Sign In to Batjee" : activeTab === "register" ? "Create an Account" : "Continue with Phone"}
+        {activeTab === "login" ? "Sign in to TradiGo" : activeTab === "register" ? "Create an Account" : "Continue with Phone"}
       </ModalHeader>
       <ModalBody>
         <Nav tabs className="mb-3">

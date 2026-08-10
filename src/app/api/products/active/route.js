@@ -7,6 +7,7 @@ import {
   compareProductsBySellerFeature,
   FEATURE_PLACEMENTS,
 } from '@/lib/seller-features';
+import { attachProductPromotionState, attachUserBadgeState, compareProductsByPromotion } from '@/lib/rewards';
 
 export async function GET(request) {
   try {
@@ -83,7 +84,11 @@ export async function GET(request) {
                     orderBy: { endsAt: 'desc' },
                   }
                 : false,
+              badge: true,
             },
+          },
+          promotions: {
+            where: { endsAt: { gt: new Date() } },
           },
           ...(viewer
             ? {
@@ -106,12 +111,19 @@ export async function GET(request) {
 
     const sortedProducts = products
       .map(attachSellerFeatureState)
-      .sort((left, right) => compareProductsBySellerFeature(left, right, { preferredPlacement }));
+      .map((product) => attachProductPromotionState({ ...product, user: attachUserBadgeState(product.user) }))
+      .sort((left, right) => {
+        const promotionComparison = compareProductsByPromotion(left, right);
+        if (promotionComparison !== 0) {
+          return promotionComparison;
+        }
+        return compareProductsBySellerFeature(left, right, { preferredPlacement });
+      });
 
     const pagedProducts = sortedProducts.slice(skip, skip + pageSize);
 
     const productsWithFavoriteState = pagedProducts.map((product) => {
-      const { address, addressCity, ...userWithoutAddress } = product.user || {};
+      const { address, addressCity, badge, ...userWithoutAddress } = product.user || {};
       return {
         ...normalizeProductCategory(product),
         user: product.user ? { ...userWithoutAddress, city: getUserCity(product.user) } : product.user,

@@ -417,9 +417,9 @@ export default function Navbar() {
         className={`py-0 tradigo-navbar${!pathname.startsWith("/admin") ? " tradigo-navbar-home" : ""}`}
         style={{
           zIndex: 45,
-          background: "#0d1f67",
+          background: "#0b5d52",
           minHeight: 42,
-          boxShadow: "0 2px 8px rgba(8, 18, 58, 0.18)",
+          boxShadow: "0 2px 8px rgba(6, 46, 41, 0.22)",
         }}
       >
         <Container className="d-flex align-items-center tradigo-navbar-container">
@@ -632,7 +632,7 @@ export default function Navbar() {
                 onClick={handlePostClick}
                 className="tradigo-navbar-login-btn ms-auto"
                 style={{
-                  background: "#3b82f6",
+                  background: "#f2711c",
                   border: "none",
                   color: "#ffffff",
                   fontWeight: 700,

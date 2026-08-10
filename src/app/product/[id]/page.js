@@ -334,6 +334,11 @@ export default function ProductDetailPage() {
                           {product.subcategory.subcategory_name}
                         </Badge>
                       ) : null}
+                      {product.isPremiumListing ? (
+                        <Badge pill style={{ background: "#fff7d6", color: "#9a6700" }}>⭐ Premium</Badge>
+                      ) : product.isBoostedListing ? (
+                        <Badge pill style={{ background: "#e7f5ff", color: "#0c5da8" }}>🚀 Boosted</Badge>
+                      ) : null}
                     </div>
                     <div className="product-detail-price mb-3">
                       {formatDisplayCurrency(product.price)}
@@ -358,7 +363,10 @@ export default function ProductDetailPage() {
                         {(product.user?.name || "?").charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="fw-semibold">{product.user?.name || "Unknown seller"}</div>
+                        <div className="fw-semibold">
+                          {product.user?.name || "Unknown seller"}
+                          {product.user?.hasReferrerBadge ? <span title="Referrer badge" className="ms-1">🎖️</span> : null}
+                        </div>
                         <div className="product-detail-meta">{product.user?.email || "Seller profile"}</div>
                         {product.user?.isFeaturedSeller ? (
                           <div className="product-detail-meta" style={{ color: "#b26a00", fontWeight: 700 }}>

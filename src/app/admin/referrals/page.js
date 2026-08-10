@@ -3,100 +3,152 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAdminData } from "../_context/AdminDataContext";
 import { useToast } from "../_components/Toast";
-import { buildReferralMetrics, buildReferralMonthRows } from "../_lib/deriveReferrals";
-import { DEFAULT_REFERRAL_SETTINGS, getReferralSettings, persistReferralSettings } from "../_lib/referralSettings";
-import { toPkCurrency } from "../_lib/format";
 
-function downloadCsv(filename, rows) {
-  const csv = rows
-    .map((row) => row.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const a = document.createElement("a");
-  a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-  a.download = filename;
-  a.click();
-}
+const TRANSACTION_LABELS = {
+  earn_referral: "Referral bonus",
+  spend_premium_slot: "Premium slot",
+  spend_boost: "Ad boost",
+  spend_badge: "Referrer badge",
+  admin_adjustment: "Admin adjustment",
+};
 
-export default function AdminReferralsPage() {
-  const { users, products, loading } = useAdminData();
+const EMPTY_SETTINGS = {
+  referralPointsPerConversion: 100,
+  minListingsForConversion: 1,
+  fraudDetectionEnabled: true,
+  premiumSlotCost: 300,
+  premiumSlotDurationDays: 7,
+  boostCost: 150,
+  boostDurationDays: 3,
+  badgeCost: 500,
+};
+
+export default function AdminRewardsPage() {
+  const { users } = useAdminData();
   const showToast = useToast();
-  const [settings, setSettings] = useState(DEFAULT_REFERRAL_SETTINGS);
-  const [form, setForm] = useState(DEFAULT_REFERRAL_SETTINGS);
 
-  useEffect(() => {
-    const stored = getReferralSettings();
-    setSettings(stored);
-    setForm(stored);
-  }, []);
+  const [rewardsData, setRewardsData] = useState(null);
+  const [form, setForm] = useState(EMPTY_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const metrics = useMemo(() => buildReferralMetrics(users, products, settings), [users, products, settings]);
-  const monthRows = useMemo(() => buildReferralMonthRows(metrics), [metrics]);
-  const hasData = metrics.referredUsers > 0;
+  const [adjustUserId, setAdjustUserId] = useState("");
+  const [adjustPoints, setAdjustPoints] = useState("");
+  const [adjustNote, setAdjustNote] = useState("");
+  const [adjustBusy, setAdjustBusy] = useState(false);
 
-  function handleSave() {
-    persistReferralSettings(form);
-    setSettings(form);
-    showToast("✅ Referral settings saved. Dashboard metrics updated.", "ok");
+  async function loadRewards() {
+    try {
+      const res = await fetch("/api/admin/rewards", { credentials: "include", cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load rewards data");
+      setRewardsData(data);
+      setForm(data.settings);
+    } catch (err) {
+      showToast(`❌ ${err.message}`, "err");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleExport() {
-    downloadCsv("tradigo_referrals.csv", [
-      ["User", "Email", "Referral Code", "City", "Referrals", "Converted", "Rate", "Rewards", "Status"],
-      ...metrics.topReferrers.map((item) => [
-        item.name,
-        item.email,
-        item.referralCode,
-        item.city,
-        item.referrals,
-        item.converted,
-        `${item.rate.toFixed(1)}%`,
-        toPkCurrency(item.rewards),
-        item.status,
-      ]),
-    ]);
+  useEffect(() => {
+    async function bootstrap() {
+      await loadRewards();
+    }
+    bootstrap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const usersById = useMemo(() => new Map((users || []).map((u) => [u.id, u])), [users]);
+
+  async function handleSaveSettings() {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/rewards", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings");
+      setRewardsData((prev) => ({ ...prev, settings: data.settings }));
+      showToast("✅ Rewards settings saved.", "ok");
+    } catch (err) {
+      showToast(`❌ ${err.message}`, "err");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAdjust() {
+    const userId = Number(adjustUserId);
+    const points = Number(adjustPoints);
+    if (!userId || !Number.isFinite(points) || points === 0) {
+      showToast("❌ Pick a user and a non-zero point amount.", "err");
+      return;
+    }
+
+    setAdjustBusy(true);
+    try {
+      const res = await fetch("/api/admin/rewards/adjust", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, points, note: adjustNote }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to adjust points");
+      showToast(`✅ ${points > 0 ? "Added" : "Removed"} ${Math.abs(points)} pts.`, "ok");
+      setAdjustUserId("");
+      setAdjustPoints("");
+      setAdjustNote("");
+      await loadRewards();
+    } catch (err) {
+      showToast(`❌ ${err.message}`, "err");
+    } finally {
+      setAdjustBusy(false);
+    }
   }
 
   if (loading) {
-    return <div style={{ padding: 40, color: "var(--mut)" }}>Loading referrals...</div>;
+    return <div style={{ padding: 40, color: "var(--mut)" }}>Loading rewards...</div>;
   }
 
   return (
     <div className="referral-shell">
       <div className="referral-card">
         <div className="referral-hero">
-          <div className="referral-kicker">Referral Growth Desk</div>
+          <div className="referral-kicker">Referral Rewards</div>
           <div className="referral-head">
             <div>
-              <h3>Track referral adoption, rewards, and fraud checks from one place.</h3>
+              <h3>Points economy for referrals, ad promotions, and profile badges.</h3>
               <p>
-                {hasData
-                  ? `Tracking ${metrics.referredUsers.toLocaleString()} referred users and ${metrics.totalReferrers.toLocaleString()} active referrers with the current qualification rules.`
-                  : "The referral program is connected, but there are no referred accounts yet. Share a few invite links to start filling this dashboard."}
+                Referrers earn {rewardsData?.settings.referralPointsPerConversion} points once a referred user
+                posts at least {rewardsData?.settings.minListingsForConversion} listing
+                {rewardsData?.settings.minListingsForConversion === 1 ? "" : "s"}. Points are redeemable for
+                premium ad slots, ad boosts, and a profile badge.
               </p>
             </div>
-            <div className="referral-chip">{hasData ? "Live referral feed active" : "No referrals yet"}</div>
+            <div className="referral-chip">Live points ledger</div>
           </div>
         </div>
         <div className="kpi-row">
           <div className="kpi">
-            <div className="kv">{metrics.totalReferrers.toLocaleString()}</div>
-            <div className="kl">Total Referrers</div>
+            <div className="kv">{(rewardsData?.totalOutstandingPoints || 0).toLocaleString()}</div>
+            <div className="kl">Points Outstanding</div>
           </div>
           <div className="kpi">
-            <div className="kv">{metrics.referredUsers.toLocaleString()}</div>
-            <div className="kl">Referred Users</div>
+            <div className="kv">{rewardsData?.activePremiumSlotCount || 0}</div>
+            <div className="kl">Active Premium Slots</div>
           </div>
           <div className="kpi">
-            <div className="kv">{toPkCurrency(metrics.avgReward)}</div>
-            <div className="kl">Avg Reward Paid</div>
+            <div className="kv">{rewardsData?.activeBoostCount || 0}</div>
+            <div className="kl">Active Boosts</div>
           </div>
           <div className="kpi">
-            <div className="kv">{toPkCurrency(metrics.rewardsReleased)}</div>
-            <div className="kl">Rewards Released</div>
-          </div>
-          <div className="kpi">
-            <div className="kv">{metrics.conversionRate.toFixed(1)}%</div>
-            <div className="kl">Conversion Rate</div>
+            <div className="kv">{rewardsData?.badgeCount || 0}</div>
+            <div className="kl">Badges Purchased</div>
           </div>
         </div>
       </div>
@@ -105,68 +157,40 @@ export default function AdminReferralsPage() {
         <div className="card referral-panel">
           <div className="referral-panel-head">
             <div>
-              <h3>Top Referrers</h3>
-              <p>
-                {hasData
-                  ? "Highest-performing advocates ranked by qualified referrals and reward impact."
-                  : "Invite activity will populate this leaderboard automatically as new referred accounts sign up."}
-              </p>
+              <h3>Points Ledger</h3>
+              <p>Most recent 100 transactions across all users.</p>
             </div>
-            <button type="button" className="btn btn-outline btn-sm" onClick={handleExport}>
-              Export
-            </button>
           </div>
           <div className="referral-empty-card">
-            <strong>{hasData ? "Referral leaderboard is live." : "No referral leaderboard yet."}</strong>
-            <p>
-              {hasData
-                ? `Qualified referrals currently require at least ${settings.minListings} listing${settings.minListings === 1 ? "" : "s"} to release a reward of ${toPkCurrency(settings.rewardAmount)}.`
-                : "Once the referral program begins collecting invitations, conversions, and rewards, this panel can highlight top referrers and flag suspicious accounts for review."}
-            </p>
             <div className="referral-empty-table">
               <div className="tbl-wrap">
                 <table>
                   <tbody>
                     <tr>
                       <th>User</th>
-                      <th>Referrals</th>
-                      <th>Converted</th>
-                      <th>Rate</th>
-                      <th>Rewards</th>
-                      <th>Status</th>
+                      <th>Type</th>
+                      <th>Points</th>
+                      <th>Balance After</th>
+                      <th>Date</th>
                     </tr>
-                    {metrics.topReferrers.length ? (
-                      metrics.topReferrers.slice(0, 8).map((item) => (
-                        <tr key={item.id}>
+                    {(rewardsData?.transactions || []).length ? (
+                      rewardsData.transactions.map((tx) => (
+                        <tr key={tx.id}>
+                          <td>{tx.user?.name || tx.user?.email || `User ${tx.userId}`}</td>
+                          <td>{TRANSACTION_LABELS[tx.type] || tx.type}</td>
                           <td>
-                            <div className="flex">
-                              <div className="avatar" style={{ background: "#0a6e6e" }}>
-                                {item.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <div style={{ fontWeight: 700, color: "#0f172a" }}>{item.name}</div>
-                                <div style={{ fontSize: 11, color: "var(--mut)" }}>
-                                  {item.referralCode} · {item.city}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td>{item.referrals}</td>
-                          <td>{item.converted}</td>
-                          <td>{item.rate.toFixed(1)}%</td>
-                          <td>{toPkCurrency(item.rewards)}</td>
-                          <td>
-                            <span
-                              className={`tag ${item.status === "Review" ? "tag-danger" : item.status === "Payable" ? "tag-ok" : "tag-info"}`}
-                            >
-                              {item.status}
+                            <span className={tx.points >= 0 ? "tag tag-ok" : "tag tag-danger"}>
+                              {tx.points >= 0 ? "+" : ""}
+                              {tx.points}
                             </span>
                           </td>
+                          <td>{tx.balanceAfter}</td>
+                          <td>{new Date(tx.createdAt).toLocaleString()}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6}>No referral data available.</td>
+                        <td colSpan={5}>No points transactions yet.</td>
                       </tr>
                     )}
                   </tbody>
@@ -174,22 +198,68 @@ export default function AdminReferralsPage() {
               </div>
             </div>
           </div>
+
+          <div className="referral-panel-head" style={{ marginTop: 24 }}>
+            <div>
+              <h3>Manual Adjustment</h3>
+              <p>Add or remove points from a user&apos;s balance (e.g. support cases or fraud reversal).</p>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div className="form-group" style={{ minWidth: 220 }}>
+              <label>User</label>
+              <select value={adjustUserId} onChange={(e) => setAdjustUserId(e.target.value)}>
+                <option value="">Select a user</option>
+                {(users || []).map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name || u.email} (#{u.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ width: 140 }}>
+              <label>Points (+/-)</label>
+              <input
+                type="number"
+                step={1}
+                placeholder="e.g. 100 or -50"
+                value={adjustPoints}
+                onChange={(e) => setAdjustPoints(e.target.value)}
+              />
+            </div>
+            <div className="form-group" style={{ minWidth: 220, flex: 1 }}>
+              <label>Note (optional)</label>
+              <input
+                type="text"
+                placeholder="Reason for adjustment"
+                value={adjustNote}
+                onChange={(e) => setAdjustNote(e.target.value)}
+              />
+            </div>
+            <button type="button" className="btn btn-teal" disabled={adjustBusy} onClick={handleAdjust}>
+              {adjustBusy ? "Applying..." : "Apply Adjustment"}
+            </button>
+          </div>
+          {adjustUserId && usersById.get(Number(adjustUserId)) ? (
+            <div className="referral-settings-note" style={{ marginTop: 8 }}>
+              Current balance: {usersById.get(Number(adjustUserId))?.referralPointsBalance ?? "unknown"} pts
+            </div>
+          ) : null}
         </div>
 
         <div className="referral-side">
           <div className="card referral-settings">
             <div className="card-h">
-              <h3>⚙️ Program Settings</h3>
+              <h3>⚙️ Rewards Settings</h3>
             </div>
             <div className="form-group" style={{ marginBottom: 12 }}>
-              <label>Reward Per Successful Referral</label>
+              <label>Points Per Converted Referral</label>
               <input
                 type="number"
                 min={0}
                 step={1}
-                placeholder="Set reward amount"
-                value={form.rewardAmount}
-                onChange={(e) => setForm((prev) => ({ ...prev, rewardAmount: Math.max(0, Number(e.target.value || 0)) }))}
+                value={form.referralPointsPerConversion}
+                onChange={(e) => setForm((prev) => ({ ...prev, referralPointsPerConversion: Math.max(0, Number(e.target.value || 0)) }))}
               />
             </div>
             <div className="form-group" style={{ marginBottom: 12 }}>
@@ -198,60 +268,72 @@ export default function AdminReferralsPage() {
                 type="number"
                 min={0}
                 step={1}
-                placeholder="Set minimum listing count"
-                value={form.minListings}
-                onChange={(e) => setForm((prev) => ({ ...prev, minListings: Math.max(0, Number(e.target.value || 0)) }))}
+                value={form.minListingsForConversion}
+                onChange={(e) => setForm((prev) => ({ ...prev, minListingsForConversion: Math.max(0, Number(e.target.value || 0)) }))}
               />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <label>Premium Slot Cost (pts) / Duration (days)</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={form.premiumSlotCost}
+                  onChange={(e) => setForm((prev) => ({ ...prev, premiumSlotCost: Math.max(0, Number(e.target.value || 0)) }))}
+                />
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={form.premiumSlotDurationDays}
+                  onChange={(e) => setForm((prev) => ({ ...prev, premiumSlotDurationDays: Math.max(1, Number(e.target.value || 0)) }))}
+                />
+              </div>
+            </div>
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <label>Boost Cost (pts) / Duration (days)</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={form.boostCost}
+                  onChange={(e) => setForm((prev) => ({ ...prev, boostCost: Math.max(0, Number(e.target.value || 0)) }))}
+                />
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={form.boostDurationDays}
+                  onChange={(e) => setForm((prev) => ({ ...prev, boostDurationDays: Math.max(1, Number(e.target.value || 0)) }))}
+                />
+              </div>
+            </div>
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <label>Badge Cost (pts)</label>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={form.badgeCost}
+                onChange={(e) => setForm((prev) => ({ ...prev, badgeCost: Math.max(0, Number(e.target.value || 0)) }))}
+              />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <span style={{ fontSize: 13, fontWeight: 600 }}>Fraud Detection</span>
               <label className="toggle">
                 <input
                   type="checkbox"
-                  checked={form.fraudDetection}
-                  onChange={(e) => setForm((prev) => ({ ...prev, fraudDetection: e.target.checked }))}
+                  checked={form.fraudDetectionEnabled}
+                  onChange={(e) => setForm((prev) => ({ ...prev, fraudDetectionEnabled: e.target.checked }))}
                 />
                 <span className="slider" />
               </label>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Program Active</span>
-              <label className="toggle">
-                <input
-                  type="checkbox"
-                  checked={form.programActive}
-                  onChange={(e) => setForm((prev) => ({ ...prev, programActive: e.target.checked }))}
-                />
-                <span className="slider" />
-              </label>
-            </div>
-            <button type="button" className="btn btn-teal" style={{ width: "100%" }} onClick={handleSave}>
-              Save Settings
+            <button type="button" className="btn btn-teal" style={{ width: "100%" }} disabled={saving} onClick={handleSaveSettings}>
+              {saving ? "Saving..." : "Save Settings"}
             </button>
-            <div className="referral-settings-note">
-              {settings.programActive
-                ? `Program is active. Rewards release at ${toPkCurrency(settings.rewardAmount)} once a referred user reaches ${settings.minListings} listing${settings.minListings === 1 ? "" : "s"}.`
-                : "Program is paused. Settings are saved and will apply once you reactivate referrals."}
-            </div>
-          </div>
-
-          <div className="card referral-month-card">
-            <div className="card-h">
-              <h3>📊 This Month</h3>
-            </div>
-            <div className="referral-month-empty">
-              {monthRows.map((row) => (
-                <div className="referral-month-row" key={row.label}>
-                  <div className="top">
-                    <span>{row.label}</span>
-                    <span>{row.value}</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${row.fill}%`, background: row.color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

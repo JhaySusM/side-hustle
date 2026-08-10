@@ -3,6 +3,7 @@ import { isAdminRequest } from '@/lib/admin-auth';
 import { normalizeProductCategory } from '@/lib/category-catalog';
 import { prisma } from '@/lib/prisma';
 import { attachSellerFeatureState, serializeSellerFeatures } from '@/lib/seller-features';
+import { attachProductPromotionState } from '@/lib/rewards';
 import { getUserCity } from '@/lib/address';
 
 // GET: Get seller by ID with their products
@@ -32,6 +33,7 @@ export async function GET(request, { params }) {
               orderBy: { endsAt: 'desc' },
             }
           : false,
+        badge: true,
       },
     });
     if (!user) {
@@ -54,6 +56,9 @@ export async function GET(request, { params }) {
       orderBy: { id: 'desc' },
       include: {
         category: true,
+        promotions: {
+          where: { endsAt: { gt: new Date() } },
+        },
         user: prisma.sellerFeature
           ? {
               select: {
@@ -69,7 +74,7 @@ export async function GET(request, { params }) {
           : { select: { id: true } },
       },
     });
-    const { address, addressCity, ...userWithoutAddress } = user;
+    const { address, addressCity, badge, ...userWithoutAddress } = user;
 
     return Response.json({
       seller: {
@@ -77,8 +82,11 @@ export async function GET(request, { params }) {
         city: getUserCity(user),
         sellerFeatures: serializeSellerFeatures(user.sellerFeatures || []),
         isFeaturedSeller: (user.sellerFeatures || []).length > 0,
+        hasReferrerBadge: Boolean(badge),
       },
-      products: products.map((product) => normalizeProductCategory(attachSellerFeatureState(product))),
+      products: products.map((product) =>
+        normalizeProductCategory(attachProductPromotionState(attachSellerFeatureState(product)))
+      ),
     });
   } catch (error) {
     return Response.json({ error: error.message || 'Failed to fetch seller' }, { status: 500 });

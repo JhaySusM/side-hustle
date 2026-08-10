@@ -31,6 +31,14 @@ function FavoriteImage({ src, alt }) {
   );
 }
 
+const REWARD_TRANSACTION_LABELS = {
+  earn_referral: "Referral bonus",
+  spend_premium_slot: "Premium slot",
+  spend_boost: "Ad boost",
+  spend_badge: "Referrer badge",
+  admin_adjustment: "Admin adjustment",
+};
+
 export default function DashboardPage() {
   const [showSoldModal, setShowSoldModal] = useState(false);
   const [pendingSoldId, setPendingSoldId] = useState(null);
@@ -40,6 +48,14 @@ export default function DashboardPage() {
   const [favorites, setFavorites] = useState([]);
   const [siteOrigin, setSiteOrigin] = useState("");
   const [copiedItem, setCopiedItem] = useState("");
+  const [rewardsBalance, setRewardsBalance] = useState(0);
+  const [rewardsTransactions, setRewardsTransactions] = useState([]);
+  const [hasBadge, setHasBadge] = useState(false);
+  const [catalog, setCatalog] = useState(null);
+  const [premiumSlotTarget, setPremiumSlotTarget] = useState("");
+  const [boostTarget, setBoostTarget] = useState("");
+  const [redeemBusy, setRedeemBusy] = useState("");
+  const [redeemMessage, setRedeemMessage] = useState(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -64,6 +80,27 @@ export default function DashboardPage() {
     }
   }
 
+  async function loadRewards() {
+    try {
+      const [balanceRes, catalogRes] = await Promise.all([
+        fetch("/api/rewards/balance", { cache: "no-store" }),
+        fetch("/api/rewards/catalog", { cache: "no-store" }),
+      ]);
+      const balanceData = await balanceRes.json();
+      const catalogData = await catalogRes.json();
+      if (balanceRes.ok) {
+        setRewardsBalance(balanceData.balance || 0);
+        setRewardsTransactions(balanceData.transactions || []);
+        setHasBadge(Boolean(balanceData.hasBadge));
+      }
+      if (catalogRes.ok) {
+        setCatalog(catalogData);
+      }
+    } catch {
+      // Leave existing rewards state as-is on failure.
+    }
+  }
+
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -73,7 +110,7 @@ export default function DashboardPage() {
           router.push("/");
         } else {
           setUser(data.user);
-          await loadDashboard();
+          await Promise.all([loadDashboard(), loadRewards()]);
         }
       } catch {
         router.push("/");
@@ -83,6 +120,35 @@ export default function DashboardPage() {
   }, [router]);
 
   if (!user) return null;
+
+  async function redeemReward(type, productId) {
+    setRedeemBusy(type);
+    setRedeemMessage(null);
+    try {
+      const url = type === "premium" ? "/api/rewards/premium-slot" : type === "boost" ? "/api/rewards/boost" : "/api/rewards/badge";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: productId ? JSON.stringify({ productId: Number(productId) }) : undefined,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to redeem reward");
+      }
+      const successText =
+        type === "premium"
+          ? "Premium slot activated for your listing."
+          : type === "boost"
+          ? "Boost activated for your listing."
+          : "Referrer badge purchased.";
+      setRedeemMessage({ type: "success", text: successText });
+      await loadRewards();
+    } catch (err) {
+      setRedeemMessage({ type: "error", text: err.message || "Failed to redeem reward" });
+    } finally {
+      setRedeemBusy("");
+    }
+  }
 
   function renderStatusControls(listing) {
     if (listing.product_status === "Sold") {
@@ -190,11 +256,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+    <div className="user-dashboard-page" style={{ minHeight: "100vh", background: "#f8fafc" }}>
       <Navbar />
       <Container className="py-5">
         {/* Welcome Banner */}
-        <div className="mb-4 p-4 rounded-3" style={{ background: "linear-gradient(90deg,#0d6efd 0%,#6610f2 100%)", color: "#fff" }}>
+        <div className="mb-4 p-4 rounded-3" style={{ background: "#0f8a76", color: "#fff" }}>
           <h3 className="fw-bold mb-1">Welcome back{user.name ? `, ${user.name}` : ""}! 👋</h3>
           <p className="mb-0" style={{ opacity: 0.85 }}>{user.email || user.phone}</p>
         </div>
@@ -204,7 +270,7 @@ export default function DashboardPage() {
           <Col xs={6} md={3}>
             <Card className="border-0 shadow-sm text-center h-100">
               <CardBody>
-                <div style={{ fontSize: 32, fontWeight: 700, color: "#0d6efd" }}>{listings.length}</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#0f8a76" }}>{listings.length}</div>
                 <div className="text-muted small">Total Listings</div>
               </CardBody>
             </Card>
@@ -274,6 +340,121 @@ export default function DashboardPage() {
           </CardBody>
         </Card>
 
+        <h5 className="fw-bold mb-3">Rewards</h5>
+        <Card className="border-0 shadow-sm mb-4">
+          <CardBody>
+            <Row className="g-3 align-items-center mb-4">
+              <Col xs={12} md="auto">
+                <div style={{ fontSize: 32, fontWeight: 700, color: "#0f8a76" }}>{rewardsBalance.toLocaleString()}</div>
+                <div className="text-muted small">Referral points{catalog ? ` · earn ${catalog.referralPointsPerConversion} pts per converted referral` : ""}</div>
+              </Col>
+            </Row>
+
+            {redeemMessage ? (
+              <div className={`alert ${redeemMessage.type === "success" ? "alert-success" : "alert-danger"} py-2 small`}>
+                {redeemMessage.text}
+              </div>
+            ) : null}
+
+            <Row className="g-3">
+              <Col md={4}>
+                <Card className="border h-100">
+                  <CardBody>
+                    <h6 className="fw-bold mb-1">⭐ Premium Slot</h6>
+                    <p className="text-muted small mb-2">
+                      {catalog ? `${catalog.premiumSlot.cost} pts · ${catalog.premiumSlot.durationDays} days` : "Loading..."}
+                    </p>
+                    <select
+                      className="form-select form-select-sm mb-2"
+                      value={premiumSlotTarget}
+                      onChange={(e) => setPremiumSlotTarget(e.target.value)}
+                    >
+                      <option value="">Select a listing</option>
+                      {listings.filter((l) => l.product_status === "Active").map((l) => (
+                        <option key={l.id} value={l.id}>{l.product_name}</option>
+                      ))}
+                    </select>
+                    <Button
+                      color="primary"
+                      size="sm"
+                      className="w-100"
+                      disabled={!premiumSlotTarget || redeemBusy === "premium" || (catalog && rewardsBalance < catalog.premiumSlot.cost)}
+                      onClick={() => redeemReward("premium", premiumSlotTarget)}
+                    >
+                      {redeemBusy === "premium" ? "Redeeming..." : "Redeem"}
+                    </Button>
+                  </CardBody>
+                </Card>
+              </Col>
+              <Col md={4}>
+                <Card className="border h-100">
+                  <CardBody>
+                    <h6 className="fw-bold mb-1">🚀 Boost Ad</h6>
+                    <p className="text-muted small mb-2">
+                      {catalog ? `${catalog.boost.cost} pts · ${catalog.boost.durationDays} days` : "Loading..."}
+                    </p>
+                    <select
+                      className="form-select form-select-sm mb-2"
+                      value={boostTarget}
+                      onChange={(e) => setBoostTarget(e.target.value)}
+                    >
+                      <option value="">Select a listing</option>
+                      {listings.filter((l) => l.product_status === "Active").map((l) => (
+                        <option key={l.id} value={l.id}>{l.product_name}</option>
+                      ))}
+                    </select>
+                    <Button
+                      color="primary"
+                      size="sm"
+                      className="w-100"
+                      disabled={!boostTarget || redeemBusy === "boost" || (catalog && rewardsBalance < catalog.boost.cost)}
+                      onClick={() => redeemReward("boost", boostTarget)}
+                    >
+                      {redeemBusy === "boost" ? "Redeeming..." : "Redeem"}
+                    </Button>
+                  </CardBody>
+                </Card>
+              </Col>
+              <Col md={4}>
+                <Card className="border h-100">
+                  <CardBody>
+                    <h6 className="fw-bold mb-1">🎖️ Referrer Badge</h6>
+                    <p className="text-muted small mb-2">
+                      {catalog ? `${catalog.badge.cost} pts · one-time, shows on your profile` : "Loading..."}
+                    </p>
+                    <Button
+                      color="primary"
+                      size="sm"
+                      className="w-100 mt-4"
+                      disabled={hasBadge || redeemBusy === "badge" || (catalog && rewardsBalance < catalog.badge.cost)}
+                      onClick={() => redeemReward("badge", null)}
+                    >
+                      {hasBadge ? "Owned" : redeemBusy === "badge" ? "Redeeming..." : "Redeem"}
+                    </Button>
+                  </CardBody>
+                </Card>
+              </Col>
+            </Row>
+
+            {rewardsTransactions.length > 0 ? (
+              <div className="mt-4">
+                <div className="text-muted small fw-semibold mb-2">Recent activity</div>
+                <div className="d-flex flex-column gap-1">
+                  {rewardsTransactions.slice(0, 5).map((tx) => (
+                    <div key={tx.id} className="d-flex justify-content-between small border-bottom pb-1">
+                      <span>{REWARD_TRANSACTION_LABELS[tx.type] || tx.type}</span>
+                      <span className={tx.points >= 0 ? "text-success" : "text-danger"}>
+                        {tx.points >= 0 ? "+" : ""}{tx.points} pts
+                      </span>
+                      <span className="text-muted">{new Date(tx.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </CardBody>
+        </Card>
+
         {/* My Listings */}
         <div className="d-flex align-items-center justify-content-between mb-3">
           <h5 className="fw-bold mb-0">My Listings</h5>
@@ -284,7 +465,7 @@ export default function DashboardPage() {
             {listings.length === 0 ? (
               <div className="text-center text-muted py-5">
                 You have no listings yet.{" "}
-                <span style={{ color: "#0d6efd", cursor: "pointer" }} onClick={() => router.push("/post")}>Post your first ad!</span>
+                <span style={{ color: "#0f8a76", cursor: "pointer" }} onClick={() => router.push("/post")}>Post your first ad!</span>
               </div>
             ) : (
               <>

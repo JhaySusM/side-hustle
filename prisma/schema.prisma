@@ -17,6 +17,7 @@ model ProductList {
   favorites            Favorite[]
   transactions         Transaction[]
   reports              ProductReport[]
+  promotions           ProductPromotion[]
 }
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -78,9 +79,64 @@ model User {
   ratingsReceived    SellerRating[]        @relation("SellerReceivedRatings")
   notifications      UserNotification[]
   sellerFeatures     SellerFeature[]
+  referralPointsBalance         Int       @default(0)
+  referralConversionCreditedAt  DateTime?
+  pointsTransactions PointsTransaction[]
+  badge              UserBadge?
 
   @@index([createdAt])
   @@index([referredById])
+}
+
+model PointsTransaction {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  type         String
+  points       Int
+  balanceAfter Int
+  referenceId  Int?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
+
+model ProductPromotion {
+  id             Int         @id @default(autoincrement())
+  productId      Int
+  promotionType  String
+  pointsSpent    Int
+  startsAt       DateTime    @default(now())
+  endsAt         DateTime
+  createdAt      DateTime    @default(now())
+  product        ProductList @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, endsAt])
+  @@index([promotionType, endsAt])
+}
+
+model UserBadge {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  badgeType    String   @default("referrer")
+  pointsSpent  Int
+  purchasedAt  DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RewardsSettings {
+  id                          Int      @id @default(1)
+  referralPointsPerConversion Int      @default(100)
+  minListingsForConversion    Int      @default(1)
+  fraudDetectionEnabled       Boolean  @default(true)
+  premiumSlotCost             Int      @default(300)
+  premiumSlotDurationDays     Int      @default(7)
+  boostCost                   Int      @default(150)
+  boostDurationDays           Int      @default(3)
+  badgeCost                   Int      @default(500)
+  updatedAt                   DateTime @updatedAt
 }
 
 model SellerFeature {

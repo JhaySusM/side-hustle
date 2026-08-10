@@ -3,6 +3,7 @@ import { isAdminRequest } from '@/lib/admin-auth';
 import { normalizeProductCategory } from '@/lib/category-catalog';
 import { prisma } from '@/lib/prisma';
 import { attachSellerFeatureState } from '@/lib/seller-features';
+import { attachProductPromotionState, attachUserBadgeState } from '@/lib/rewards';
 import { getUserCity } from '@/lib/address';
 
 export async function GET(request, { params }) {
@@ -31,7 +32,11 @@ export async function GET(request, { params }) {
                   orderBy: { endsAt: 'desc' },
                 }
               : false,
+            badge: true,
           },
+        },
+        promotions: {
+          where: { endsAt: { gt: new Date() } },
         },
       },
     });
@@ -51,10 +56,16 @@ export async function GET(request, { params }) {
       return Response.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    const normalizedProduct = normalizeProductCategory(attachSellerFeatureState(product));
+    const normalizedProduct = normalizeProductCategory(
+      attachProductPromotionState(attachSellerFeatureState(product))
+    );
     if (normalizedProduct.user) {
-      const { address, addressCity, ...userWithoutAddress } = normalizedProduct.user;
-      normalizedProduct.user = { ...userWithoutAddress, city: getUserCity(product.user) };
+      const { address, addressCity, badge, ...userWithoutAddress } = normalizedProduct.user;
+      normalizedProduct.user = {
+        ...userWithoutAddress,
+        city: getUserCity(product.user),
+        hasReferrerBadge: Boolean(badge),
+      };
     }
 
     return Response.json({ product: normalizedProduct });

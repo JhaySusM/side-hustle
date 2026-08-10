@@ -422,7 +422,10 @@ export default function SellerProfilePage() {
                 {sellerName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h4 className="fw-bold mb-1">{sellerName}</h4>
+                <h4 className="fw-bold mb-1">
+                  {sellerName}
+                  {seller?.hasReferrerBadge ? <span title="Referrer badge" className="ms-1">🎖️</span> : null}
+                </h4>
                 <div className="text-muted small mb-2">{seller?.email}</div>
                 {seller?.city ? <div className="text-muted small mb-2">{seller.city}</div> : null}
                 <div className="d-flex gap-2 flex-wrap">
@@ -599,6 +602,11 @@ export default function SellerProfilePage() {
                       <Badge color="light" className="text-muted border" style={{ fontSize: 11 }}>
                         {item.category?.category_name}
                       </Badge>
+                      {item.isPremiumListing ? (
+                        <Badge pill style={{ background: "#fff7d6", color: "#9a6700", fontSize: 11 }}>⭐ Premium</Badge>
+                      ) : item.isBoostedListing ? (
+                        <Badge pill style={{ background: "#e7f5ff", color: "#0c5da8", fontSize: 11 }}>🚀 Boosted</Badge>
+                      ) : null}
                     </div>
                     <CardTitle tag="h6" className="fw-semibold mb-1">{item.product_name}</CardTitle>
                     <CardText className="text-primary fw-bold mb-1">{formatDisplayCurrency(item.price)}</CardText>

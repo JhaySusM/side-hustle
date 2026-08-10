@@ -195,6 +195,11 @@ export default function ProductQuickViewModal({ productId, isOpen, onClose, view
             <div className="p-4">
               <div className="product-quickview-price">{formatDisplayCurrency(product.price)}</div>
               <h2 className="product-quickview-title">{product.product_name}</h2>
+              {product.isPremiumListing ? (
+                <Badge pill className="me-2" style={{ background: "#fff7d6", color: "#9a6700" }}>⭐ Premium</Badge>
+              ) : product.isBoostedListing ? (
+                <Badge pill className="me-2" style={{ background: "#e7f5ff", color: "#0c5da8" }}>🚀 Boosted</Badge>
+              ) : null}
               <div className="product-quickview-meta">
                 {product.user?.city ? (
                   <span className="d-inline-flex align-items-center gap-1">
@@ -215,7 +220,10 @@ export default function ProductQuickViewModal({ productId, isOpen, onClose, view
                   {(product.user?.name || "?").charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-grow-1">
-                  <div className="fw-semibold">{product.user?.name || "Unknown seller"}</div>
+                  <div className="fw-semibold">
+                    {product.user?.name || "Unknown seller"}
+                    {product.user?.hasReferrerBadge ? <span title="Referrer badge" className="ms-1">🎖️</span> : null}
+                  </div>
                   <div className="text-muted small">
                     ⭐ {(Number(product.user?.sellerRatingAvg || 0)).toFixed(1)} ({Number(product.user?.sellerRatingCount || 0)} review{Number(product.user?.sellerRatingCount || 0) !== 1 ? "s" : ""})
                   </div>

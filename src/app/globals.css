@@ -315,8 +315,8 @@ body {
 
 .tradigo-navbar-login-btn:hover,
 .tradigo-navbar-login-btn:focus {
-  background: #2f6fed !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  background: #d9600f !important;
+  box-shadow: 0 4px 12px rgba(242, 113, 28, 0.4);
 }
 
 .tradigo-navbar {
@@ -783,7 +783,17 @@ body {
   }
 
   .hero-mega-menu {
-    width: 92vw;
+    position: fixed !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    transform: none !important;
+    width: 100vw !important;
+    max-width: 100vw;
+    max-height: 75vh;
+    margin: 0 !important;
+    border-radius: 18px 18px 0 0;
     padding: 16px;
   }
 
@@ -1063,10 +1073,10 @@ body {
     width: 54px;
     height: 54px;
     border-radius: 999px;
-    background: #1683ff;
+    background: #f2711c;
     color: #ffffff;
     font-size: 2.1rem;
-    box-shadow: 0 12px 24px rgba(22, 131, 255, 0.28);
+    box-shadow: 0 12px 24px rgba(242, 113, 28, 0.28);
   }
 
   .tradigo-navbar-home {
@@ -2066,4 +2076,21 @@ a {
   border: 1px solid #fceec2;
   color: #7a5c00;
   font-size: 0.8rem;
+}
+
+/* Dashboard-only: swap Bootstrap's default blue "primary" for a tint of the navbar teal. */
+.user-dashboard-page .btn-primary {
+  background-color: #0f8a76;
+  border-color: #0f8a76;
+}
+
+.user-dashboard-page .btn-primary:hover,
+.user-dashboard-page .btn-primary:focus,
+.user-dashboard-page .btn-primary:active {
+  background-color: #094a41 !important;
+  border-color: #094a41 !important;
+}
+
+.user-dashboard-page .text-primary {
+  color: #0f8a76 !important;
 }

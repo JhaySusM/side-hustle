@@ -283,6 +283,21 @@ function FeaturedListings({ filter, subcategoryFilter, locationFilter, search = 
               alt={item.product_name}
               style={mobileHome ? { width: "100%", height: 156, objectFit: "cover" } : compact ? { width: "100%", height: 150, objectFit: "cover" } : undefined}
             />
+            {item.isPremiumListing ? (
+              <span
+                className="badge rounded-pill"
+                style={{ position: "absolute", top: 8, left: 8, background: "#fff7d6", color: "#9a6700", fontSize: 11 }}
+              >
+                ⭐ Premium
+              </span>
+            ) : item.isBoostedListing ? (
+              <span
+                className="badge rounded-pill"
+                style={{ position: "absolute", top: 8, left: 8, background: "#e7f5ff", color: "#0c5da8", fontSize: 11 }}
+              >
+                🚀 Boosted
+              </span>
+            ) : null}
             <FavoriteButton
               className="product-tile-favorite-btn"
               isFavorited={Boolean(item.isFavorited)}
