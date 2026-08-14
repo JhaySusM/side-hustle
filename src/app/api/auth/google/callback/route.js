@@ -3,6 +3,8 @@ import { exchangeGoogleCode, fetchGoogleUser } from "@/lib/oauth-google";
 import { findOrCreateOAuthUser } from "@/lib/oauth-users";
 import { ensureUserReferralCode } from "@/lib/referrals";
 import { toSafeUser } from "@/lib/auth";
+import { logActivity } from "@/lib/activity-log";
+import { prisma } from "@/lib/prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "batjee-secret";
 const CLEAR_STATE_COOKIE = "oauth_state=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax";
@@ -45,6 +47,15 @@ export async function GET(request) {
       name: googleUser.name,
     });
     user = await ensureUserReferralCode(user);
+    await logActivity(prisma, {
+      userId: user.id,
+      action: "login",
+      category: "account",
+      status: "success",
+      detail: "Logged in via Google",
+      request,
+      metadata: { method: "google" },
+    });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
 

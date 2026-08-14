@@ -4,6 +4,7 @@ import { ensureUserReferralCode } from '@/lib/referrals';
 import { hashPassword, isHashed, verifyPassword } from '@/lib/passwords';
 import { toSafeUser } from '@/lib/auth';
 import { issueAndSendOtp } from '@/lib/otp';
+import { logActivity } from '@/lib/activity-log';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
 
@@ -16,6 +17,15 @@ export async function POST(request) {
     }
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await verifyPassword(password, user.password))) {
+      await logActivity(prisma, {
+        userId: user?.id || null,
+        action: 'login_failed',
+        category: 'account',
+        status: 'failed',
+        detail: `Failed login attempt for ${email}`,
+        request,
+        metadata: { method: 'password', email },
+      });
       return Response.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
@@ -28,6 +38,15 @@ export async function POST(request) {
     }
 
     const hydratedUser = await ensureUserReferralCode(user);
+    await logActivity(prisma, {
+      userId: hydratedUser.id,
+      action: 'login',
+      category: 'account',
+      status: 'success',
+      detail: 'Logged in via password',
+      request,
+      metadata: { method: 'password' },
+    });
     // Create JWT
     const token = jwt.sign({ id: hydratedUser.id, email: hydratedUser.email }, JWT_SECRET, { expiresIn: '7d' });
     const cookieHeader = `batjee_token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict`;

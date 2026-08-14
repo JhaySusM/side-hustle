@@ -1,6 +1,7 @@
 import { requireRequestUser } from "@/lib/auth";
 import { publishMessageEvent } from "@/lib/message-events";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity-log";
 import {
   calculateTransactionAmounts,
   PLATFORM_COMMISSION_RATE,
@@ -277,6 +278,18 @@ export async function PATCH(request) {
 
       return updatedTransaction;
     });
+
+    if (action === "submit_fee_payment") {
+      await logActivity(prisma, {
+        userId: user.id,
+        action: "payment_made",
+        category: "transaction",
+        status: "pending",
+        detail: `${user.name || user.email} submitted platform fee payment of PKR ${transaction.platformFeeAmount} via ${transaction.feePaymentMethod}`,
+        request,
+        metadata: { transactionId: transaction.id },
+      });
+    }
 
     publishMessageEvent(getParticipantIds(existing.conversation), {
       type: "refresh",

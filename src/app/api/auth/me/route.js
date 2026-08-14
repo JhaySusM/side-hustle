@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 import { ensureUserReferralCode } from '@/lib/referrals';
 import { toSafeUser, requireRequestUser } from '@/lib/auth';
+import { logActivity } from '@/lib/activity-log';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
 
@@ -68,6 +69,15 @@ export async function PATCH(request) {
         addressPostalCode: addressPostalCode.trim(),
         addressCountry: addressCountry.trim(),
       },
+    });
+
+    await logActivity(prisma, {
+      userId: user.id,
+      action: 'profile_updated',
+      category: 'account',
+      status: 'success',
+      detail: 'Address updated',
+      request,
     });
 
     return Response.json({ user: toSafeUser(updated) });

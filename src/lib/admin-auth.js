@@ -13,22 +13,25 @@ function getAdminTokenFromRequest(request) {
 // (see getRequestUser in lib/auth.js) so that authenticating in the admin
 // panel never changes which account a regular shopper is browsing as.
 export async function isAdminRequest(request) {
+  return Boolean(await getAdminUser(request));
+}
+
+// Like isAdminRequest, but returns the admin's own user record — used when
+// an action needs to attribute itself to a specific admin (e.g. activity logging).
+export async function getAdminUser(request) {
   const token = getAdminTokenFromRequest(request);
   if (!token) {
-    return false;
+    return null;
   }
 
   let payload;
   try {
     payload = jwt.verify(token, JWT_SECRET);
   } catch {
-    return false;
+    return null;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.id },
-    select: { user_type: true, status: true },
-  });
+  const user = await prisma.user.findUnique({ where: { id: payload.id } });
 
-  return Boolean(user && user.user_type === "admin" && user.status === "active");
+  return user && user.user_type === "admin" && user.status === "active" ? user : null;
 }

@@ -1,5 +1,6 @@
 import { requireRequestUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity-log";
 
 const REPORT_TYPE_PRIORITY = {
   scam: "high",
@@ -221,6 +222,18 @@ export async function POST(request) {
           },
         },
       },
+    });
+
+    await logActivity(prisma, {
+      userId: seller?.id || listing?.user_id || null,
+      actorId: user.id,
+      actorType: "user",
+      action: "listing_reported",
+      category: "listing",
+      status: "flagged",
+      detail: `${user.name || user.email} reported ${listing ? `listing #${listing.id}` : `seller #${sellerId}`} for ${reportType}`,
+      request,
+      metadata: { reportId: report.id, reportType },
     });
 
     return Response.json({ report: serializeReport(report) }, { status: 201 });

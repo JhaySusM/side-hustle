@@ -4,6 +4,7 @@ import { isAdminRequest } from '@/lib/admin-auth';
 import { normalizeProductCategory } from '@/lib/category-catalog';
 import { getSellerOutstandingFeeSummary } from '@/lib/seller-fee-status';
 import { creditReferralConversion } from '@/lib/rewards';
+import { logActivity } from '@/lib/activity-log';
 
 export async function GET(request) {
   if (!(await isAdminRequest(request))) {
@@ -109,6 +110,16 @@ export async function POST(request) {
     } catch (rewardError) {
       console.error('Failed to credit referral conversion', rewardError);
     }
+
+    await logActivity(prisma, {
+      userId: user.id,
+      action: 'listing_created',
+      category: 'listing',
+      status: 'success',
+      detail: `${product_name} — ${category.category_name}`,
+      request,
+      metadata: { listingId: product.id },
+    });
 
     return Response.json({ product });
   } catch (error) {

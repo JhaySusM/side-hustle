@@ -6,6 +6,7 @@ import { isAdminRequest } from '@/lib/admin-auth';
 import { hashPassword } from '@/lib/passwords';
 import { generateOtp, hashOtp, OTP_EXPIRY_MS } from '@/lib/otp';
 import { sendOtpEmail } from '@/lib/email';
+import { logActivity } from '@/lib/activity-log';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
 
@@ -142,6 +143,15 @@ export async function POST(request) {
         { status: 500 }
       );
     }
+
+    await logActivity(prisma, {
+      userId: user.id,
+      action: 'account_created',
+      category: 'account',
+      status: 'success',
+      detail: `Account created for ${user.email}`,
+      request,
+    });
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 

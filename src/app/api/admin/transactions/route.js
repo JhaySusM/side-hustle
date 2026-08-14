@@ -1,6 +1,7 @@
-import { isAdminRequest } from "@/lib/admin-auth";
+import { isAdminRequest, getAdminUser } from "@/lib/admin-auth";
 import { publishMessageEvent } from "@/lib/message-events";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity-log";
 import { serializeTransaction } from "@/lib/transaction-utils";
 
 function serializeAdminTransaction(transaction) {
@@ -112,7 +113,8 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  if (!(await isAdminRequest(request))) {
+  const admin = await getAdminUser(request);
+  if (!admin) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -154,6 +156,18 @@ export async function PATCH(request) {
           },
         },
       },
+    });
+
+    await logActivity(prisma, {
+      userId: updated.seller.id,
+      actorId: admin.id,
+      actorType: "admin",
+      action: "payment_verified",
+      category: "transaction",
+      status: "success",
+      detail: `${admin.name || admin.email} verified platform fee payment for transaction #${updated.id}`,
+      request,
+      metadata: { transactionId: updated.id },
     });
 
     publishMessageEvent([updated.buyer.id, updated.seller.id], {

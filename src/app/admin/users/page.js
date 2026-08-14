@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useAdminData } from "../_context/AdminDataContext";
 import { useToast } from "../_components/Toast";
 import { hydrateUsersList } from "../_lib/deriveStats";
+import ViewUserModal from "../_components/modals/ViewUserModal";
 
 const USERS_PER_PAGE = 7;
 
@@ -32,6 +33,7 @@ export default function AdminUsersPage() {
   const [city, setCity] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [viewUser, setViewUser] = useState(null);
 
   const rows = useMemo(() => hydrateUsersList(users, products, reports), [users, products, reports]);
 
@@ -59,10 +61,7 @@ export default function AdminUsersPage() {
 
   async function handleUserAction(user, action) {
     if (action === "view") {
-      showToast(
-        `👤 ${user.name} · 📧 ${user.email} · 📞 ${user.phone} · 📍 ${user.city} · 📋 ${user.listings} listings · 📅 Joined ${user.joined}`,
-        "ok"
-      );
+      setViewUser(user);
       return;
     }
 
@@ -242,6 +241,8 @@ export default function AdminUsersPage() {
           </button>
         </div>
       </div>
+
+      <ViewUserModal user={viewUser} onClose={() => setViewUser(null)} />
     </div>
   );
 }

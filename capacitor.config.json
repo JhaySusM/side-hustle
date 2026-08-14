@@ -1,0 +1,14 @@
+{
+  "appId": "com.tradigo.app",
+  "appName": "TradiGo",
+  "webDir": "www",
+  "server": {
+    "url": "https://side-hustle-eight.vercel.app",
+    "androidScheme": "https",
+    "cleartext": false,
+    "allowNavigation": [
+      "accounts.google.com",
+      "www.facebook.com"
+    ]
+  }
+}

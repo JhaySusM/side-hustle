@@ -133,7 +133,7 @@ function ListingModal({ item, isOpen, toggle, seller, viewer }) {
           {item.description && (
             <div className="mb-3">
               <div className="fw-semibold small text-muted mb-1">Description</div>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#444" }}>{item.description}</p>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#444", whiteSpace: "pre-wrap" }}>{item.description}</p>
             </div>
           )}
           <div

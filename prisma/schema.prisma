@@ -83,9 +83,37 @@ model User {
   referralConversionCreditedAt  DateTime?
   pointsTransactions PointsTransaction[]
   badge              UserBadge?
+  activityLogs       ActivityLog[] @relation("ActivityLogUser")
+  activityLogsActed  ActivityLog[] @relation("ActivityLogActor")
 
   @@index([createdAt])
   @@index([referredById])
+}
+
+// Unified audit trail for the admin Activity Log page — every account,
+// listing, and transaction event writes here. `userId` is the subject the
+// event is about; `actorId` is who performed it when different (e.g. an
+// admin suspending someone else's account).
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  actorId   Int?
+  actorType String   @default("user")
+  action    String
+  category  String
+  status    String   @default("success")
+  detail    String?
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User?    @relation("ActivityLogUser", fields: [userId], references: [id], onDelete: SetNull)
+  actor     User?    @relation("ActivityLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([category, createdAt])
+  @@index([createdAt])
 }
 
 model PointsTransaction {

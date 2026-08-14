@@ -1,5 +1,6 @@
-import { isAdminRequest } from "@/lib/admin-auth";
+import { isAdminRequest, getAdminUser } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity-log";
 
 function serializeReport(report) {
   return {
@@ -143,7 +144,8 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  if (!(await isAdminRequest(request))) {
+  const admin = await getAdminUser(request);
+  if (!admin) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -245,6 +247,18 @@ export async function PATCH(request) {
           },
         },
       },
+    });
+
+    await logActivity(prisma, {
+      userId: existing.listing?.user_id || existing.seller?.id || null,
+      actorId: admin.id,
+      actorType: "admin",
+      action: "report_resolved",
+      category: "listing",
+      status: "admin",
+      detail: `${admin.name || admin.email} resolved report #${reportId}${actionTaken ? ` (${actionTaken})` : ""}`,
+      request,
+      metadata: { reportId, actionTaken },
     });
 
     return Response.json({ report: serializeReport(report) });

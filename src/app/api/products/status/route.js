@@ -1,6 +1,7 @@
 import { getRequestUser } from '@/lib/auth';
-import { isAdminRequest } from '@/lib/admin-auth';
+import { getAdminUser } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
+import { logActivity } from '@/lib/activity-log';
 
 export async function PATCH(request) {
   try {
@@ -19,10 +20,22 @@ export async function PATCH(request) {
       return Response.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    if (await isAdminRequest(request)) {
+    const admin = await getAdminUser(request);
+    if (admin) {
       const updated = await prisma.productList.update({
         where: { id: product.id },
         data: { product_status },
+      });
+      await logActivity(prisma, {
+        userId: product.user_id,
+        actorId: admin.id,
+        actorType: 'admin',
+        action: 'listing_status_changed',
+        category: 'listing',
+        status: 'admin',
+        detail: `${admin.name || admin.email} set listing #${product.id} to ${product_status}`,
+        request,
+        metadata: { listingId: product.id, from: product.product_status, to: product_status },
       });
       return Response.json({ product: updated });
     }

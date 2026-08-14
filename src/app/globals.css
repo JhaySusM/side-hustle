@@ -1734,6 +1734,7 @@ a {
 .product-detail-copy {
   color: #334155;
   line-height: 1.75;
+  white-space: pre-wrap;
 }
 
 .product-detail-safety-title {

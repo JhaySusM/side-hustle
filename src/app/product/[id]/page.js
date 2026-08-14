@@ -317,6 +317,61 @@ export default function ProductDetailPage() {
                     </ul>
                   </CardBody>
                 </Card>
+
+                <Card className="product-detail-card border-0 mt-4">
+                  <CardBody className="p-4">
+                    <h2 className="product-detail-section-title">Report listing</h2>
+                    <p className="product-detail-meta mb-3">Found something suspicious or unsafe? Send a report to our moderation team.</p>
+
+                    {reportError ? <Alert color="danger">{reportError}</Alert> : null}
+                    {reportSuccess ? <Alert color="success">{reportSuccess}</Alert> : null}
+
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Reason</label>
+                      <Input
+                        type="select"
+                        value={reportType}
+                        onChange={(event) => setReportType(event.target.value)}
+                      >
+                        <option value="scam">Scam / Fraud</option>
+                        <option value="illegal_item">Illegal Item</option>
+                        <option value="fake_item">Fake / Misleading Listing</option>
+                        <option value="abusive_seller">Abusive Seller</option>
+                        <option value="spam">Spam</option>
+                        <option value="wrong_category">Wrong Category</option>
+                        <option value="other">Other</option>
+                      </Input>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Details</label>
+                      <Input
+                        type="textarea"
+                        rows={3}
+                        value={reportDetails}
+                        onChange={(event) => setReportDetails(event.target.value)}
+                        placeholder="Tell us what happened..."
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label small fw-semibold">Screenshot (optional)</label>
+                      <Input type="file" accept="image/*" onChange={handleReportImageChange} />
+                      {reportImagePreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={reportImagePreview}
+                          alt="Report preview"
+                          style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 10, marginTop: 10, border: "1px solid #dbe3ea" }}
+                        />
+                      ) : null}
+                    </div>
+
+                    <Button color="danger" className="w-100" onClick={handleSubmitReport} disabled={reportSubmitting}>
+                      {reportSubmitting ? "Submitting..." : "Submit report"}
+                    </Button>
+                  </CardBody>
+                </Card>
               </Col>
 
               <Col lg={5}>
@@ -408,61 +463,6 @@ export default function ProductDetailPage() {
                         </Button>
                       </>
                     )}
-                  </CardBody>
-                </Card>
-
-                <Card className="product-detail-card border-0 mt-4">
-                  <CardBody className="p-4">
-                    <h2 className="product-detail-section-title">Report listing</h2>
-                    <p className="product-detail-meta mb-3">Found something suspicious or unsafe? Send a report to our moderation team.</p>
-
-                    {reportError ? <Alert color="danger">{reportError}</Alert> : null}
-                    {reportSuccess ? <Alert color="success">{reportSuccess}</Alert> : null}
-
-                    <div className="mb-3">
-                      <label className="form-label small fw-semibold">Reason</label>
-                      <Input
-                        type="select"
-                        value={reportType}
-                        onChange={(event) => setReportType(event.target.value)}
-                      >
-                        <option value="scam">Scam / Fraud</option>
-                        <option value="illegal_item">Illegal Item</option>
-                        <option value="fake_item">Fake / Misleading Listing</option>
-                        <option value="abusive_seller">Abusive Seller</option>
-                        <option value="spam">Spam</option>
-                        <option value="wrong_category">Wrong Category</option>
-                        <option value="other">Other</option>
-                      </Input>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label small fw-semibold">Details</label>
-                      <Input
-                        type="textarea"
-                        rows={3}
-                        value={reportDetails}
-                        onChange={(event) => setReportDetails(event.target.value)}
-                        placeholder="Tell us what happened..."
-                      />
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label small fw-semibold">Screenshot (optional)</label>
-                      <Input type="file" accept="image/*" onChange={handleReportImageChange} />
-                      {reportImagePreview ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={reportImagePreview}
-                          alt="Report preview"
-                          style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 10, marginTop: 10, border: "1px solid #dbe3ea" }}
-                        />
-                      ) : null}
-                    </div>
-
-                    <Button color="danger" className="w-100" onClick={handleSubmitReport} disabled={reportSubmitting}>
-                      {reportSubmitting ? "Submitting..." : "Submit report"}
-                    </Button>
                   </CardBody>
                 </Card>
               </Col>

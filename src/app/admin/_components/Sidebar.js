@@ -28,6 +28,7 @@ const NAV_GROUPS = [
     section: "Insights",
     items: [
       { href: "/admin/analytics", icon: "📈", label: "Analytics" },
+      { href: "/admin/activity", icon: "🕒", label: "Activity Log" },
       { href: "/admin/referrals", icon: "🎁", label: "Referral Tracking" },
     ],
   },
@@ -68,6 +69,7 @@ export default function Sidebar() {
 export const PAGE_TITLES = {
   "/admin": "Dashboard",
   "/admin/analytics": "Analytics",
+  "/admin/activity": "Activity Log",
   "/admin/users": "User Management",
   "/admin/sellers": "Seller Management",
   "/admin/listings": "Listing Approval",
