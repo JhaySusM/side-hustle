@@ -66,6 +66,10 @@ export default function HeroSearchBar({ mobileTeal = false, onSearch, onLocation
     onLocationChange?.(value);
   }
 
+  function handleSellClick() {
+    window.dispatchEvent(new Event("batjee:request-sell"));
+  }
+
   if (mobileTeal) {
     return (
       <div className="hero-mobile-teal-panel">
@@ -136,6 +140,10 @@ export default function HeroSearchBar({ mobileTeal = false, onSearch, onLocation
           <SearchIcon />
         </button>
       </label>
+
+      <button type="button" className="hero-sell-button" onClick={handleSellClick}>
+        + Sell
+      </button>
     </form>
   );
 }

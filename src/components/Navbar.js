@@ -1,14 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Navbar as RSNavbar,
   NavbarBrand,
   Collapse,
-  Nav,
-  NavItem,
-  NavLink,
   Button,
   Container,
   Dropdown,
@@ -356,13 +353,18 @@ export default function Navbar() {
     }
   }
 
-  function handlePostClick() {
+  const handlePostClick = useCallback(() => {
     if (!user) {
       setAuthOpen(true);
     } else {
       router.push("/post");
     }
-  }
+  }, [user, router]);
+
+  useEffect(() => {
+    window.addEventListener("batjee:request-sell", handlePostClick);
+    return () => window.removeEventListener("batjee:request-sell", handlePostClick);
+  }, [handlePostClick]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -427,16 +429,9 @@ export default function Navbar() {
             {brandLogo}
           </NavbarBrand>
 
-          <Collapse navbar className="d-none d-lg-flex flex-grow-1 align-items-center">
-            <Nav className="align-items-center gap-1" navbar>
-              <NavItem><NavLink href="/#home" style={{ color: "#ffffff", fontWeight: 700, fontSize: "0.92rem" }}>Home</NavLink></NavItem>
-              <NavItem><NavLink href="/#marketplace" style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500, fontSize: "0.92rem" }}>Marketplace</NavLink></NavItem>
-              <NavItem><NavLink href="/#about" style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500, fontSize: "0.92rem" }}>About</NavLink></NavItem>
-              <NavItem><NavLink href="/#contact" style={{ color: "rgba(255,255,255,0.75)", fontWeight: 500, fontSize: "0.92rem" }}>Contact</NavLink></NavItem>
-            </Nav>
-
+          <Collapse navbar className="d-none d-lg-flex flex-grow-1 align-items-center justify-content-end">
             {user ? (
-              <div className="d-flex align-items-center gap-2 ms-auto">
+              <div className="d-flex align-items-center gap-2">
                 {showMessageIcon ? (
                   <Dropdown isOpen={messageMenuOpen} toggle={() => {
                     setMessageMenuOpen((current) => !current);
@@ -623,14 +618,19 @@ export default function Navbar() {
                         <span className="badge bg-danger ms-2 rounded-pill" style={{ fontSize: 11 }}>{unreadCount}</span>
                       )}
                     </DropdownItem>
+                    <DropdownItem divider />
+                    <DropdownItem tag="a" href="/#marketplace">Marketplace</DropdownItem>
+                    <DropdownItem tag="a" href="/#about">About</DropdownItem>
+                    <DropdownItem tag="a" href="/#contact">Contact</DropdownItem>
+                    <DropdownItem divider />
                     <DropdownItem onClick={openLogoutModal}>Sign Out</DropdownItem>
                   </DropdownMenu>
                 </Dropdown>
               </div>
             ) : (
               <Button
-                onClick={handlePostClick}
-                className="tradigo-navbar-login-btn ms-auto"
+                onClick={() => setAuthOpen(true)}
+                className="tradigo-navbar-login-btn"
                 style={{
                   background: "#f2711c",
                   border: "none",
