@@ -55,6 +55,8 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  const [showWhatsappEntry, setShowWhatsappEntry] = useState(false);
+
   useEffect(() => {
     if (!isOpen) {
       setVerifyContext(null);
@@ -62,6 +64,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
       setResendCooldown(0);
       setSubmitting(false);
       setFieldErrors({});
+      setShowWhatsappEntry(false);
     }
   }, [isOpen]);
 
@@ -300,7 +303,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
         setError(data.error || "Failed to send verification code.");
         return;
       }
-      setVerifyContext({ phone: data.phone, channel: "whatsapp", origin: "login" });
+      setVerifyContext({ phone: data.phone, channel: "whatsapp", origin: activeTab === "register" ? "register" : "login" });
     } catch (err) {
       setError("Failed to send verification code. Please try again.");
     } finally {
@@ -380,10 +383,61 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
     );
   }
 
+  if (showWhatsappEntry) {
+    return (
+      <Modal isOpen={isOpen} toggle={toggle} centered>
+        <ModalHeader toggle={toggle}>Continue with WhatsApp</ModalHeader>
+        <ModalBody>
+          <button
+            type="button"
+            onClick={() => {
+              setShowWhatsappEntry(false);
+              setError("");
+            }}
+            className="d-flex align-items-center gap-1 mb-3"
+            style={{ background: "none", border: "none", padding: 0, color: "#0d6efd", fontSize: 14 }}
+          >
+            ← Back
+          </button>
+
+          {error && <Alert color="danger">{error}</Alert>}
+
+          <Form onSubmit={handleStartWhatsapp}>
+            <FormGroup>
+              <Label for="phone-number">Phone Number</Label>
+              <Input
+                id="phone-number"
+                type="tel"
+                placeholder="+923001234567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                autoComplete="tel"
+                autoFocus
+              />
+              <small className="text-muted d-block mt-2">
+                Include your country code. We&apos;ll text you a 6-digit code on WhatsApp — this
+                works for both signing in and creating a new account.
+              </small>
+            </FormGroup>
+            <Button color="success" block type="submit" disabled={phoneSubmitting}>
+              {phoneSubmitting ? (
+                <>
+                  <Spinner size="sm" className="me-2" /> Sending code...
+                </>
+              ) : (
+                "Send code via WhatsApp"
+              )}
+            </Button>
+          </Form>
+        </ModalBody>
+      </Modal>
+    );
+  }
+
   return (
     <Modal isOpen={isOpen} toggle={toggle} centered>
       <ModalHeader toggle={toggle}>
-        {activeTab === "login" ? "Sign in to TradiGo" : activeTab === "register" ? "Create an Account" : "Continue with Phone"}
+        {activeTab === "login" ? "Sign in to MaalX" : "Create an Account"}
       </ModalHeader>
       <ModalBody>
         <Nav tabs className="mb-3">
@@ -404,17 +458,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
               onClick={() => switchTab("register")}
               style={{ cursor: "pointer", fontWeight: activeTab === "register" ? 600 : 400 }}
             >
-              Register
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink
-              href="#"
-              active={activeTab === "phone"}
-              onClick={() => switchTab("phone")}
-              style={{ cursor: "pointer", fontWeight: activeTab === "phone" ? 600 : 400 }}
-            >
-              Phone
+              Sign up
             </NavLink>
           </NavItem>
         </Nav>
@@ -444,6 +488,20 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
               <path d="M18 9a9 9 0 1 0-10.4 8.9v-6.3H5.3V9h2.3V7c0-2.3 1.36-3.56 3.45-3.56.98 0 2 .17 2 .17v2.2h-1.13c-1.11 0-1.46.7-1.46 1.4V9h2.5l-.4 2.6h-2.1v6.3A9 9 0 0 0 18 9z" />
             </svg>
             Continue with Facebook
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              setError("");
+              setShowWhatsappEntry(true);
+            }}
+            className="text-white d-flex align-items-center justify-content-center gap-2"
+            style={{ background: "#25D366", borderColor: "#25D366" }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+              <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.85.5 3.58 1.36 5.08L2 22l5.25-1.37a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm5.86 14.08c-.25.7-1.45 1.33-2 1.42-.51.08-1.12.11-1.8-.11-.42-.13-.96-.31-1.65-.6-2.9-1.25-4.79-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3 0-1.42.75-2.12 1.02-2.41.27-.29.58-.36.78-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.25.6.85 2.07.92 2.22.07.15.12.33.02.53-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.22 1.37.28.14.44.12.6-.07.16-.19.68-.79.87-1.07.18-.28.37-.23.62-.14.25.09 1.6.76 1.87.9.28.14.46.21.53.32.07.12.07.68-.18 1.38z" />
+            </svg>
+            Continue with WhatsApp
           </Button>
         </div>
         <div className="text-center text-muted mb-3" style={{ fontSize: 13 }}>or</div>
@@ -549,7 +607,7 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                 <small className="text-muted d-block mt-2">
                   {referralLocked
                     ? "This referral code came from your invite link and cannot be changed here."
-                    : "If someone shared a TradiGO referral with you, paste the code here before creating your account."}
+                    : "If someone shared a MaalX referral with you, paste the code here before creating your account."}
                 </small>
               </FormGroup>
               <FormGroup>
@@ -665,35 +723,6 @@ export default function AuthModal({ isOpen, toggle, onAuthSuccess, onLoginSucces
                   Sign in
                 </span>
               </p>
-            </Form>
-          </TabPane>
-
-          <TabPane tabId="phone">
-            <Form onSubmit={handleStartWhatsapp}>
-              <FormGroup>
-                <Label for="phone-number">Phone Number</Label>
-                <Input
-                  id="phone-number"
-                  type="tel"
-                  placeholder="+923001234567"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  autoComplete="tel"
-                />
-                <small className="text-muted d-block mt-2">
-                  Include your country code. We&apos;ll text you a 6-digit code on WhatsApp — this
-                  works for both signing in and creating a new account.
-                </small>
-              </FormGroup>
-              <Button color="success" block type="submit" disabled={phoneSubmitting}>
-                {phoneSubmitting ? (
-                  <>
-                    <Spinner size="sm" className="me-2" /> Sending code...
-                  </>
-                ) : (
-                  "Send code via WhatsApp"
-                )}
-              </Button>
             </Form>
           </TabPane>
         </TabContent>
