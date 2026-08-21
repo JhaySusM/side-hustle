@@ -35,6 +35,7 @@ export async function getRequestUser(request) {
       phoneVerifiedAt: true,
       googleId: true,
       facebookId: true,
+      password: true,
     },
   });
 }
@@ -57,7 +58,15 @@ export function toSafeUser(user) {
     ...safeUser,
     googleLinked: Boolean(googleId),
     facebookLinked: Boolean(facebookId),
+    hasPassword: Boolean(password),
   };
+}
+
+// Google, Facebook, and WhatsApp sign-ins all create password-less accounts
+// (see findOrCreateOAuthUser and the WhatsApp start route), so "no password"
+// reliably identifies a social/passwordless login regardless of provider.
+export function isSocialAuthUser(user) {
+  return !user?.password;
 }
 
 export async function requireRequestUser(request) {

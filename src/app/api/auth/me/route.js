@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 import { ensureUserReferralCode } from '@/lib/referrals';
-import { toSafeUser, requireRequestUser } from '@/lib/auth';
+import { toSafeUser, requireRequestUser, isSocialAuthUser } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'batjee-secret';
@@ -39,6 +39,32 @@ export async function PATCH(request) {
 
   try {
     const body = await request.json();
+
+    // Google/Facebook/WhatsApp accounts are password-less; they only give a
+    // town/city instead of a full structured address.
+    if (isSocialAuthUser(user)) {
+      const { addressCity } = body;
+      if (!addressCity?.trim()) {
+        return Response.json({ error: 'Please enter your town/city.' }, { status: 400 });
+      }
+
+      const updated = await prisma.user.update({
+        where: { id: user.id },
+        data: { addressCity: addressCity.trim() },
+      });
+
+      await logActivity(prisma, {
+        userId: user.id,
+        action: 'profile_updated',
+        category: 'account',
+        status: 'success',
+        detail: 'Town/city updated',
+        request,
+      });
+
+      return Response.json({ user: toSafeUser(updated) });
+    }
+
     const {
       addressHouseNo,
       addressStreetNo,

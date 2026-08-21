@@ -9,17 +9,26 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AddAddressModal from "@/components/AddAddressModal";
 import { formatDisplayCurrency } from "@/lib/currency";
+import { PAKISTAN_CITIES } from "@/lib/pakistan-cities";
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 function hasCompleteAddress(user) {
+  if (!user) return false;
+
+  // Google/Facebook/WhatsApp sign-ins are password-less and only ever collect
+  // a city, picked inline in the post form instead of the full address modal.
+  if (!user.hasPassword) {
+    return true;
+  }
+
   return Boolean(
-    user?.addressHouseNo &&
-    user?.addressStreetNo &&
-    user?.addressArea &&
-    user?.addressCity &&
-    user?.addressPostalCode
+    user.addressHouseNo &&
+    user.addressStreetNo &&
+    user.addressArea &&
+    user.addressCity &&
+    user.addressPostalCode
   );
 }
 
@@ -39,7 +48,7 @@ async function uploadToCloudinary(file) {
 export default function PostPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [form, setForm] = useState({ title: "", description: "", price: "", category: "", subcategory: "" });
+  const [form, setForm] = useState({ title: "", description: "", price: "", category: "", subcategory: "", city: "" });
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -51,6 +60,7 @@ export default function PostPage() {
   const [needsAddress, setNeedsAddress] = useState(false);
 
   const availableSubcategories = categories.find((cat) => cat.category_name === form.category)?.subcategories || [];
+  const needsCityInput = Boolean(user) && !user.addressCity;
 
   useEffect(() => {
     async function checkAuthAndFetchCategories() {
@@ -95,6 +105,10 @@ export default function PostPage() {
       setError("Please fill in all required fields.");
       return;
     }
+    if (needsCityInput && !form.city) {
+      setError("Please select your city.");
+      return;
+    }
     if (availableSubcategories.length > 0 && !form.subcategory) {
       setError("Please select a subcategory.");
       return;
@@ -120,6 +134,20 @@ export default function PostPage() {
       return;
     }
     try {
+      if (needsCityInput) {
+        const cityRes = await fetch("/api/auth/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ addressCity: form.city }),
+        });
+        const cityData = await cityRes.json();
+        if (!cityRes.ok) {
+          setError(cityData.error || "Failed to save your city.");
+          return;
+        }
+        setUser(cityData.user);
+      }
+
       let imageUrl = null;
       let extraUrls = [];
       if (imageFiles.length) {
@@ -195,6 +223,21 @@ export default function PostPage() {
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />
               </FormGroup>
+              {needsCityInput && (
+                <FormGroup>
+                  <Label>City <span className="text-danger">*</span></Label>
+                  <Input
+                    type="select"
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  >
+                    <option value="">— Select a city —</option>
+                    {PAKISTAN_CITIES.map((city) => (
+                      <option key={city.name} value={city.name}>{city.name}</option>
+                    ))}
+                  </Input>
+                </FormGroup>
+              )}
               <FormGroup>
                 <Label>Category <span className="text-danger">*</span></Label>
                 <Input
