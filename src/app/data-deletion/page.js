@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Data Deletion | TradiGo",
+  title: "Data Deletion | MaalX",
 };
 
 export default function DataDeletionPage() {
@@ -14,7 +14,7 @@ export default function DataDeletionPage() {
         <p className="text-muted">Last updated: August 2, 2026</p>
 
         <p>
-          You can request deletion of your TradiGo account and associated personal data at any
+          You can request deletion of your MaalX account and associated personal data at any
           time, including data received from Google, Facebook, or WhatsApp sign-in.
         </p>
 

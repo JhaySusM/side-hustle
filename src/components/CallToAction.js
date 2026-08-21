@@ -28,10 +28,10 @@ const MOBILE_SECTIONS = [
   {
     label: "About Us",
     type: "copy",
-    body: "TradiGo is a local marketplace built to help buyers and sellers connect quickly, chat directly, and arrange deals in their area.",
+    body: "MaalX is a local marketplace built to help buyers and sellers connect quickly, chat directly, and arrange deals in their area.",
   },
   {
-    label: "TradiGo",
+    label: "MaalX",
     type: "facts",
     items: [
       "Browse fresh listings across Pakistan.",
@@ -145,7 +145,7 @@ export default function CallToAction() {
           <div className="cta-app-banner cta-mobile-app-banner">
             <Image
               src="/img/banner/buttom_banner.png"
-              alt="Download TradiGo Today"
+              alt="Download MaalX Today"
               width={1180}
               height={240}
               className="cta-app-image"
@@ -159,7 +159,7 @@ export default function CallToAction() {
         <div className="cta-sell-card">
           <div className="cta-sell-copy">
             <h3 className="cta-sell-title">Ready to Start Selling?</h3>
-            <p className="cta-sell-text">Join thousands of sellers on TradiGo.com and reach buyers in your area today.</p>
+            <p className="cta-sell-text">Join thousands of sellers on MaalX.com and reach buyers in your area today.</p>
             <Button className="cta-sell-button" onClick={handleClick}>
               Post your Ad- Free
             </Button>
@@ -178,7 +178,7 @@ export default function CallToAction() {
         <div className="cta-app-banner">
           <Image
             src="/img/banner/buttom_banner.png"
-            alt="Download TradiGo Today"
+            alt="Download MaalX Today"
             width={1180}
             height={240}
             className="cta-app-image"

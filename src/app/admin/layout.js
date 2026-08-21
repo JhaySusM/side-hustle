@@ -103,10 +103,10 @@ export default function AdminLayout({ children }) {
         <div className="admin-login-card">
           <div className="admin-login-logo-wrap">
             <Image
-              src="/img/header/Logo TradiGO.png"
-              alt="TradiGO"
+              src="/img/MaalX logo.png"
+              alt="MaalX"
               width={170}
-              height={52}
+              height={43}
               priority
               style={{ width: "auto", height: "auto" }}
             />

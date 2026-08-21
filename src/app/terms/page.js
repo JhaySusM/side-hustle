@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Terms of Service | TradiGo",
+  title: "Terms of Service | MaalX",
 };
 
 export default function TermsPage() {
@@ -14,7 +14,7 @@ export default function TermsPage() {
         <p className="text-muted">Last updated: August 2, 2026</p>
 
         <p>
-          By creating an account or using TradiGo, you agree to these terms. TradiGo is a
+          By creating an account or using MaalX, you agree to these terms. MaalX is a
           classifieds marketplace connecting buyers and sellers &mdash; we are not a party to the
           transactions arranged between users.
         </p>
@@ -38,13 +38,13 @@ export default function TermsPage() {
         <p>
           Buyers and sellers negotiate and complete transactions directly. Where a platform fee
           applies, it is disclosed to both parties before the transaction is marked complete.
-          TradiGo does not guarantee the condition, delivery, or legitimacy of any listed item.
+          MaalX does not guarantee the condition, delivery, or legitimacy of any listed item.
         </p>
 
         <h2 className="h4 mt-4">Termination</h2>
         <p>
           We may suspend or terminate accounts that violate these terms or applicable law. You may
-          stop using TradiGo and request account deletion at any time &mdash; see our{" "}
+          stop using MaalX and request account deletion at any time &mdash; see our{" "}
           <a href="/data-deletion">Data Deletion</a> page.
         </p>
 

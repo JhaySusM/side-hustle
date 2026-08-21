@@ -41,7 +41,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sb-logo">
         <div className="brand-row">
-          <div className="name">TradiGO</div>
+          <div className="name">MaalX</div>
         </div>
         <div className="sub">Admin Backoffice</div>
       </div>

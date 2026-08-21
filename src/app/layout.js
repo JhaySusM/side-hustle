@@ -3,7 +3,7 @@ import "./globals.css";
 import ChatWidget from "@/components/ChatWidget";
 
 export const metadata = {
-  title: "TradiGo",
+  title: "MaalX",
   description: "The modern marketplace to post, talk, and deal. Buy and sell anything locally with confidence.",
   icons: {
     icon: "/img/TGo%20LOGO%202.0.png",

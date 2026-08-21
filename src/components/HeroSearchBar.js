@@ -75,10 +75,10 @@ export default function HeroSearchBar({ mobileTeal = false, onSearch, onLocation
       <div className="hero-mobile-teal-panel">
         <div className="hero-mobile-teal-top">
           <Image
-            src="/img/header/Logo TradiGo.png"
-            alt="TradiGo"
+            src="/img/MaalX logo.png"
+            alt="MaalX"
             width={112}
-            height={35}
+            height={29}
             className="hero-mobile-teal-logo"
           />
           <label className="hero-mobile-location-pill" aria-label="Select location">

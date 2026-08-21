@@ -397,10 +397,10 @@ export default function Navbar() {
 
   const brandLogo = (
     <Image
-      src="/img/header/Logo TradiGo.png"
-      alt="TradiGo Logo"
+      src="/img/MaalX logo.png"
+      alt="MaalX Logo"
       width={140}
-      height={44}
+      height={36}
       priority
       className="tradigo-navbar-logo-image"
     />

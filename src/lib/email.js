@@ -25,7 +25,7 @@ function otpEmailHtml(code) {
             <tr>
               <td style="padding:24px 32px; background-color:#0b1e39; text-align:center;">
                 <span style="font-family:Arial, Helvetica, sans-serif; font-size:28px; font-weight:bold; letter-spacing:1px;">
-                  <span style="color:#5ec6f2;">Tradi</span><span style="color:#f5c542;">Go</span>
+                  <span style="color:#5ec6f2;">Maal</span><span style="color:#f5c542;">X</span>
                 </span>
               </td>
             </tr>
@@ -33,7 +33,7 @@ function otpEmailHtml(code) {
               <td style="padding:32px 32px 8px;">
                 <h1 style="margin:0; font-size:20px; color:#101828;">Verify your email</h1>
                 <p style="margin:12px 0 0; font-size:14px; line-height:22px; color:#475467;">
-                  Use the code below to finish signing in to your TradiGo account. This code expires in 10 minutes.
+                  Use the code below to finish signing in to your MaalX account. This code expires in 10 minutes.
                 </p>
               </td>
             </tr>
@@ -53,7 +53,7 @@ function otpEmailHtml(code) {
             </tr>
             <tr>
               <td style="padding:24px 32px; border-top:1px solid #eaecf0;">
-                <p style="margin:0 0 8px; font-size:13px; font-weight:bold; color:#101828;">TradiGo — Your Digital Marketplace</p>
+                <p style="margin:0 0 8px; font-size:13px; font-weight:bold; color:#101828;">MaalX — Your Digital Marketplace</p>
                 <p style="margin:0; font-size:12px; line-height:18px; color:#98a2b3;">
                   Buy and sell across Cars, Property, Mobile Phones, Jobs, Fashion, and more — secure payments and verified sellers on every listing.
                 </p>
@@ -61,7 +61,7 @@ function otpEmailHtml(code) {
             </tr>
             <tr>
               <td style="padding:16px 32px 24px; background-color:#fafafa;">
-                <p style="margin:0; font-size:11px; color:#98a2b3; text-align:center;">© 2026 TradiGo.com — All rights reserved.</p>
+                <p style="margin:0; font-size:11px; color:#98a2b3; text-align:center;">© 2026 MaalX.com — All rights reserved.</p>
               </td>
             </tr>
           </table>
@@ -84,9 +84,9 @@ export async function sendOtpEmail(to, code) {
   }
 
   await getTransporter().sendMail({
-    from: `"TradiGO" <${process.env.GMAIL_USER}>`,
+    from: `"MaalX" <${process.env.GMAIL_USER}>`,
     to,
-    subject: "Your TradiGO verification code",
+    subject: "Your MaalX verification code",
     html: otpEmailHtml(code),
   });
 }

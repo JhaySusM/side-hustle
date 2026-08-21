@@ -29,7 +29,7 @@ const MOBILE_NAV_LINKS = [
   { label: "Saved", href: "/dashboard#favorites", iconType: "heart" },
   { label: "Sell", href: "/post", icon: "+", accent: true },
   { label: "Chat", href: "/messages", icon: "/img/mobile/Chat Icon.png" },
-  { label: "Acc", href: "/dashboard", icon: "/img/mobile/Acc Icon.png" },
+  { label: "Account", href: "/dashboard", icon: "/img/mobile/Acc Icon.png" },
 ];
 
 function HeartNavIcon() {
@@ -137,7 +137,7 @@ export default function Footer() {
   }
 
   function handleMobileNavClick(event, item) {
-    const requiresAuth = item.label === "Acc" || item.label === "Saved" || item.label === "Chat" || item.label === "Sell";
+    const requiresAuth = item.label === "Account" || item.label === "Saved" || item.label === "Chat" || item.label === "Sell";
 
     if (!requiresAuth || user) {
       return;
@@ -169,7 +169,7 @@ export default function Footer() {
               </a>
             ))}
           </div>
-          <div className="footer-mobile-home-copy">Classified in Pakistan. @ 2026 TradiGo</div>
+          <div className="footer-mobile-home-copy">Classified in Pakistan. @ 2026 MaalX</div>
         </footer>
       ) : null}
 
@@ -186,7 +186,7 @@ export default function Footer() {
             </div>
           </Col>
           <Col md={4} lg={4} className="mb-3 footer-tradigo-column footer-tradigo-column-center">
-            <h5 className="footer-tradigo-heading">TradiGo</h5>
+            <h5 className="footer-tradigo-heading">MaalX</h5>
             <div className="footer-tradigo-links-inline">
               {FOOTER_LINKS.map((item) => (
                 <a key={item.label} href={item.href} className="footer-tradigo-link-inline">{item.label}</a>
@@ -205,7 +205,7 @@ export default function Footer() {
           </Col>
         </Row>
         <div className="text-center mt-4 footer-tradigo-copy">
-          <small>© 2026 TradiGo.com — All rights reserved.</small>
+          <small>© 2026 MaalX.com — All rights reserved.</small>
         </div>
         </div>
         </footer>

@@ -262,7 +262,7 @@ export default function ProductQuickViewModal({ productId, isOpen, onClose, view
               </button>
 
               <div className="product-quickview-safety">
-                <strong>Stay safe:</strong> TradiGo never handles payment or delivery. Meet in a public place, inspect the item, and pay only after you&apos;re satisfied.
+                <strong>Stay safe:</strong> MaalX never handles payment or delivery. Meet in a public place, inspect the item, and pay only after you&apos;re satisfied.
               </div>
             </div>
           </div>

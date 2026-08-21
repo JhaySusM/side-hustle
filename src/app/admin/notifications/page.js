@@ -177,8 +177,8 @@ export default function AdminNotificationsPage() {
               <div className="notification-phone-screen">
                 <div className="notification-app-icon">🛍️</div>
                 <div className="notification-preview-copy">
-                  <div className="notification-preview-app">TradiGO</div>
-                  <div className="notification-preview-title">{title || "TradiGO"}</div>
+                  <div className="notification-preview-app">MaalX</div>
+                  <div className="notification-preview-title">{title || "MaalX"}</div>
                   <div className="notification-preview-body">{body || "Your notification preview will appear here."}</div>
                   <div className="notification-preview-time">now</div>
                 </div>

@@ -2,7 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Privacy Policy | TradiGo",
+  title: "Privacy Policy | MaalX",
 };
 
 export default function PrivacyPage() {
@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         <p className="text-muted">Last updated: August 2, 2026</p>
 
         <p>
-          TradiGo (&quot;we&quot;, &quot;us&quot;) operates a classifieds marketplace where
+          MaalX (&quot;we&quot;, &quot;us&quot;) operates a classifieds marketplace where
           buyers and sellers post listings, message each other, and complete transactions. This
           policy explains what information we collect, why, and how you can control it.
         </p>
