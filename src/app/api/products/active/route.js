@@ -4,10 +4,14 @@ import { getCategoryFilterNames, normalizeProductCategory } from '@/lib/category
 import { getUserCity } from '@/lib/address';
 import {
   attachSellerFeatureState,
-  compareProductsBySellerFeature,
+  normalizeFeaturePlacement,
   FEATURE_PLACEMENTS,
 } from '@/lib/seller-features';
-import { attachProductPromotionState, attachUserBadgeState, compareProductsByPromotion } from '@/lib/rewards';
+import {
+  attachProductPromotionState,
+  attachUserBadgeState,
+  PROMOTION_TYPES,
+} from '@/lib/rewards';
 
 export async function GET(request) {
   try {
@@ -59,68 +63,114 @@ export async function GET(request) {
         : {}),
     };
 
-    const [products, total] = await Promise.all([
-      prisma.productList.findMany({
-        where,
-        orderBy: { id: 'desc' },
-        include: {
-          category: true,
-          subcategory: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              address: true,
-              addressCity: true,
-              createdAt: true,
-              sellerRatingAvg: true,
-              sellerRatingCount: true,
-              sellerFeatures: prisma.sellerFeature
-                ? {
-                    where: {
-                      endsAt: { gt: new Date() },
-                    },
-                    orderBy: { endsAt: 'desc' },
-                  }
-                : false,
-              badge: true,
-            },
-          },
-          promotions: {
-            where: { endsAt: { gt: new Date() } },
-          },
-          ...(viewer
-            ? {
-                favorites: {
-                  where: { userId: viewer.id },
-                  select: { id: true },
-                },
-              }
-            : {}),
-        },
-      }),
-      prisma.productList.count({ where }),
-    ]);
-
     const preferredPlacement = query
       ? FEATURE_PLACEMENTS.SEARCH_BOOST
       : category
       ? FEATURE_PLACEMENTS.CATEGORY_TOP
       : FEATURE_PLACEMENTS.HOMEPAGE_BANNER;
 
-    const sortedProducts = products
-      .map(attachSellerFeatureState)
-      .map((product) => attachProductPromotionState({ ...product, user: attachUserBadgeState(product.user) }))
-      .sort((left, right) => {
-        const promotionComparison = compareProductsByPromotion(left, right);
-        if (promotionComparison !== 0) {
-          return promotionComparison;
-        }
-        return compareProductsBySellerFeature(left, right, { preferredPlacement });
-      });
+    const now = new Date();
 
-    const pagedProducts = sortedProducts.slice(skip, skip + pageSize);
+    // Boost/feature ranking isn't a plain SQL column, so we can't ORDER BY it
+    // directly. Rather than hydrating every active listing (category,
+    // subcategory, full seller profile, promotions...) just to sort and throw
+    // most of it away, do a cheap pass with only the fields the ranking needs,
+    // figure out which `pageSize` ids belong on this page, then hydrate only
+    // those.
+    const [rankRows, total] = await Promise.all([
+      prisma.productList.findMany({
+        where,
+        orderBy: { id: 'desc' },
+        select: {
+          id: true,
+          promotions: {
+            where: { endsAt: { gt: now } },
+            select: { promotionType: true },
+          },
+          user: {
+            select: {
+              sellerFeatures: {
+                where: { endsAt: { gt: now } },
+                select: { placement: true },
+              },
+            },
+          },
+        },
+      }),
+      prisma.productList.count({ where }),
+    ]);
+
+    function rankOf(row) {
+      const isPremium = row.promotions.some((p) => p.promotionType === PROMOTION_TYPES.PREMIUM_SLOT);
+      const isBoosted = row.promotions.some((p) => p.promotionType === PROMOTION_TYPES.BOOST);
+      const placements = new Set(
+        (row.user?.sellerFeatures || [])
+          .map((f) => normalizeFeaturePlacement(f.placement))
+          .filter(Boolean)
+      );
+      const isPreferred = Boolean(preferredPlacement) && placements.has(preferredPlacement);
+      const isFeatured = placements.size > 0;
+      return [isPremium ? 1 : 0, isBoosted ? 1 : 0, isPreferred ? 1 : 0, isFeatured ? 1 : 0];
+    }
+
+    const sortedIds = rankRows
+      .map((row) => ({ id: row.id, rank: rankOf(row) }))
+      .sort((left, right) => {
+        for (let i = 0; i < left.rank.length; i++) {
+          if (left.rank[i] !== right.rank[i]) {
+            return right.rank[i] - left.rank[i];
+          }
+        }
+        return right.id - left.id;
+      })
+      .map((row) => row.id);
+
+    const pagedIds = sortedIds.slice(skip, skip + pageSize);
+
+    const hydratedProducts = pagedIds.length
+      ? await prisma.productList.findMany({
+          where: { id: { in: pagedIds } },
+          include: {
+            category: true,
+            subcategory: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                address: true,
+                addressCity: true,
+                createdAt: true,
+                sellerRatingAvg: true,
+                sellerRatingCount: true,
+                sellerFeatures: {
+                  where: { endsAt: { gt: now } },
+                  orderBy: { endsAt: 'desc' },
+                },
+                badge: true,
+              },
+            },
+            promotions: {
+              where: { endsAt: { gt: now } },
+            },
+            ...(viewer
+              ? {
+                  favorites: {
+                    where: { userId: viewer.id },
+                    select: { id: true },
+                  },
+                }
+              : {}),
+          },
+        })
+      : [];
+
+    const hydratedById = new Map(hydratedProducts.map((product) => [product.id, product]));
+    const pagedProducts = pagedIds
+      .map((id) => hydratedById.get(id))
+      .filter(Boolean)
+      .map(attachSellerFeatureState)
+      .map((product) => attachProductPromotionState({ ...product, user: attachUserBadgeState(product.user) }));
 
     const productsWithFavoriteState = pagedProducts.map((product) => {
       const { address, addressCity, badge, ...userWithoutAddress } = product.user || {};

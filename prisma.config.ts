@@ -1,7 +1,11 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-const databaseUrl = process.env.DATABASE_URL;
+// Schema commands (migrate, db push, studio) need the direct connection —
+// Neon's pooled/pgbouncer endpoint doesn't support the session features
+// Prisma Migrate relies on. DATABASE_URL (pooled) is what the app's
+// generated Prisma Client uses at runtime; DIRECT_URL is CLI-only.
+const databaseUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -16,6 +20,6 @@ export default defineConfig({
 
 if (!databaseUrl) {
   throw new Error(
-    "DATABASE_URL is required for Prisma schema commands. Set it in the environment or add it to a local .env file."
+    "DIRECT_URL (or DATABASE_URL) is required for Prisma schema commands. Set it in the environment or add it to a local .env file."
   );
 }
