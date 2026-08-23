@@ -5,9 +5,6 @@ import ChatWidget from "@/components/ChatWidget";
 export const metadata = {
   title: "MaalX",
   description: "The modern marketplace to post, talk, and deal. Buy and sell anything locally with confidence.",
-  icons: {
-    icon: "/img/TGo%20LOGO%202.0.png",
-  },
 };
 
 export default function RootLayout({ children }) {
